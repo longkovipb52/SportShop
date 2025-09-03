@@ -27,6 +27,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<PayPalService>();
 builder.Services.AddScoped<PayPalService>();
 
+// Thêm MoMo Service
+builder.Services.AddHttpClient<MoMoService>();
+builder.Services.AddScoped<MoMoService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

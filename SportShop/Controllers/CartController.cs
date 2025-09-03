@@ -19,11 +19,13 @@ namespace SportShop.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly PayPalService _payPalService;
+        private readonly MoMoService _moMoService;
 
-        public CartController(ApplicationDbContext context, PayPalService payPalService)
+        public CartController(ApplicationDbContext context, PayPalService payPalService, MoMoService moMoService)
         {
             _context = context;
             _payPalService = payPalService;
+            _moMoService = moMoService;
         }
 
         // GET: Cart - Hiển thị trang giỏ hàng
@@ -1033,10 +1035,10 @@ namespace SportShop.Controllers
                 var userId = HttpContext.Session.GetInt32("UserId");
                 var order = new Order
                 {
-                    UserID = userId ?? 0, // Guest user if not logged in
+                    UserID = userId ?? 0, 
                     OrderDate = DateTime.Now,
-                    TotalAmount = totalAmount, // Sử dụng giá trị tính toán lại
-                    Status = "Pending",
+                    TotalAmount = totalAmount,
+                    Status = "Chờ xử lý",
                     ShippingName = model.ShippingName ?? "",
                     ShippingAddress = model.ShippingAddress ?? "",
                     ShippingPhone = model.ShippingPhone ?? "",
@@ -1061,8 +1063,15 @@ namespace SportShop.Controllers
                 }
 
                 // Tạo thông tin thanh toán
-                string paymentStatus = "Pending";
-                if (model.PaymentMethod == "PayPal")
+                string paymentStatus;
+                string paymentMethod = model.PaymentMethod ?? "COD";
+                
+                // Xác định trạng thái thanh toán dựa trên phương thức
+                if (paymentMethod == "COD")
+                {
+                    paymentStatus = "Chưa thanh toán";
+                }
+                else if (paymentMethod == "PayPal")
                 {
                     // Lấy thông tin PayPal từ form data
                     var paypalOrderId = Request.Form["PayPalOrderId"].ToString();
@@ -1071,38 +1080,34 @@ namespace SportShop.Controllers
                     
                     Console.WriteLine($"PayPal Payment - OrderId: {paypalOrderId}, PayerId: {paypalPayerId}, Status: {paypalPaymentStatus}");
                     
-                    // Nếu PayPal payment thành công
+                    // PayPal được coi là đã thanh toán nếu có thông tin hợp lệ
                     if (!string.IsNullOrEmpty(paypalOrderId) && paypalPaymentStatus == "COMPLETED")
                     {
-                        paymentStatus = "Completed";
-                        order.Status = "Confirmed"; // Đơn hàng đã xác nhận khi thanh toán PayPal thành công
+                        paymentStatus = "Đã thanh toán";
                     }
                     else
                     {
-                        paymentStatus = "Failed";
+                        paymentStatus = "Chưa thanh toán";
                     }
                 }
-                else if (model.PaymentMethod == "CreditCard")
+                else if (paymentMethod == "MoMo")
                 {
-                    paymentStatus = "Processing";
+                    paymentStatus = "Đã thanh toán"; // MoMo sẽ được cập nhật khi callback
+                }
+                else
+                {
+                    paymentStatus = "Chưa thanh toán"; // Mặc định cho các phương thức khác
                 }
 
                 var payment = new Payment
                 {
                     OrderID = order.OrderID,
-                    Method = model.PaymentMethod ?? "COD",
+                    Method = paymentMethod,
                     Status = paymentStatus,
                     PaymentDate = DateTime.Now,
                     Amount = totalAmount // Sử dụng giá trị tính toán lại
                 };
                 _context.Payments.Add(payment);
-
-                // Cập nhật trạng thái đơn hàng nếu cần
-                if (paymentStatus == "Completed")
-                {
-                    order.Status = "Confirmed";
-                    _context.Orders.Update(order);
-                }
 
                 await _context.SaveChangesAsync();
 
@@ -1292,7 +1297,7 @@ namespace SportShop.Controllers
                 UserID = userId ?? 0,
                 OrderDate = DateTime.Now,
                 TotalAmount = totalAmount,
-                Status = "Confirmed", // PayPal đã thanh toán thành công
+                Status = "Chờ xử lý",
                 ShippingName = model.ShippingName ?? "",
                 ShippingAddress = model.ShippingAddress ?? "",
                 ShippingPhone = model.ShippingPhone ?? "",
@@ -1321,7 +1326,7 @@ namespace SportShop.Controllers
             {
                 OrderID = order.OrderID,
                 Method = "PayPal",
-                Status = "Completed",
+                Status = "Đã thanh toán",
                 PaymentDate = DateTime.Now,
                 Amount = totalAmount
             };
@@ -1331,6 +1336,309 @@ namespace SportShop.Controllers
 
             return order.OrderID;
         }
+
+        // MoMo Payment Methods
+
+        // Tạo MoMo Payment
+        [HttpPost]
+        [Route("CreateMoMoPayment")]
+        public async Task<IActionResult> CreateMoMoPayment([FromForm] CheckoutViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["Error"] = "Thông tin thanh toán không hợp lệ";
+                    return RedirectToAction("Checkout");
+                }
+
+                // Lưu thông tin checkout vào session để sử dụng sau khi thanh toán
+                var checkoutJson = System.Text.Json.JsonSerializer.Serialize(model);
+                HttpContext.Session.SetString("CheckoutInfo", checkoutJson);
+
+                var cartItems = await GetCartItemsAsync();
+                if (!cartItems.Any())
+                {
+                    TempData["Error"] = "Giỏ hàng trống";
+                    return RedirectToAction("Index");
+                }
+
+                // Tính tổng tiền
+                var subtotal = cartItems.Sum(item => item.TotalPrice);
+                var shippingFee = CalculateShippingFee(subtotal);
+                var totalAmount = subtotal + shippingFee;
+
+                // Tạo order ID duy nhất
+                var orderId = $"ORDER_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}";
+                var orderInfo = $"Thanh toán đơn hàng {orderId}";
+
+                // Chuyển đổi VND sang đơn vị MoMo (VND)
+                var amountLong = (long)totalAmount;
+
+                // Tạo payment request với MoMo
+                var momoResponse = await _moMoService.CreatePaymentAsync(orderId, amountLong, orderInfo);
+
+                // Debug: Log response để kiểm tra
+                Console.WriteLine($"MoMo Response - ResultCode: {momoResponse.ResultCode}");
+                Console.WriteLine($"MoMo Response - Message: {momoResponse.Message}");
+                Console.WriteLine($"MoMo Response - QrCodeUrl: {momoResponse.QrCodeUrl}");
+                Console.WriteLine($"MoMo Response - PayUrl: {momoResponse.PayUrl}");
+
+                if (momoResponse.ResultCode == 0)
+                {
+                    // Lưu thông tin payment vào session để xác minh sau này
+                    HttpContext.Session.SetString("MoMoOrderId", orderId);
+                    HttpContext.Session.SetString("MoMoAmount", amountLong.ToString());
+
+                    // Redirect trực tiếp đến trang thanh toán MoMo
+                    return Redirect(momoResponse.PayUrl);
+                }
+                else
+                {
+                    TempData["Error"] = $"Không thể tạo thanh toán MoMo: {momoResponse.Message}";
+                    return RedirectToAction("Checkout");
+                }
+            }
+            catch
+            {
+                TempData["Error"] = "Có lỗi xảy ra khi tạo thanh toán MoMo";
+                return RedirectToAction("Checkout");
+            }
+        }
+
+        // MoMo Return - Khi thanh toán thành công/thất bại
+        [Route("MoMoReturn")]
+        public async Task<IActionResult> MoMoReturn()
+        {
+            try
+            {
+                // Lấy tất cả parameters từ query string
+                var parameters = Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString());
+
+                if (!parameters.ContainsKey("signature"))
+                {
+                    TempData["Error"] = "Phản hồi từ MoMo không hợp lệ";
+                    return RedirectToAction("Index");
+                }
+
+                // Tách signature ra khỏi parameters để verify
+                var signature = parameters["signature"];
+                var verifyParams = parameters.Where(p => p.Key != "signature").ToDictionary(x => x.Key, x => x.Value);
+
+                // Verify signature
+                if (!_moMoService.VerifySignature(signature, verifyParams))
+                {
+                    Console.WriteLine("[MoMoReturn] Signature không hợp lệ");
+                    TempData["Error"] = "Chữ ký MoMo không hợp lệ";
+                    return RedirectToAction("Index");
+                }
+
+                var resultCode = int.Parse(parameters.GetValueOrDefault("resultCode", "-1"));
+                var orderId = parameters.GetValueOrDefault("orderId", "");
+                var transId = parameters.GetValueOrDefault("transId", "");
+
+                if (resultCode == 0) // Thành công
+                {
+                    // Lấy thông tin checkout từ session
+                    var checkoutJson = HttpContext.Session.GetString("CheckoutInfo");
+                    
+                    if (string.IsNullOrEmpty(checkoutJson))
+                    {
+                        TempData["Error"] = "Không tìm thấy thông tin đơn hàng";
+                        return RedirectToAction("Index");
+                    }
+
+                    var checkoutInfo = System.Text.Json.JsonSerializer.Deserialize<CheckoutViewModel>(checkoutJson);
+                    if (checkoutInfo == null)
+                    {
+                        TempData["Error"] = "Thông tin đơn hàng không hợp lệ";
+                        return RedirectToAction("Index");
+                    }
+
+                    // Tạo đơn hàng
+                    var amount = decimal.Parse(parameters.GetValueOrDefault("amount", "0"));
+                    
+                    var newOrderId = await CreateOrderFromMoMo(checkoutInfo, amount, orderId, transId);
+
+                    // Xóa thông tin session
+                    HttpContext.Session.Remove("CheckoutInfo");
+                    HttpContext.Session.Remove("MoMoOrderId");
+                    HttpContext.Session.Remove("MoMoAmount");
+
+                    TempData["Success"] = "Thanh toán MoMo thành công!";
+                    return RedirectToAction("OrderSuccess", new { orderId = newOrderId });
+                }
+                else
+                {
+                    var message = parameters.GetValueOrDefault("message", "Thanh toán thất bại");
+                    TempData["Error"] = $"Thanh toán MoMo thất bại: {message}";
+                    return RedirectToAction("Checkout");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MoMoReturn] Lỗi exception: {ex.Message}");
+                TempData["Error"] = "Có lỗi xảy ra khi xử lý phản hồi từ MoMo";
+                return RedirectToAction("Index");
+            }
+        }
+
+        // MoMo IPN - Webhook notification từ MoMo
+        [HttpPost]
+        [Route("MoMoIPN")]
+        public async Task<IActionResult> MoMoIPN()
+        {
+            try
+            {
+                // Đọc raw body
+                using var reader = new StreamReader(Request.Body);
+                var body = await reader.ReadToEndAsync();
+                
+                if (string.IsNullOrEmpty(body))
+                {
+                    return BadRequest();
+                }
+
+                // Parse JSON
+                var ipnData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(body);
+                if (ipnData == null)
+                {
+                    return BadRequest();
+                }
+
+                var parameters = ipnData.ToDictionary(x => x.Key, x => x.Value?.ToString() ?? "");
+
+                // Verify signature
+                if (!parameters.ContainsKey("signature"))
+                {
+                    return BadRequest();
+                }
+
+                var signature = parameters["signature"];
+                var verifyParams = parameters.Where(p => p.Key != "signature").ToDictionary(x => x.Key, x => x.Value);
+
+                if (!_moMoService.VerifySignature(signature, verifyParams))
+                {
+                    return BadRequest();
+                }
+
+                var resultCode = int.Parse(parameters.GetValueOrDefault("resultCode", "-1"));
+                
+                if (resultCode == 0)
+                {
+                    // Cập nhật trạng thái đơn hàng nếu cần
+                    var orderId = parameters.GetValueOrDefault("orderId", "");
+                    // Có thể thêm logic cập nhật database ở đây
+                }
+
+                return Ok();
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        // Tạo đơn hàng từ MoMo payment
+        private async Task<int> CreateOrderFromMoMo(CheckoutViewModel model, decimal totalAmount, string momoOrderId, string transId)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            var user = userId.HasValue ? await _context.Users.FindAsync(userId.Value) : null;
+
+            var order = new Order
+            {
+                UserID = userId ?? 0,
+                OrderDate = DateTime.Now,
+                Status = "Chờ xử lý", 
+                TotalAmount = totalAmount,
+                ShippingName = model.ShippingName ?? (user?.FullName ?? ""),
+                ShippingAddress = model.ShippingAddress ?? (user?.Address ?? ""),
+                ShippingPhone = model.ShippingPhone ?? (user?.Phone ?? ""),
+                Note = model.Note ?? ""
+            };
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+
+            // Lấy cart items để tạo order items
+            var cartItems = await GetCartItemsAsync();
+            
+            foreach (var item in cartItems)
+            {
+                var orderItem = new OrderItem
+                {
+                    OrderID = order.OrderID,
+                    ProductID = item.ProductId,
+                    AttributeID = item.AttributeId,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.Price
+                };
+                _context.OrderItems.Add(orderItem);
+            }
+
+            // Tạo payment record
+            var payment = new Payment
+            {
+                OrderID = order.OrderID,
+                Method = "MoMo",
+                Amount = totalAmount,
+                Status = "Đã thanh toán", 
+                PaymentDate = DateTime.Now
+            };
+            _context.Payments.Add(payment);
+
+            await _context.SaveChangesAsync();
+
+            // Xóa giỏ hàng
+            await ClearCartAsync();
+
+            return order.OrderID;
+        }
+
+        // Check MoMo payment status via AJAX
+        [HttpGet]
+        [Route("Cart/CheckMoMoPaymentStatus")]
+        public async Task<IActionResult> CheckMoMoPaymentStatus(string orderId)
+        {
+            Console.WriteLine($"[CheckMoMoPaymentStatus] Called with orderId: {orderId}");
+            try
+            {
+                // Kiểm tra xem có session data không
+                var sessionOrderId = HttpContext.Session.GetString("MoMoOrderId");
+                if (string.IsNullOrEmpty(sessionOrderId) || sessionOrderId != orderId)
+                {
+                    return Json(new { success = false, failed = true, message = "Session hết hạn" });
+                }
+
+                // Kiểm tra xem có order nào đã được tạo với MoMo payment chưa
+                // Tìm order mới nhất có payment MoMo
+                var existingOrder = await _context.Orders
+                    .Include(o => o.Payments)
+                    .Where(o => o.Payments.Any(p => p.Method == "MoMo"))
+                    .OrderByDescending(o => o.OrderDate)
+                    .FirstOrDefaultAsync();
+
+                if (existingOrder != null)
+                {
+                    // Xóa session
+                    HttpContext.Session.Remove("MoMoOrderId");
+                    HttpContext.Session.Remove("MoMoAmount");
+                    HttpContext.Session.Remove("CheckoutInfo");
+                    
+                    return Json(new { success = true, orderIdNew = existingOrder.OrderID });
+                }
+
+                // Chưa có order, vẫn đang chờ thanh toán
+                return Json(new { success = false, failed = false });
+            }
+            catch
+            {
+                return Json(new { success = false, failed = true, message = "Lỗi kiểm tra trạng thái thanh toán" });
+            }
+        }
+        
+
+        
     }
 
     // Lớp hỗ trợ lưu thông tin giỏ hàng trong session

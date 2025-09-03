@@ -1,0 +1,482 @@
+@model SportShop.Models.ViewModels.ProductIndexViewModel
+@{
+    ViewData["Title"] = "Sản phẩm";
+    ViewData["CustomCSS"] = "product.css";
+}
+
+<section class="products-hero position-relative">
+    <!-- Lớp overlay tối màu -->
+    <div class="hero-overlay"></div>
+    
+    <!-- Marquee Image Slider -->
+    <div class="marquee-container">
+        <div class="marquee-wrapper">
+            <div class="marquee-content">
+                <div class="marquee-item">
+                    <img src="/image/product-banner1.png" alt="Badminton Player" class="marquee-image">
+                </div>
+                <div class="marquee-item">
+                    <img src="/image/product-banner2.png" alt="Nike Collection" class="marquee-image">
+                </div>
+                <div class="marquee-item">
+                    <img src="/image/product-banner3.png" alt="Fitness Sportswear" class="marquee-image">
+                </div>
+                <div class="marquee-item">
+                    <img src="/image/product-banner4.png" alt="Badminton Player" class="marquee-image">
+                </div>
+                <div class="marquee-item">
+                    <img src="/image/product-banner5.png" alt="Nike Collection" class="marquee-image">
+                </div>
+                <div class="marquee-item">
+                    <img src="/image/product-banner6.png" alt="Fitness Sportswear" class="marquee-image">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Nội dung tiêu đề -->
+    <div class="container position-relative hero-content">
+        <div class="text-center py-5">
+            <h1 class="display-4 fw-bold text-white">Sản phẩm thể thao</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-center mb-0">
+                    <li class="breadcrumb-item"><a href="/" class="text-white">Trang chủ</a></li>
+                    <li class="breadcrumb-item active text-white" aria-current="page">Sản phẩm</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</section>
+
+<section class="products-section py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Sidebar Filters -->
+            <div class="col-lg-3">
+                <div class="filter-sidebar-wrapper">
+                    <div class="filter-sidebar p-4 rounded-3 shadow-sm">
+                        <div class="mb-4">
+                            <h5 class="fw-bold border-start border-primary border-4 ps-3">Danh mục</h5>
+                            <div class="category-filters mt-3">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input category-checkbox" type="radio" name="category" id="category-all" value=""
+                                           @(ViewData["CurrentCategory"] == null ? "checked" : "")>
+                                    <label class="form-check-label" for="category-all">
+                                        Tất cả sản phẩm
+                                    </label>
+                                </div>
+                                @foreach (var category in Model.Categories)
+                                {
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input category-checkbox" type="radio" name="category" 
+                                               id="category-@category.CategoryID" value="@category.CategoryID"
+                                               @(ViewData["CurrentCategory"] != null && (int)ViewData["CurrentCategory"] == category.CategoryID ? "checked" : "")>
+                                        <label class="form-check-label d-flex justify-content-between" for="category-@category.CategoryID">
+                                            <span>@category.Name</span>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5 class="fw-bold border-start border-primary border-4 ps-3">Thương hiệu</h5>
+                            <div class="brand-filters mt-3">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input brand-checkbox" type="radio" name="brand" id="brand-all" value=""
+                                           @(ViewData["CurrentBrand"] == null ? "checked" : "")>
+                                    <label class="form-check-label" for="brand-all">
+                                        Tất cả thương hiệu
+                                    </label>
+                                </div>
+                                @foreach (var brand in Model.Brands)
+                                {
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input brand-checkbox" type="radio" name="brand" 
+                                               id="brand-@brand.BrandID" value="@brand.BrandID"
+                                               @(ViewData["CurrentBrand"] != null && (int)ViewData["CurrentBrand"] == brand.BrandID ? "checked" : "")>
+                                        <label class="form-check-label" for="brand-@brand.BrandID">
+                                            @brand.Name
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5 class="fw-bold border-start border-primary border-4 ps-3">Giá</h5>
+                            <div class="price-filter mt-3">
+                                <div class="range-slider">
+                                    <input type="range" class="form-range" id="price-range" min="0" max="5000000" step="100000">
+                                </div>
+                                <div class="d-flex justify-content-between mt-2">
+                                    <span id="price-min">0đ</span>
+                                    <span id="price-max">5.000.000đ</span>
+                                </div>
+                                <div class="price-inputs mt-3 d-flex justify-content-between">
+                                    <div class="input-group">
+                                        <span class="input-group-text">Từ</span>
+                                        <input type="text" id="min-price-input" class="form-control" placeholder="0">
+                                    </div>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Đến</span>
+                                        <input type="text" id="max-price-input" class="form-control" placeholder="5.000.000">
+                                    </div>
+                                </div>
+                                <button id="apply-price-filter" class="btn btn-primary w-100 mt-3">Áp dụng</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5 class="fw-bold border-start border-primary border-4 ps-3">Đánh giá</h5>
+                            <div class="rating-filters mt-3">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="rating" id="rating-all" value="" 
+                                        @(ViewData["CurrentRating"] == null ? "checked" : "")>
+                                    <label class="form-check-label" for="rating-all">
+                                        Tất cả đánh giá
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="rating" id="rating-5" value="5"
+                                        @(ViewData["CurrentRating"] != null && (int)ViewData["CurrentRating"] == 5 ? "checked" : "")>
+                                    <label class="form-check-label" for="rating-5">
+                                        <div class="stars">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="rating" id="rating-4" value="4"
+                                        @(ViewData["CurrentRating"] != null && (int)ViewData["CurrentRating"] == 4 ? "checked" : "")>
+                                    <label class="form-check-label" for="rating-4">
+                                        <div class="stars">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="far fa-star text-warning"></i>
+                                            <span class="ms-1">& lên</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="rating" id="rating-3" value="3"
+                                        @(ViewData["CurrentRating"] != null && (int)ViewData["CurrentRating"] == 3 ? "checked" : "")>
+                                    <label class="form-check-label" for="rating-3">
+                                        <div class="stars">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="far fa-star text-warning"></i>
+                                            <i class="far fa-star text-warning"></i>
+                                            <span class="ms-1">& lên</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button id="clear-filters" class="btn btn-outline-secondary w-100 mt-2">Xóa bộ lọc</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Listings -->
+            <div class="col-lg-9">
+                <div class="products-container-wrapper">
+                    <!-- Sorting & Filters Header -->
+                    <div class="products-header d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                        <div class="results-count">
+                            <p class="mb-0"><strong>@Model.Products.Count</strong> sản phẩm @(!string.IsNullOrEmpty(Model.Keyword) ? $"cho từ khóa '{Model.Keyword}'" : "")</p>
+                        </div>
+                        
+                        <div class="filters d-flex align-items-center">
+                            <div class="d-flex align-items-center me-3">
+                                <label for="sort-by" class="me-2">Sắp xếp:</label>
+                                @Html.DropDownList("sort-by", new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text = "Giá tăng dần", Value = "", Selected = string.IsNullOrEmpty(Model.SortOrder) },
+                                    new SelectListItem { Text = "Giá giảm dần", Value = "price_desc", Selected = Model.SortOrder == "price_desc" },
+                                    new SelectListItem { Text = "Tên A-Z", Value = "name", Selected = Model.SortOrder == "name" },
+                                    new SelectListItem { Text = "Tên Z-A", Value = "name_desc", Selected = Model.SortOrder == "name_desc" }
+                                }, new { @class = "form-select" })
+                            </div>
+                            
+                            <div class="view-options d-flex align-items-center">
+                                <button id="grid-view" class="btn btn-sm btn-outline-secondary me-2 active">
+                                    <i class="fas fa-th"></i>
+                                </button>
+                                <button id="list-view" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Grid -->
+                    <div id="products-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        @foreach (var product in Model.Products)
+                        {
+                            <div class="col product-item" data-aos="fade-up">
+                                <div class="card h-100 product-card">
+                                    <div class="card-img-top-container position-relative overflow-hidden">
+                                        <img src="@(string.IsNullOrEmpty(product.ImageURL) ? "/images/product-placeholder.jpg" : $"/upload/product/{product.ImageURL}")" 
+                                             class="card-img-top" alt="@product.Name">
+                                        
+                                        <div class="product-actions">
+                                            <button class="btn btn-sm btn-light rounded-circle quick-view" data-id="@product.ProductID">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-light rounded-circle add-to-wishlist" data-id="@product.ProductID">
+                                                <i class="far fa-heart"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-light rounded-circle add-to-cart" data-id="@product.ProductID">
+                                                <i class="fas fa-shopping-cart"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        @if (product.Price > 3000000)
+                                        {
+                                            <span class="badge bg-danger position-absolute top-0 start-0 m-2">Cao cấp</span>
+                                        }
+                                        else if (product.Stock <= 5)
+                                        {
+                                            <span class="badge bg-warning position-absolute top-0 start-0 m-2">Sắp hết hàng</span>
+                                        }
+                                    </div>
+                                    
+                                    <div class="card-body">
+                                        <h5 class="card-title product-title">
+                                            <a href="@Url.Action("Details", "Product", new { id = product.ProductID })" class="text-decoration-none text-dark stretched-link">
+                                                @product.Name
+                                            </a>
+                                        </h5>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div class="brand-badge">
+                                                @if (product.Brand != null)
+                                                {
+                                                    <span class="badge bg-light text-dark">@product.Brand.Name</span>
+                                                }
+                                                <span class="badge bg-secondary">@product.Category.Name</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="product-description d-none">
+                                            <p class="card-text text-muted small">@product.Description</p>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="product-price">
+                                                <span class="fw-bold">@string.Format("{0:N0}", product.Price)đ</span>
+                                            </div>
+                                            <div class="product-rating">
+                                                <i class="fas fa-star text-warning"></i>
+                                                <span>
+                                                    @{
+                                                        double avgRating = Model.GetProductRating(product.ProductID);
+                                                        int reviewCount = Model.GetProductReviewCount(product.ProductID);
+                                                    }
+                                                    @if(avgRating > 0)
+                                                    {
+                                                        <text>@avgRating.ToString("0.0")</text>
+                                                        <span class="text-muted small">(@reviewCount)</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <text>Chưa có đánh giá</text>
+                                                    }
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Empty state if no products -->
+                    @if (!Model.Products.Any())
+                    {
+                        <div class="empty-state text-center py-5">
+                            <div class="empty-icon mb-3">
+                                <i class="fas fa-box-open fa-4x text-muted"></i>
+                            </div>
+                            <h3 class="mb-3">Không tìm thấy sản phẩm phù hợp</h3>
+                            <p class="text-muted mb-4">Vui lòng thử lại với bộ lọc khác hoặc khám phá danh mục khác</p>
+                            <a href="@Url.Action("Index", "Product")" class="btn btn-primary">Xem tất cả sản phẩm</a>
+                        </div>
+                    }
+
+                    <!-- Pagination -->
+                    @if (Model.TotalPages > 1)
+                    {
+                        <nav aria-label="Page navigation" class="mt-5">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", "Product", new { page = Model.CurrentPage - 1, categoryId = Model.CategoryId, brandId = Model.BrandId, sortOrder = Model.SortOrder })" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                
+                                @for (int i = 1; i <= Model.TotalPages; i++)
+                                {
+                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", "Product", new { page = i, categoryId = Model.CategoryId, brandId = Model.BrandId, sortOrder = Model.SortOrder })">
+                                            @i
+                                        </a>
+                                    </li>
+                                }
+                                
+                                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", "Product", new { page = Model.CurrentPage + 1, categoryId = Model.CategoryId, brandId = Model.BrandId, sortOrder = Model.SortOrder })" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xem nhanh sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <img src="" alt="Product" id="quick-view-image" class="img-fluid">
+                        </div>
+                        <div class="col-md-6">
+                            <h4 id="quick-view-title"></h4>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rating" id="quick-view-rating">
+                                    <!-- Stars sẽ được thêm động bởi JavaScript -->
+                                </div>
+                            </div>
+                            <p class="fw-bold fs-4 mb-3" id="quick-view-price"></p>
+                            <p class="mb-3" id="quick-view-description"></p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Màu sắc</label>
+                                <div class="color-options d-flex flex-wrap" id="quick-view-colors"></div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Kích cỡ</label>
+                                <div class="size-options d-flex flex-wrap" id="quick-view-sizes"></div>
+                            </div>
+                            
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="quantity-controls d-flex" style="border: 1px solid #ced4da; border-radius: 0.375rem; overflow: hidden;">
+                                    <button type="button" class="qty-btn qty-decrease" id="quick-view-decrease-quantity" 
+                                            style="width: 40px; height: 40px; border: none; background: #f8f9fa; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                            onclick="console.log('Quick view decrease clicked'); quickViewDecreaseQuantity();">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" class="form-control text-center" value="1" min="1" id="product-quantity"
+                                           style="width: 70px; border: none; border-left: 1px solid #ced4da; border-right: 1px solid #ced4da;">
+                                    <button type="button" class="qty-btn qty-increase" id="quick-view-increase-quantity" 
+                                            style="width: 40px; height: 40px; border: none; background: #f8f9fa; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                            onclick="console.log('Quick view increase clicked'); quickViewIncreaseQuantity();">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <button id="quick-view-add-to-cart" class="btn btn-primary ms-3">Thêm vào giỏ hàng</button>
+                            </div>
+                            
+                            <div class="product-meta">
+                                <p class="mb-2">
+                                    <span class="fw-bold">Danh mục:</span> 
+                                    <span id="quick-view-category"></span>
+                                </p>
+                                <p class="mb-0">
+                                    <span class="fw-bold">Thương hiệu:</span> 
+                                    <span id="quick-view-brand"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="~/js/product.js"></script>
+    
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+            mirror: false
+        });
+        
+        // Quick View quantity functions
+        function quickViewDecreaseQuantity() {
+            console.log('quickViewDecreaseQuantity called');
+            const input = document.getElementById('product-quantity');
+            if (input) {
+                let currentValue = parseInt(input.value) || 1;
+                if (currentValue > 1) {
+                    input.value = currentValue - 1;
+                    console.log('Quick view decreased to:', input.value);
+                } else {
+                    console.log('Cannot decrease below 1 in quick view');
+                }
+            } else {
+                console.error('Quick view quantity input not found');
+            }
+        }
+        
+        function quickViewIncreaseQuantity() {
+            console.log('quickViewIncreaseQuantity called');
+            const input = document.getElementById('product-quantity');
+            if (input) {
+                let currentValue = parseInt(input.value) || 1;
+                const maxStock = 999; // You can set this dynamically based on product
+                if (currentValue < maxStock) {
+                    input.value = currentValue + 1;
+                    console.log('Quick view increased to:', input.value);
+                } else {
+                    console.log('Cannot increase above max stock in quick view:', maxStock);
+                }
+            } else {
+                console.error('Quick view quantity input not found');
+            }
+        }
+        
+        // Test function for quick view
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Index page loaded');
+            
+            // Test when modal is shown
+            const modal = document.getElementById('quickViewModal');
+            if (modal) {
+                modal.addEventListener('shown.bs.modal', function() {
+                    console.log('Quick view modal opened');
+                    console.log('Quick view quantity input:', document.getElementById('product-quantity'));
+                });
+            }
+        });
+    </script>
+}

@@ -1,0 +1,614 @@
+@model SportShop.Models.ViewModels.CheckoutViewModel
+@{
+    ViewData["Title"] = "Thanh toán";
+}
+
+<style>
+    .checkout-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 15px;
+    }
+    
+    .checkout-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .checkout-header h2 {
+        color: #2c3e50;
+        font                    <!-- PayPal Container -->
+                    <div class="paypal-container" id="paypalContainer" style="display: none;">
+                        <h6 class="mb-3">Thanh toán với PayPal</h6>
+                        <p class="text-muted mb-3">Bạn sẽ được chuyển đến trang PayPal để hoàn tất thanh toán.</p>
+                        <p class="text-info mb-3">
+                            <i class="fas fa-info-circle"></i>
+                            Tổng tiền sẽ được chuyển đổi từ VND sang USD với tỷ giá 1 USD = 25,000 VND
+                        </p>
+                        <div class="text-center">
+                            <i class="fab fa-paypal" style="font-size: 2rem; color: #0070ba;"></i>
+                            <br>
+                            <small>Giao dịch được bảo mật bởi PayPal</small>
+                        </div>
+                    </div>600;
+        margin-bottom: 10px;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin: 30px 0;
+    }
+    
+    .step {
+        display: flex;
+        align-items: center;
+        margin: 0 20px;
+    }
+    
+    .step-number {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 10px;
+    }
+    
+    .step.active .step-number {
+        background: #007bff;
+        color: white;
+    }
+    
+    .step.completed .step-number {
+        background: #28a745;
+        color: white;
+    }
+    
+    .order-summary {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        position: sticky;
+        top: 20px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 10px;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    
+    .payment-method {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .payment-method:hover {
+        border-color: #007bff;
+        background: #f8f9ff;
+    }
+    
+    .payment-method.selected {
+        border-color: #007bff;
+        background: #e7f3ff;
+    }
+    
+    .payment-icon {
+        width: 40px;
+        height: 40px;
+        margin-right: 15px;
+    }
+    
+    .order-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .order-item:last-child {
+        border-bottom: none;
+    }
+    
+    .item-image {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-right: 15px;
+    }
+    
+    .item-details {
+        flex: 1;
+    }
+    
+    .item-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .item-attributes {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .item-price {
+        font-weight: 600;
+        color: #007bff;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 8px 0;
+    }
+    
+    .summary-row.total {
+        border-top: 2px solid #dee2e6;
+        margin-top: 15px;
+        padding-top: 15px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #007bff;
+    }
+    
+    .btn-checkout {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border: none;
+        border-radius: 10px;
+        padding: 15px 30px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-checkout:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,123,255,0.3);
+    }
+    
+    .security-info {
+        background: #e8f5e8;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 20px;
+        text-align: center;
+    }
+    
+    .card-form {
+        display: none;
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    .card-form.show {
+        display: block;
+    }
+    
+    @@media (max-width: 768px) {
+        .step-indicator {
+            flex-direction: column;
+        }
+        
+        .step {
+            margin: 10px 0;
+        }
+        
+        .order-summary {
+            position: static;
+            margin-top: 30px;
+        }
+    }
+</style>
+
+<div class="checkout-container">
+    <div class="checkout-header">
+        <h2><i class="fas fa-shopping-bag"></i> Thanh toán đơn hàng</h2>
+        <p class="text-muted">Vui lòng kiểm tra thông tin và hoàn tất đơn hàng của bạn</p>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+        <div class="step completed">
+            <div class="step-number">1</div>
+            <span>Giỏ hàng</span>
+        </div>
+        <div class="step active">
+            <div class="step-number">2</div>
+            <span>Thanh toán</span>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <span>Hoàn tất</span>
+        </div>
+    </div>
+
+    <form asp-action="ProcessCheckout" method="post" id="checkoutForm">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Thông tin giao hàng -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-truck"></i> Thông tin giao hàng
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ShippingName" class="form-label">Họ và tên *</label>
+                            <input asp-for="ShippingName" class="form-control" placeholder="Nhập họ và tên">
+                            <span asp-validation-for="ShippingName" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ShippingPhone" class="form-label">Số điện thoại *</label>
+                            <input asp-for="ShippingPhone" class="form-control" placeholder="Nhập số điện thoại">
+                            <span asp-validation-for="ShippingPhone" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" class="form-control" placeholder="Nhập email (tùy chọn)">
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ShippingAddress" class="form-label">Địa chỉ giao hàng *</label>
+                            <input asp-for="ShippingAddress" class="form-control" placeholder="Nhập địa chỉ giao hàng">
+                            <span asp-validation-for="ShippingAddress" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Note" class="form-label">Ghi chú đơn hàng</label>
+                        <textarea asp-for="Note" class="form-control" rows="3" placeholder="Ghi chú về đơn hàng (tùy chọn)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Phương thức thanh toán -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-credit-card"></i> Phương thức thanh toán
+                    </h4>
+                    
+                    <div class="payment-method" data-method="COD">
+                        <div class="d-flex align-items-center">
+                            <div class="payment-icon d-flex align-items-center justify-content-center bg-warning text-white rounded">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Thanh toán khi nhận hàng (COD)</h6>
+                                <small class="text-muted">Thanh toán bằng tiền mặt khi nhận hàng</small>
+                            </div>
+                            <div class="ms-auto">
+                                <input type="radio" name="PaymentMethod" value="COD" class="form-check-input" checked>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-method" data-method="CreditCard">
+                        <div class="d-flex align-items-center">
+                            <div class="payment-icon d-flex align-items-center justify-content-center bg-primary text-white rounded">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Thẻ tín dụng/Ghi nợ</h6>
+                                <small class="text-muted">Visa, MasterCard, JCB</small>
+                            </div>
+                            <div class="ms-auto">
+                                <input type="radio" name="PaymentMethod" value="CreditCard" class="form-check-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-method" data-method="BankTransfer">
+                        <div class="d-flex align-items-center">
+                            <div class="payment-icon d-flex align-items-center justify-content-center bg-success text-white rounded">
+                                <i class="fas fa-university"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Chuyển khoản ngân hàng</h6>
+                                <small class="text-muted">Chuyển khoản qua Internet Banking</small>
+                            </div>
+                            <div class="ms-auto">
+                                <input type="radio" name="PaymentMethod" value="BankTransfer" class="form-check-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-method" data-method="EWallet">
+                        <div class="d-flex align-items-center">
+                            <div class="payment-icon d-flex align-items-center justify-content-center bg-info text-white rounded">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Ví điện tử</h6>
+                                <small class="text-muted">MoMo, ZaloPay, ViettelPay</small>
+                            </div>
+                            <div class="ms-auto">
+                                <input type="radio" name="PaymentMethod" value="EWallet" class="form-check-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-method" data-method="PayPal">
+                        <div class="d-flex align-items-center">
+                            <div class="payment-icon d-flex align-items-center justify-content-center" style="background: #0070ba;">
+                                <i class="fab fa-paypal text-white"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">PayPal</h6>
+                                <small class="text-muted">Thanh toán an toàn với PayPal</small>
+                            </div>
+                            <div class="ms-auto">
+                                <input type="radio" name="PaymentMethod" value="PayPal" class="form-check-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form thông tin thẻ tín dụng -->
+                    <div class="card-form" id="cardForm">
+                        <h6 class="mb-3">Thông tin thẻ tín dụng</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CardHolderName" class="form-label">Tên chủ thẻ</label>
+                                <input asp-for="CardHolderName" class="form-control" placeholder="Nhập tên chủ thẻ">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CardNumber" class="form-label">Số thẻ</label>
+                                <input asp-for="CardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ExpiryDate" class="form-label">Tháng/Năm hết hạn</label>
+                                <input asp-for="ExpiryDate" class="form-control" placeholder="MM/YY" maxlength="5">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CVV" class="form-label">CVV</label>
+                                <input asp-for="CVV" class="form-control" placeholder="123" maxlength="4">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PayPal Container -->
+                    <div class="paypal-container" id="paypalContainer" style="display: none;">
+                        <h6 class="mb-3">Thanh toán với PayPal</h6>
+                        <div id="paypal-button-container" class="text-center"></div>
+                        <div class="security-info mt-3">
+                            <i class="fas fa-shield-alt text-success"></i>
+                            <small>Giao dịch được bảo mật bởi PayPal</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Tóm tắt đơn hàng -->
+                <div class="order-summary">
+                    <h4 class="section-title">
+                        <i class="fas fa-file-invoice"></i> Tóm tắt đơn hàng
+                    </h4>
+
+                    <!-- Danh sách sản phẩm -->
+                    @foreach (var item in Model.CartItems)
+                    {
+                        <div class="order-item">
+                            <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/product-placeholder.jpg" : $"/upload/product/{item.ImageUrl}")" 
+                                 alt="@item.ProductName" class="item-image">
+                            <div class="item-details">
+                                <div class="item-name">@item.ProductName</div>
+                                <div class="item-attributes">
+                                    @if (!string.IsNullOrEmpty(item.Color) || !string.IsNullOrEmpty(item.Size))
+                                    {
+                                        <span>
+                                            @if (!string.IsNullOrEmpty(item.Color))
+                                            {
+                                                <text>Màu: @item.Color</text>
+                                            }
+                                            @if (!string.IsNullOrEmpty(item.Size))
+                                            {
+                                                @if (!string.IsNullOrEmpty(item.Color)) { <text> / </text> }
+                                                <text>Size: @item.Size</text>
+                                            }
+                                        </span>
+                                    }
+                                    <br>
+                                    <span>Số lượng: @item.Quantity</span>
+                                </div>
+                            </div>
+                            <div class="item-price">
+                                @string.Format("{0:N0}đ", item.TotalPrice)
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Tổng kết -->
+                    <div class="summary-row">
+                        <span>Tạm tính:</span>
+                        <span>@string.Format("{0:N0}đ", Model.Subtotal)</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Phí vận chuyển:</span>
+                        <span class="shipping-fee">
+                            @if (Model.ShippingFee == 0)
+                            {
+                                <span class="text-success">Miễn phí</span>
+                            }
+                            else
+                            {
+                                @string.Format("{0:N0}đ", Model.ShippingFee)
+                            }
+                        </span>
+                    </div>
+                    @if (Model.Tax > 0)
+                    {
+                        <div class="summary-row">
+                            <span>Thuế:</span>
+                            <span>@string.Format("{0:N0}đ", Model.Tax)</span>
+                        </div>
+                    }
+                    <div class="summary-row total">
+                        <span>Tổng cộng:</span>
+                        <span>@string.Format("{0:N0}đ", Model.Total)</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-checkout mt-3" id="normalCheckoutBtn">
+                        <i class="fas fa-lock"></i> Đặt hàng ngay
+                    </button>
+
+                    <div class="security-info">
+                        <i class="fas fa-shield-alt text-success"></i>
+                        <small>Thông tin của bạn được bảo mật an toàn</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Xử lý chọn phương thức thanh toán
+            const paymentMethods = document.querySelectorAll('.payment-method');
+            const cardForm = document.getElementById('cardForm');
+            const paypalContainer = document.getElementById('paypalContainer');
+
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    // Remove selected class from all methods
+                    paymentMethods.forEach(m => m.classList.remove('selected'));
+                    
+                    // Add selected class to clicked method
+                    this.classList.add('selected');
+                    
+                    // Check the radio button
+                    const radio = this.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    
+                    // Show/hide appropriate forms
+                    const selectedMethod = this.dataset.method;
+                    
+                    // Hide all forms first
+                    cardForm.style.display = 'none';
+                    paypalContainer.style.display = 'none';
+                    
+                    if (selectedMethod === 'CreditCard') {
+                        cardForm.style.display = 'block';
+                    } else if (selectedMethod === 'PayPal') {
+                        paypalContainer.style.display = 'block';
+                    }
+                });
+            });
+
+            // Format card number input
+            const cardNumberInput = document.querySelector('input[name="CardNumber"]');
+            if (cardNumberInput) {
+                cardNumberInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+                    let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+                    if (formattedValue.length > 19) formattedValue = formattedValue.slice(0, 19);
+                    e.target.value = formattedValue;
+                });
+            }
+
+            // Format expiry date input
+            const expiryInput = document.querySelector('input[name="ExpiryDate"]');
+            if (expiryInput) {
+                expiryInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length >= 2) {
+                        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                    }
+                    e.target.value = value;
+                });
+            }
+
+            // Form validation and submission
+            const form = document.getElementById('checkoutForm');
+            form.addEventListener('submit', function(e) {
+                const selectedPayment = document.querySelector('input[name="PaymentMethod"]:checked');
+                
+                if (!selectedPayment) {
+                    e.preventDefault();
+                    alert('Vui lòng chọn phương thức thanh toán');
+                    return;
+                }
+
+                // Handle PayPal payment
+                if (selectedPayment.value === 'PayPal') {
+                    e.preventDefault();
+                    
+                    // Show loading state
+                    const submitBtn = document.querySelector('.btn-checkout');
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang chuyển đến PayPal...';
+                    submitBtn.disabled = true;
+                    
+                    // Submit to PayPal creation endpoint
+                    form.action = '/Cart/CreatePayPalPayment';
+                    form.submit();
+                    return;
+                }
+                
+                // Validate credit card if selected
+                if (selectedPayment.value === 'CreditCard') {
+                    const cardHolder = document.querySelector('input[name="CardHolderName"]').value;
+                    const cardNumber = document.querySelector('input[name="CardNumber"]').value.replace(/\s/g, '');
+                    const expiry = document.querySelector('input[name="ExpiryDate"]').value;
+                    const cvv = document.querySelector('input[name="CVV"]').value;
+                    
+                    if (!cardHolder || !cardNumber || !expiry || !cvv) {
+                        e.preventDefault();
+                        alert('Vui lòng điền đầy đủ thông tin thẻ tín dụng');
+                        return;
+                    }
+                    
+                    if (cardNumber.length < 13) {
+                        e.preventDefault();
+                        alert('Số thẻ không hợp lệ');
+                        return;
+                    }
+                }
+                
+                // Show loading state for other payment methods
+                const submitBtn = form.querySelector('.btn-checkout');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+                submitBtn.disabled = true;
+            });
+        });
+    </script>
+}

@@ -1,0 +1,334 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - LoLoSport</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="~/image/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="~/image/favicon.ico" type="image/x-icon">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/checkout.css" asp-append-version="true" />
+    
+    <!-- Custom CSS per page -->
+    @if (ViewData["CustomCSS"] != null)
+    {
+        <link rel="stylesheet" href="~/css/@ViewData["CustomCSS"]" asp-append-version="true" />
+    }
+</head>
+<body>
+    <header>
+        <!-- Top Bar -->
+        <div class="top-bar bg-light py-1">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="small text-muted">
+                            <i class="fas fa-phone-alt me-1"></i> (028) 3835 4266 |
+                            <i class="fas fa-envelope ms-2 me-1"></i> support@lolosport.com
+                        </span>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="top-links">
+                            <a href="#" class="text-muted me-3 small"><i class="fas fa-truck me-1"></i> Theo dõi đơn hàng</a>
+                            <a href="#" class="text-muted me-3 small"><i class="fas fa-heart me-1"></i> Danh sách yêu thích</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+            <div class="container">
+                <!-- Logo và thương hiệu -->
+                <a class="navbar-brand d-flex align-items-center" href="/">
+                    <img src="~/image/logo.png" alt="LoLoShop Logo" class="me-2" style="height: 50px; width: auto;">
+                    <span class="fw-bold">LoLoSport</span>
+                </a>
+                
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <!-- Thanh tìm kiếm ở đây -->
+                    <div class="search-container mx-auto">
+                        <form class="d-flex position-relative search-form" action="/Product/Search" method="get">
+                            <input type="search" name="keyword" class="form-control search-input" placeholder="Tìm kiếm sản phẩm..." aria-label="Search">
+                            <button class="btn btn-search" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Home" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")" href="/">Trang chủ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "About" ? "active" : "")" href="/About">Giới thiệu</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Product" ? "active" : "")" href="/Product">Sản phẩm</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Blog" ? "active" : "")" href="/Blog">Tin tức</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Contact" ? "active" : "")" href="/Contact">Liên hệ</a>
+                        </li>
+                        
+                        <!-- Thêm icon tìm kiếm cho mobile -->
+                        <li class="nav-item d-lg-none">
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#searchModal">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </a>
+                        </li>
+                        
+                        <!-- Cart icon -->
+                        <li class="nav-item ms-lg-2">
+                            <a class="nav-link position-relative" href="@Url.Action("Index", "Cart")">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-count">
+                                    @await Component.InvokeAsync("CartCount")
+                                </span>
+                            </a>
+                        </li>
+                        
+                        <!-- User/Login button -->
+                        <li class="nav-item ms-lg-3">
+                            @{
+                                string username = null;
+                                string fullName = null;
+                                try
+                                {
+                                    username = Context.Session.GetString("Username");
+                                    fullName = Context.Session.GetString("FullName");
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Session error: {ex.Message}");
+                                }
+                            }
+                            
+                            @if (!string.IsNullOrEmpty(username))
+                            {
+                                <div class="dropdown">
+                                    <a class="nav-link btn btn-outline-primary rounded-pill px-4 dropdown-toggle" href="#" 
+                                        id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-user me-1"></i> @(string.IsNullOrEmpty(fullName) ? username : fullName)
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Tài khoản</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-bag me-2"></i>Đơn hàng</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-heart me-2"></i>Yêu thích</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            }
+                            else
+                            {
+                                <a class="nav-link btn btn-outline-primary rounded-pill px-4 @(ViewContext.RouteData.Values["Controller"].ToString() == "Account" && ViewContext.RouteData.Values["Action"].ToString() == "Login" ? "active" : "")" 
+                                    asp-controller="Account" asp-action="Login">
+                                    <i class="fas fa-user me-1"></i> Đăng nhập
+                                </a>
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-dark text-light py-5">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="mb-3">
+                        <img src="~/image/logo.png" alt="LoLoShop Logo" style="height: 80px; width: auto;" class="mb-2">
+                        <h5 class="fw-bold">LoLoSport</h5>
+                    </div>
+                    <p class="text-muted">
+                        Điểm đến lý tưởng cho các sản phẩm thể thao chất lượng cao và trải nghiệm mua sắm hiện đại.
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="text-light me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-2">
+                    <h6 class="fw-bold mb-3">Liên kết nhanh</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/" class="text-muted text-decoration-none">Trang chủ</a></li>
+                        <li><a href="/Product" class="text-muted text-decoration-none">Sản phẩm</a></li>
+                        <li><a href="/About" class="text-muted text-decoration-none">Giới thiệu</a></li>
+                        <li><a href="/Contact" class="text-muted text-decoration-none">Liên hệ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-3">
+                    <h6 class="fw-bold mb-3">Thông tin liên hệ</h6>
+                    <ul class="list-unstyled text-muted">
+                        <li><i class="fas fa-map-marker-alt me-2"></i>123 Đường Thể Thao, TP.HCM</li>
+                        <li><i class="fas fa-phone me-2"></i>(028) 3835 4266</li>
+                        <li><i class="fas fa-envelope me-2"></i>support@lolosport.com</li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-3">
+                    <h6 class="fw-bold mb-3">Đăng ký nhận tin</h6>
+                    <p class="text-muted small">Đăng ký để nhận thông tin và ưu đãi mới nhất</p>
+                    <div class="input-group">
+                        <input type="email" class="form-control" placeholder="Email của bạn">
+                        <button class="btn btn-primary">Đăng ký</button>
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="text-muted mb-0">&copy; 2025 - LoLoSport - <a asp-area="" asp-controller="Home" asp-action="Privacy" class="text-muted text-decoration-none">Chính sách bảo mật</a></p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="#" class="text-muted text-decoration-none me-3">Điều khoản sử dụng</a>
+                    <a href="#" class="text-muted text-decoration-none">Chính sách đổi trả</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Cart Modal -->
+    <div class="modal fade" id="cartModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Giỏ hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="cart-item d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-0">Nike Air Max 270</h6>
+                            <small class="text-muted">Size: 42</small>
+                        </div>
+                        <div>
+                            <span class="fw-bold">2.290.000đ</span>
+                        </div>
+                    </div>
+                    <div class="cart-item d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-0">Áo thể thao Adidas</h6>
+                            <small class="text-muted">Size: L</small>
+                        </div>
+                        <div>
+                            <span class="fw-bold">750.000đ</span>
+                        </div>
+                    </div>
+                    <div class="cart-item d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-0">Thảm tập Yoga cao cấp</h6>
+                            <small class="text-muted">Màu: Tím</small>
+                        </div>
+                        <div>
+                            <span class="fw-bold">550.000đ</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Tổng: 3.590.000đ</strong>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tiếp tục mua sắm</button>
+                    <button type="button" class="btn btn-primary">Thanh toán</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal for Mobile -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="searchModalLabel">Tìm kiếm sản phẩm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form class="position-relative search-form" action="/Product/Search" method="get">
+                        <input type="search" name="keyword" class="form-control search-input" placeholder="Nhập từ khóa tìm kiếm..." aria-label="Search">
+                        <button class="btn btn-search" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                    
+                    <!-- Popular searches -->
+                    <div class="mt-3">
+                        <p class="mb-2 text-muted">Tìm kiếm phổ biến:</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="/Product/Search?keyword=Giày bóng đá" class="badge bg-light text-dark text-decoration-none">Giày bóng đá</a>
+                            <a href="/Product/Search?keyword=Áo thể thao" class="badge bg-light text-dark text-decoration-none">Áo thể thao</a>
+                            <a href="/Product/Search?keyword=Quần thể thao" class="badge bg-light text-dark text-decoration-none">Quần thể thao</a>
+                            <a href="/Product/Search?keyword=Phụ kiện" class="badge bg-light text-dark text-decoration-none">Phụ kiện</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollToTop" class="btn btn-primary scroll-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/script.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

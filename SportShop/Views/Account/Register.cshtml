@@ -1,0 +1,92 @@
+@model SportShop.Models.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    ViewData["CustomCSS"] = "account.css";
+}
+
+<div class="auth-container">
+    <div class="auth-decoration auth-decoration-1"></div>
+    <div class="auth-decoration auth-decoration-2"></div>
+    
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <span class="text-pink">LoLo</span>Sport
+            </div>
+            <h1 class="auth-title">Tạo tài khoản mới</h1>
+            <p class="auth-subtitle">Đăng ký để trở thành thành viên của LoLoSport</p>
+        </div>
+        
+        <div class="auth-body">
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger mb-3">
+                    @TempData["ErrorMessage"]
+                </div>
+            }
+
+            <form asp-controller="Account" asp-action="Register" method="post" class="register-form">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+                
+                <div class="form-floating">
+                    <input asp-for="Username" class="form-control" placeholder=" " />
+                    <label asp-for="Username"></label>
+                    <span asp-validation-for="Username" class="invalid-feedback"></span>
+                </div>
+                
+                <div class="form-floating">
+                    <input asp-for="FullName" class="form-control" placeholder=" " />
+                    <label asp-for="FullName"></label>
+                    <span asp-validation-for="FullName" class="invalid-feedback"></span>
+                </div>
+                
+                <div class="form-floating">
+                    <input asp-for="Email" class="form-control" placeholder=" " />
+                    <label asp-for="Email"></label>
+                    <span asp-validation-for="Email" class="invalid-feedback"></span>
+                </div>
+                
+                <div class="form-floating">
+                    <input asp-for="Phone" class="form-control" placeholder=" " />
+                    <label asp-for="Phone"></label>
+                    <span asp-validation-for="Phone" class="invalid-feedback"></span>
+                </div>
+                
+                <div class="form-floating" style="grid-column: span 2;">
+                    <input asp-for="Address" class="form-control" placeholder=" " />
+                    <label asp-for="Address"></label>
+                    <span asp-validation-for="Address" class="invalid-feedback"></span>
+                </div>
+                
+                <div class="form-floating">
+                    <input asp-for="Password" class="form-control" placeholder=" " />
+                    <label asp-for="Password"></label>
+                    <span asp-validation-for="Password" class="invalid-feedback"></span>
+                </div>
+                
+                <div class="form-floating">
+                    <input asp-for="ConfirmPassword" class="form-control" placeholder=" " />
+                    <label asp-for="ConfirmPassword"></label>
+                    <span asp-validation-for="ConfirmPassword" class="invalid-feedback"></span>
+                </div>
+                
+                <div id="password-strength-container" style="grid-column: span 2;" class="mb-3">
+                    <div id="password-strength" class="password-strength"></div>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-auth">Đăng ký</button>
+                </div>
+            </form>
+            
+            <div class="auth-footer">
+                Đã có tài khoản? <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/account.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,989 @@
+@model List<SportShop.Controllers.CartViewModel>
+@{
+    ViewData["Title"] = "Giỏ hàng của bạn";
+    ViewData["CustomCSS"] = "cart.css";
+    decimal subtotal = Model.Sum(item => item.TotalPrice);
+    decimal shippingFee = subtotal > 0 ? 15000M : 0;
+    decimal total = subtotal + shippingFee;
+}
+
+<section class="page-header py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="fw-bold">Giỏ hàng</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-center mb-0">
+                        <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Giỏ hàng</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cart-section py-5">
+    <div class="container">
+        @if (Model.Count > 0)
+        {
+            <div class="row g-4">
+                <!-- Cart Items -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm rounded-3">
+                        <div class="card-body p-4">
+                            <div class="table-responsive">
+                                <table class="table table-cart">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="border-0 bg-light">Sản phẩm</th>
+                                            <th scope="col" class="border-0 bg-light text-center">Giá</th>
+                                            <th scope="col" class="border-0 bg-light text-center">Số lượng</th>
+                                            <th scope="col" class="border-0 bg-light text-end">Tổng</th>
+                                            <th scope="col" class="border-0 bg-light"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model)
+                                        {
+                                            <tr class="cart-item" data-cart-id="@item.CartId" data-product-id="@item.ProductId" data-attribute-id="@item.AttributeId">
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/product-placeholder.jpg" : $"/upload/product/{item.ImageUrl}")" 
+                                                             alt="@item.ProductName" class="cart-item-image rounded-3">
+                                                        <div class="ms-3">
+                                                            <h6 class="mb-1 product-name">@item.ProductName</h6>
+                                                            <p class="text-muted mb-0 small product-attributes">
+                                                                @if (!string.IsNullOrEmpty(item.Color) || !string.IsNullOrEmpty(item.Size))
+                                                                {
+                                                                    @if (!string.IsNullOrEmpty(item.Color))
+                                                                    {
+                                                                        <span class="badge bg-light text-dark product-color">Màu: @item.Color</span>
+                                                                    }
+                                                                    @if (!string.IsNullOrEmpty(item.Size))
+                                                                    {
+                                                                        <span class="badge bg-light text-dark product-size">@(!string.IsNullOrEmpty(item.Color) ? " / " : "")Size: @item.Size</span>
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="text-muted small">Mặc định</span>
+                                                                }
+
+                                                                <!-- Nút thay đổi thuộc tính (luôn hiển thị) -->
+                                                                <button type="button" class="btn btn-sm btn-outline-primary ms-2 edit-attribute-btn">
+                                                                    <i class="fas fa-exchange-alt"></i> Thay đổi
+                                                                </button>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="fw-medium">@string.Format("{0:N0}đ", item.Price)</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="quantity-selector mx-auto">
+                                                        <button class="btn btn-sm btn-outline-secondary quantity-decrease">-</button>
+                                                        <input type="number" class="form-control form-control-sm quantity-input" value="@item.Quantity" min="1" max="99">
+                                                        <button class="btn btn-sm btn-outline-secondary quantity-increase">+</button>
+                                                    </div>
+                                                </td>
+                                                <td class="text-end">
+                                                    <span class="fw-bold item-total">@string.Format("{0:N0}đ", item.TotalPrice)</span>
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm btn-outline-danger remove-item">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent p-4 border-top">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="/Product" class="btn btn-outline-primary">
+                                        <i class="fas fa-arrow-left me-2"></i> Tiếp tục mua sắm
+                                    </a>
+                                </div>
+                                <div>
+                                    <button id="update-cart" class="btn btn-outline-secondary me-2">
+                                        <i class="fas fa-sync me-2"></i> Cập nhật giỏ hàng
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cart Summary -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm rounded-3">
+                        <div class="card-header bg-light py-3">
+                            <h5 class="mb-0 fw-bold">Tóm tắt đơn hàng</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Tạm tính</span>
+                                <span class="fw-medium cart-subtotal">@string.Format("{0:N0}đ", subtotal)</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Phí vận chuyển</span>
+                                <span class="fw-medium shipping-fee">@string.Format("{0:N0}đ", shippingFee)</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-4">
+                                <span class="fw-bold">Thành tiền</span>
+                                <span class="fw-bold text-primary cart-total">@string.Format("{0:N0}đ", total)</span>
+                            </div>
+                            
+                            <a href="@Url.Action("Checkout", "Cart")" class="btn btn-primary w-100 py-3">
+                                Tiến hành thanh toán
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </a>
+                            
+                            <div class="mt-4 bg-light rounded p-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-shield-alt text-success fs-5 me-3"></i>
+                                    <p class="small mb-0">Thanh toán an toàn và bảo mật</p>
+                                </div>
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-exchange-alt text-success fs-5 me-3"></i>
+                                    <p class="small mb-0">Đổi trả trong 30 ngày</p>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-truck text-success fs-5 me-3"></i>
+                                    <p class="small mb-0">Giao hàng toàn quốc</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Empty Cart State -->
+            <div class="empty-cart text-center py-5">
+                <div class="empty-cart-icon mb-4">
+                    <i class="fas fa-shopping-cart fa-5x text-muted"></i>
+                </div>
+                <h2 class="mb-3">Giỏ hàng của bạn đang trống</h2>
+                <p class="text-muted mb-4">Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy thêm sản phẩm vào giỏ hàng để tiến hành mua sắm.</p>
+                <a href="/Product" class="btn btn-primary px-4 py-2">
+                    <i class="fas fa-arrow-left me-2"></i> Tiếp tục mua sắm
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- Các sản phẩm gợi ý -->
+<section class="recommended-section py-5 bg-light">
+    <div class="container">
+        <div class="section-title text-center mb-5">
+            <h2 class="fw-bold">Có thể bạn sẽ thích</h2>
+            <p class="text-muted">Những sản phẩm được ưa chuộng nhất</p>
+        </div>
+        
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            <!-- Hiển thị 4 sản phẩm gợi ý -->
+            <!-- Phần này sẽ hiển thị các sản phẩm được gợi ý cho người dùng -->
+        </div>
+    </div>
+</section>
+
+<!-- Thêm modal chọn thuộc tính -->
+<div class="modal fade" id="attributeModal" tabindex="-1" aria-labelledby="attributeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attributeModalLabel">Thay đổi thuộc tính sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal-cart-id">
+                <input type="hidden" id="modal-product-id">
+                
+                <div class="mb-3">
+                    <h6 id="modal-product-name"></h6>
+                </div>
+                
+                <div id="attribute-selection-container">
+                    <div class="mb-4" id="color-selection">
+                        <label class="form-label fw-medium">Màu sắc:</label>
+                        <div class="color-options d-flex flex-wrap gap-2">
+                            <!-- Các màu sẽ được thêm bằng JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4" id="size-selection">
+                        <label class="form-label fw-medium">Kích thước:</label>
+                        <div class="size-options d-flex flex-wrap gap-2">
+                            <!-- Các kích thước sẽ được thêm bằng JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="selected-attribute-info mt-4 p-3 bg-light rounded">
+                        <div class="d-flex justify-content-between">
+                            <span>Giá:</span>
+                            <span class="fw-bold" id="selected-attribute-price"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span>Tình trạng:</span>
+                            <span id="selected-attribute-stock"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="attribute-loading" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="mt-2">Đang tải thông tin thuộc tính...</p>
+                </div>
+                
+                <div id="attribute-error" class="alert alert-danger mt-3 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="save-attribute-btn" disabled>Cập nhật</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initCartFunctions();
+        });
+
+        function initCartFunctions() {
+            // Tăng số lượng
+            document.querySelectorAll('.quantity-increase').forEach(button => {
+                button.addEventListener('click', function() {
+                    const row = this.closest('.cart-item');
+                    const input = row.querySelector('.quantity-input');
+                    const currentValue = parseInt(input.value);
+                    
+                    if (currentValue < 99) {
+                        input.value = currentValue + 1;
+                        updateItemQuantity(row);
+                    }
+                });
+            });
+
+            // Giảm số lượng
+            document.querySelectorAll('.quantity-decrease').forEach(button => {
+                button.addEventListener('click', function() {
+                    const row = this.closest('.cart-item');
+                    const input = row.querySelector('.quantity-input');
+                    const currentValue = parseInt(input.value);
+                    
+                    if (currentValue > 1) {
+                        input.value = currentValue - 1;
+                        updateItemQuantity(row);
+                    }
+                });
+            });
+
+            // Thay đổi số lượng bằng cách nhập số
+            document.querySelectorAll('.quantity-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const row = this.closest('.cart-item');
+                    let value = parseInt(this.value);
+                    
+                    if (isNaN(value) || value < 1) {
+                        value = 1;
+                    } else if (value > 99) {
+                        value = 99;
+                    }
+                    
+                    this.value = value;
+                    updateItemQuantity(row);
+                });
+            });
+
+            // Xóa sản phẩm khỏi giỏ hàng
+            document.querySelectorAll('.remove-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const row = this.closest('.cart-item');
+                    const productId = row.dataset.productId;
+                    const attributeId = row.dataset.attributeId || null;
+                    
+                    if (confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+                        removeCartItem(productId, attributeId, row);
+                    }
+                });
+            });
+
+            // Cập nhật giỏ hàng
+            document.getElementById('update-cart').addEventListener('click', function() {
+                // Hiển thị thông báo cập nhật thành công
+                showNotification('Giỏ hàng đã được cập nhật', 'success');
+            });
+
+            // Chỉnh sửa thuộc tính sản phẩm
+            document.querySelectorAll('.edit-attribute-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const row = this.closest('.cart-item');
+                    const productId = row.dataset.productId;
+                    const cartId = row.dataset.cartId;
+                    
+                    // Mở modal và thiết lập thông tin sản phẩm
+                    openAttributeModal(cartId, productId);
+                });
+            });
+
+            // Lưu thuộc tính đã chỉnh sửa
+            document.getElementById('save-attribute-btn').addEventListener('click', function() {
+                const cartId = document.getElementById('modal-cart-id').value;
+                const productId = document.getElementById('modal-product-id').value;
+                const color = document.querySelector('input[name="color"]:checked');
+                const size = document.querySelector('input[name="size"]:checked');
+@*                 
+                updateProductAttributes(cartId, productId, color ? color.value : null, size ? size.value : null); *@
+            });
+        }
+
+        // Cập nhật số lượng sản phẩm
+        function updateItemQuantity(row) {
+            const productId = row.dataset.productId;
+            const attributeId = row.dataset.attributeId || '';
+            const quantity = parseInt(row.querySelector('.quantity-input').value);
+            
+            console.log(`Updating quantity: productId=${productId}, attributeId=${attributeId}, quantity=${quantity}`);
+            
+            // Tạo FormData object để đảm bảo gửi đúng định dạng
+            const formData = new FormData();
+            formData.append('productId', productId);
+            formData.append('quantity', quantity);
+            if (attributeId) {
+                formData.append('attributeId', attributeId);
+            }
+            
+            fetch('/Cart/UpdateQuantity', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Cập nhật UI
+                    const totalElement = row.querySelector('.item-total');
+                    const pricePerItem = parseFloat(row.querySelector('.fw-medium').textContent.replace(/\D/g, ''));
+                    const newTotal = pricePerItem * quantity;
+                    
+                    totalElement.textContent = formatCurrency(newTotal);
+                    
+                    // Cập nhật tổng giỏ hàng
+                    updateCartTotals(data.subtotal);
+                    
+                    // Cập nhật số lượng sản phẩm trong header
+                    updateHeaderCartCount(data.cartCount);
+                    
+                    // Thêm thông báo thành công
+                    showNotification("Đã cập nhật số lượng", "success");
+                } else {
+                    showNotification(data.message, 'error');
+                    // Khôi phục giá trị trước đó nếu cập nhật thất bại
+                }
+            })
+            .catch(error => {
+                console.error('Error updating quantity:', error);
+                showNotification('Có lỗi xảy ra khi cập nhật số lượng', 'error');
+            });
+        }
+
+        // Xóa sản phẩm khỏi giỏ hàng
+        function removeCartItem(productId, attributeId, row) {
+            console.log(`Removing item: productId=${productId}, attributeId=${attributeId || 'null'}`);
+            
+            // Tạo FormData object
+            const formData = new FormData();
+            formData.append('productId', productId);
+            if (attributeId) {
+                formData.append('attributeId', attributeId);
+            }
+            
+            fetch('/Cart/RemoveItem', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Xóa hàng khỏi bảng
+                    row.remove();
+                    
+                    // Cập nhật tổng giỏ hàng
+                    updateCartTotals(data.subtotal);
+                    
+                    // Cập nhật số lượng sản phẩm trong header
+                    updateHeaderCartCount(data.cartCount);
+                    
+                    // Hiển thị thông báo
+                    showNotification(data.message, 'success');
+                    
+                    // Nếu không còn sản phẩm nào, reload trang để hiển thị giỏ hàng trống
+                    if (data.cartCount === 0) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error removing item:', error);
+                showNotification('Có lỗi xảy ra khi xóa sản phẩm', 'error');
+            });
+        }
+
+        // Cập nhật tổng giỏ hàng
+        function updateCartTotals(subtotal) {
+            const subtotalElement = document.querySelector('.cart-subtotal');
+            const totalElement = document.querySelector('.cart-total');
+            const shippingFee = subtotal > 0 ? 15000 : 0;
+            const total = subtotal + shippingFee;
+            
+            subtotalElement.textContent = formatCurrency(subtotal);
+            document.querySelector('.shipping-fee').textContent = formatCurrency(shippingFee);
+            totalElement.textContent = formatCurrency(total);
+        }
+
+        // Cập nhật số lượng sản phẩm trong header
+        function updateHeaderCartCount(count) {
+            const cartCountElement = document.querySelector('.cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = count;
+                
+                // Thêm hiệu ứng
+                cartCountElement.classList.add('pulse');
+                setTimeout(() => {
+                    cartCountElement.classList.remove('pulse');
+                }, 1000);
+            }
+        }
+
+        // Format số thành dạng tiền tệ
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
+        }
+
+        // Hiển thị thông báo
+        function showNotification(message, type = 'info') {
+            // Check if notification container exists, if not, create one
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.style.position = 'fixed';
+                container.style.bottom = '20px';
+                container.style.right = '20px';
+                container.style.zIndex = '9999';
+                document.body.appendChild(container);
+            }
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show`;
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            // Add to container
+            container.appendChild(notification);
+
+            // Auto dismiss after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Mở modal chỉnh sửa thuộc tính sản phẩm
+        function openAttributeModal(cartId, productId) {
+            const modalElement = document.getElementById('attributeModal');
+            
+            // Cleanup any existing backdrop first
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.remove();
+            });
+            
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            
+            modal.show();
+            
+            document.getElementById('modal-cart-id').value = cartId;
+            document.getElementById('modal-product-id').value = productId;
+            
+            // Add event listener for modal close
+            modalElement.addEventListener('hidden.bs.modal', function handleModalClose() {
+                // Remove all modal backdrops
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                    backdrop.remove();
+                });
+                
+                // Reset body state
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+                document.body.style.removeProperty('overflow');
+                
+                // Remove this event listener to prevent multiple bindings
+                modalElement.removeEventListener('hidden.bs.modal', handleModalClose);
+            });
+            
+            // Lấy thông tin sản phẩm để hiển thị lên modal
+            // Thay đổi từ "/Product/GetAttributes" thành "/Cart/GetProductAttributes"
+            fetch(`/Cart/GetProductAttributes?productId=${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const product = data.product;
+                        
+                        document.getElementById('modal-product-name').textContent = data.productName;
+                        
+                        // Cập nhật phần xử lý dữ liệu attributes
+                        const attributes = data.attributes;
+                        const colors = [...new Set(attributes.filter(a => a.color).map(a => a.color))];
+                        const sizes = [...new Set(attributes.filter(a => a.size).map(a => a.size))];
+                        
+                        // Hiển thị các tùy chọn màu sắc
+                        const colorOptionsContainer = document.querySelector('.color-options');
+                        colorOptionsContainer.innerHTML = '';
+                        
+                        if (colors.length > 0) {
+                            colors.forEach(color => {
+                                const colorOption = document.createElement('button');
+                                colorOption.type = 'button';
+                                colorOption.className = 'btn btn-outline-secondary color-option';
+                                colorOption.dataset.color = color;
+                                colorOption.textContent = color;
+                                
+                                colorOption.addEventListener('click', function() {
+                                    document.querySelectorAll('.color-option').forEach(b => {
+                                        b.classList.remove('btn-primary');
+                                        b.classList.add('btn-outline-secondary');
+                                    });
+                                    this.classList.remove('btn-outline-secondary');
+                                    this.classList.add('btn-primary');
+                                    
+                                    updateSelectedAttribute();
+                                });
+                                
+                                colorOptionsContainer.appendChild(colorOption);
+                            });
+                            document.getElementById('color-selection').classList.remove('d-none');
+                        } else {
+                            document.getElementById('color-selection').classList.add('d-none');
+                        }
+                        
+                        // Tương tự với sizes...
+                        // ...
+                    } else {
+                        document.getElementById('attribute-error').textContent = data.message;
+                        document.getElementById('attribute-error').classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching product attributes:', error);
+                    document.getElementById('attribute-error').textContent = 'Có lỗi xảy ra khi tải thông tin sản phẩm.';
+                    document.getElementById('attribute-error').classList.remove('d-none');
+                })
+                .finally(() => {
+                    document.getElementById('attribute-loading').classList.add('d-none');
+                });
+        }
+
+        @* // Cập nhật thuộc tính sản phẩm
+        function updateProductAttributes(cartId, productId, color, size) {
+            fetch('/Cart/UpdateAttributes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `cartId=${cartId}&productId=${productId}&color=${color || ''}&size=${size || ''}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Đóng modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('attributeModal'));
+                    modal.hide();
+                    
+                    // Cập nhật lại thông tin sản phẩm trong giỏ hàng
+                    const cartItemRow = document.querySelector(`.cart-item[data-cart-id="${cartId}"]`);
+                    if (cartItemRow) {
+                        const colorBadge = cartItemRow.querySelector('.product-color');
+                        const sizeBadge = cartItemRow.querySelector('.product-size');
+                        
+                        if (colorBadge && color) {
+                            colorBadge.textContent = `Màu: ${color}`;
+                        }
+                        
+                        if (sizeBadge && size) {
+                            sizeBadge.textContent = `Size: ${size}`;
+                        }
+                    }
+                    
+                    // Hiển thị thông báo thành công
+                    showNotification('Cập nhật thuộc tính sản phẩm thành công', 'success');
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating product attributes:', error);
+                showNotification('Có lỗi xảy ra khi cập nhật thuộc tính sản phẩm', 'error');
+            });
+        } *@
+
+        // Xử lý chức năng thay đổi thuộc tính
+        document.addEventListener('DOMContentLoaded', function() {
+            initAttributeEdit();
+        });
+        
+        function initAttributeEdit() {
+            // Khởi tạo các biến toàn cục
+            let selectedAttributeId = null;
+            let availableAttributes = [];
+            
+            // Lắng nghe sự kiện click trên nút thay đổi thuộc tính
+            document.querySelectorAll('.edit-attribute-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const row = this.closest('.cart-item');
+                    const cartId = row.dataset.cartId;
+                    const productId = row.dataset.productId;
+                    const currentAttributeId = row.dataset.attributeId;
+                    const productName = row.querySelector('.product-name').textContent;
+                    
+                    // Reset modal
+                    resetAttributeModal();
+                    
+                    // Lưu thông tin vào modal
+                    document.getElementById('modal-cart-id').value = cartId;
+                    document.getElementById('modal-product-id').value = productId;
+                    document.getElementById('modal-product-name').textContent = productName;
+                    
+                    // Hiển thị loading
+                    toggleAttributeLoading(true);
+                    
+                    // Mở modal
+                    const attributeModal = new bootstrap.Modal(document.getElementById('attributeModal'));
+                    attributeModal.show();
+                    
+                    // Lấy thông tin thuộc tính sản phẩm
+                    fetchProductAttributes(productId, currentAttributeId);
+                });
+            });
+            
+            // Nút lưu thay đổi thuộc tính
+            document.getElementById('save-attribute-btn').addEventListener('click', function() {
+                if (!selectedAttributeId) {
+                    showAttributeError('Vui lòng chọn thuộc tính');
+                    return;
+                }
+                
+                const cartId = document.getElementById('modal-cart-id').value;
+                const productId = document.getElementById('modal-product-id').value;
+                
+                // Hiển thị trạng thái đang xử lý
+                const saveBtn = this;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+                
+                // Gọi API cập nhật thuộc tính
+                updateCartAttribute(cartId, productId, selectedAttributeId);
+            });
+            
+            // Hàm lấy thông tin thuộc tính sản phẩm
+            function fetchProductAttributes(productId, currentAttributeId) {
+                console.log(`Fetching attributes for product: ${productId}`);
+                
+                fetch(`/Cart/GetProductAttributes?productId=${productId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log("Received attributes data:", data);
+                        toggleAttributeLoading(false);
+                        
+                        if (data.success) {
+                            availableAttributes = data.attributes;
+                            renderAttributeOptions(data.attributes, currentAttributeId);
+                        } else {
+                            showAttributeError(data.message || 'Không thể lấy thông tin thuộc tính');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching attributes:', error);
+                        toggleAttributeLoading(false);
+                        showAttributeError('Đã xảy ra lỗi khi lấy thông tin thuộc tính: ' + error.message);
+                    });
+            }
+            
+            // Hàm hiển thị các tùy chọn thuộc tính
+            function renderAttributeOptions(attributes, currentAttributeId) {
+                // Lấy danh sách màu và kích thước
+                const colors = [...new Set(attributes.filter(a => a.color).map(a => a.color))];
+                const sizes = [...new Set(attributes.filter(a => a.size).map(a => a.size))];
+                
+                // Lấy thông tin thuộc tính hiện tại
+                const currentAttribute = attributes.find(a => a.id == currentAttributeId) || attributes[0];
+                
+                // Cập nhật selectedAttributeId
+                selectedAttributeId = currentAttribute?.id;
+                
+                // Hiển thị màu sắc
+                const colorContainer = document.querySelector('.color-options');
+                colorContainer.innerHTML = '';
+                
+                if (colors.length > 0) {
+                    colors.forEach(color => {
+                        const isSelected = currentAttribute?.color === color;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = `btn ${isSelected ? 'btn-primary' : 'btn-outline-secondary'} color-option`;
+                        btn.dataset.color = color;
+                        btn.textContent = color;
+                        
+                        btn.addEventListener('click', function() {
+                            // Đánh dấu màu được chọn
+                            document.querySelectorAll('.color-option').forEach(b => {
+                                b.classList.remove('btn-primary');
+                                b.classList.add('btn-outline-secondary');
+                            });
+                            this.classList.remove('btn-outline-secondary');
+                            this.classList.add('btn-primary');
+                            
+                            // Cập nhật thuộc tính đã chọn
+                            updateSelectedAttribute();
+                        });
+                        
+                        colorContainer.appendChild(btn);
+                    });
+                    document.getElementById('color-selection').classList.remove('d-none');
+                } else {
+                    document.getElementById('color-selection').classList.add('d-none');
+                }
+                
+                // Hiển thị kích thước
+                const sizeContainer = document.querySelector('.size-options');
+                sizeContainer.innerHTML = '';
+                
+                if (sizes.length > 0) {
+                    sizes.forEach(size => {
+                        const isSelected = currentAttribute?.size === size;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = `btn ${isSelected ? 'btn-primary' : 'btn-outline-secondary'} size-option`;
+                        btn.dataset.size = size;
+                        btn.textContent = size;
+                        
+                        btn.addEventListener('click', function() {
+                            // Đánh dấu kích thước được chọn
+                            document.querySelectorAll('.size-option').forEach(b => {
+                                b.classList.remove('btn-primary');
+                                b.classList.add('btn-outline-secondary');
+                            });
+                            this.classList.remove('btn-outline-secondary');
+                            this.classList.add('btn-primary');
+                            
+                            // Cập nhật thuộc tính đã chọn
+                            updateSelectedAttribute();
+                        });
+                        
+                        sizeContainer.appendChild(btn);
+                    });
+                    document.getElementById('size-selection').classList.remove('d-none');
+                } else {
+                    document.getElementById('size-selection').classList.add('d-none');
+                }
+                
+                // Hiển thị thông tin thuộc tính đã chọn
+                updateAttributeInfo(currentAttribute);
+                
+                // Mở khóa nút cập nhật
+                document.getElementById('save-attribute-btn').disabled = false;
+            }
+            
+            // Hàm cập nhật thuộc tính đã chọn khi người dùng thay đổi màu hoặc kích thước
+            function updateSelectedAttribute() {
+                const selectedColor = document.querySelector('.color-option.btn-primary')?.dataset.color;
+                const selectedSize = document.querySelector('.size-option.btn-primary')?.dataset.size;
+                
+                console.log("Selected options:", { color: selectedColor, size: selectedSize });
+                console.log("Available attributes:", availableAttributes);
+                
+                // Tìm thuộc tính phù hợp
+                const matchingAttribute = availableAttributes.find(attr => {
+                    // So sánh chính xác cả color và size
+                    if (selectedColor && selectedSize) {
+                        return attr.color === selectedColor && attr.size === selectedSize;
+                    } else if (selectedColor && !selectedSize) {
+                        return attr.color === selectedColor && (!attr.size || attr.size === '');
+                    } else if (!selectedColor && selectedSize) {
+                        return (!attr.color || attr.color === '') && attr.size === selectedSize;
+                    }
+                    return false;
+                });
+                
+                console.log("Matching attribute:", matchingAttribute);
+                
+                if (matchingAttribute) {
+                    selectedAttributeId = matchingAttribute.id;
+                    updateAttributeInfo(matchingAttribute);
+                    document.getElementById('save-attribute-btn').disabled = false;
+                } else {
+                    document.getElementById('save-attribute-btn').disabled = true;
+                    showAttributeError('Không tìm thấy sản phẩm với tùy chọn này');
+                }
+            }
+            
+            // Hàm hiển thị thông tin thuộc tính đã chọn
+            function updateAttributeInfo(attribute) {
+                if (attribute) {
+                    document.getElementById('selected-attribute-price').textContent = attribute.formattedPrice;
+                    
+                    const stockStatus = attribute.stock > 0 
+                        ? `<span class="text-success">Còn hàng (${attribute.stock})</span>` 
+                        : '<span class="text-danger">Hết hàng</span>';
+                    document.getElementById('selected-attribute-stock').innerHTML = stockStatus;
+                    
+                    // Hiển thị thông tin
+                    document.querySelector('.selected-attribute-info').classList.remove('d-none');
+                } else {
+                    document.querySelector('.selected-attribute-info').classList.add('d-none');
+                }
+            }
+            
+            // Hàm gọi API cập nhật thuộc tính
+            function updateCartAttribute(cartId, productId, attributeId) {
+                // Thêm log để debug
+                console.log(`Calling UpdateAttribute with: cartId=${cartId}, productId=${productId}, attributeId=${attributeId}`);
+                
+                fetch('/Cart/UpdateAttribute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `cartId=${cartId}&productId=${productId}&attributeId=${attributeId}`
+                })
+                .then(response => {
+                    // Thêm kiểm tra response status
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Đóng modal
+                        bootstrap.Modal.getInstance(document.getElementById('attributeModal')).hide();
+                        
+                        // Hiển thị thông báo thành công
+                        showNotification(data.message, 'success');
+                        
+                        // Reload trang để cập nhật thông tin giỏ hàng
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        // Hiển thị lỗi
+                        showAttributeError(data.message);
+                        document.getElementById('save-attribute-btn').disabled = false;
+                        document.getElementById('save-attribute-btn').textContent = 'Cập nhật';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating attribute:', error);
+                    showAttributeError('Đã xảy ra lỗi khi cập nhật thuộc tính: ' + error.message);
+                    document.getElementById('save-attribute-btn').disabled = false;
+                    document.getElementById('save-attribute-btn').textContent = 'Cập nhật';
+                });
+            }
+            
+            // Hàm hiển thị/ẩn loading
+            function toggleAttributeLoading(show) {
+                document.getElementById('attribute-loading').classList.toggle('d-none', !show);
+                document.getElementById('attribute-selection-container').classList.toggle('d-none', show);
+                document.getElementById('attribute-error').classList.add('d-none');
+            }
+            
+            // Hàm hiển thị lỗi
+            function showAttributeError(message) {
+                const errorElement = document.getElementById('attribute-error');
+                errorElement.textContent = message;
+                errorElement.classList.remove('d-none');
+            }
+            
+            // Hàm reset modal
+            function resetAttributeModal() {
+                document.getElementById('attribute-error').classList.add('d-none');
+                document.getElementById('save-attribute-btn').disabled = true;
+                document.getElementById('save-attribute-btn').textContent = 'Cập nhật';
+                document.querySelector('.color-options').innerHTML = '';
+                document.querySelector('.size-options').innerHTML = '';
+                document.getElementById('color-selection').classList.add('d-none');
+                document.getElementById('size-selection').classList.add('d-none');
+                document.querySelector('.selected-attribute-info').classList.add('d-none');
+                selectedAttributeId = null;
+                availableAttributes = [];
+            }
+        }
+        
+        // Additional modal cleanup function
+        function cleanupModal() {
+            // Remove any remaining backdrops
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.remove();
+            });
+            
+            // Reset body state
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+            document.body.style.removeProperty('overflow');
+        }
+        
+        // Event listener for all modal close events
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('attributeModal');
+            if (modal) {
+                modal.addEventListener('hidden.bs.modal', cleanupModal);
+                
+                // Also listen for click on backdrop
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        cleanupModal();
+                    }
+                });
+            }
+        });
+    </script>
+}

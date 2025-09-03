@@ -1,0 +1,409 @@
+﻿@model SportShop.Models.ViewModels.HomeViewModel
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Hero Section -->
+<section id="home" class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="container">
+        <div class="row align-items-center min-vh-100">
+            <div class="col-lg-6">
+                <div class="hero-content text-white">
+                    <h1 class="display-4 fw-bold mb-4 animate-fade-in">
+                        Nâng cao trải nghiệm thể thao của bạn với LoLoSport Store
+                    </h1>
+                    <p class="lead mb-5 animate-fade-in-delay">
+                        Khám phá các thiết bị, quần áo và phụ kiện thể thao cao cấp được thiết kế riêng cho bạn.
+                    </p>
+                    <div class="hero-buttons animate-fade-in-delay-2">
+                        <a asp-controller="Product" asp-action="Index" class="btn btn-primary btn-lg me-3 gradient-btn">
+                            <i class="fas fa-shopping-bag me-2"></i>Mua sắm ngay
+                        </a>
+                        <a href="#categories" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-compass me-2"></i>Khám phá
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image text-center animate-fade-in-delay">
+                    <img src="/image/sport-banner.png" alt="Sports Equipment" class="img-fluid rounded-3 shadow hero-img animate-float">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Categories -->
+<section id="categories" class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold text-dark">Danh mục nổi bật</h2>
+                <p class="lead text-muted">Khám phá các danh mục thể thao cùng chúng tôi</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            @if (Model.FeaturedCategories != null && Model.FeaturedCategories.Any())
+            {
+                foreach (var category in Model.FeaturedCategories)
+                {
+                    <div class="col-lg-4 col-md-6">
+                        <div class="category-card card h-100 border-0 shadow-sm">
+                            <div class="card-img-wrapper">
+                                @if (!string.IsNullOrEmpty(category.ImageURL))
+                                {
+                                    <img src="~/upload/category/@category.ImageURL" class="card-img-top" alt="@category.Name">
+                                }
+                                else
+                                {
+                                    <img src="/placeholder.svg?height=250&width=400&text=@category.Name" class="card-img-top" alt="@category.Name">
+                                }
+                                <div class="card-overlay">
+                                    <a asp-controller="Product" asp-action="ByCategory" asp-route-id="@category.CategoryID" class="btn btn-primary">Xem chi tiết</a>
+                                </div>
+                            </div>
+                            <div class="card-body text-center">
+                                <h5 class="card-title fw-bold">@category.Name</h5>
+                                <p class="card-text text-muted">@category.Description</p>
+                                <div class="price-tag">
+                                    <span class="h5 text-primary fw-bold">Từ @(category.Products?.Min(p => p.Price).ToString("N0") ?? "0") đ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12 text-center">
+                    <p>Không có danh mục nào.</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Featured Brands -->
+<section id="brands" class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold text-dark">Thương hiệu nổi bật</h2>
+                <p class="lead text-muted">Những thương hiệu uy tín hàng đầu trên thế giới</p>
+            </div>
+        </div>
+        
+        <div class="brands-carousel">
+            <div class="row g-4 justify-content-center">
+                @if (Model.FeaturedBrands != null && Model.FeaturedBrands.Any())
+                {
+                    foreach (var brand in Model.FeaturedBrands.Take(6))
+                    {
+                        <div class="col-lg-2 col-md-3 col-4">
+                            <div class="brand-item text-center">
+                                <a asp-controller="Product" asp-action="ByBrand" asp-route-id="@brand.BrandID" class="brand-link">
+                                    <div class="brand-logo-wrapper">
+                                        <img src="~/upload/branch/@brand.Logo" alt="@brand.Name" class="img-fluid brand-logo" 
+                                             onerror="this.src='/placeholder.svg?height=80&width=120&text=@brand.Name'">
+                                    </div>
+                                    <h6 class="brand-name mt-2">@brand.Name</h6>
+                                </a>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center">
+                        <p>Không có thương hiệu nào.</p>
+                    </div>
+                }
+            </div>
+            
+            @if (Model.FeaturedBrands != null && Model.FeaturedBrands.Count() > 6)
+            {
+                <div class="row g-4 justify-content-center mt-4">
+                    @foreach (var brand in Model.FeaturedBrands.Skip(6).Take(5))
+                    {
+                        <div class="col-lg-2 col-md-3 col-4">
+                            <div class="brand-item text-center">
+                                <a asp-controller="Product" asp-action="ByBrand" asp-route-id="@brand.BrandID" class="brand-link">
+                                    <div class="brand-logo-wrapper">
+                                        <img src="~/upload/branch/@brand.Logo" alt="@brand.Name" class="img-fluid brand-logo" 
+                                             onerror="this.src='/placeholder.svg?height=80&width=120&text=@brand.Name'">
+                                    </div>
+                                    <h6 class="brand-name mt-2">@brand.Name</h6>
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <a href="#" class="btn btn-outline-primary">
+                    <i class="fas fa-th-large me-2"></i>Xem tất cả thương hiệu
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AI Assistant Section -->
+<section class="py-5 ai-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="ai-content">
+                    <div class="ai-icon mb-4">
+                        <i class="fas fa-robot fa-4x text-primary"></i>
+                    </div>
+                    <h3 class="display-6 fw-bold mb-4">Gợi ý thông minh</h3>
+                    <p class="lead mb-4">
+                        Nhận các gợi ý sản phẩm được cá nhân hóa phù hợp với nhu cầu và sở thích thể thao của bạn. 
+                        Hệ thống của chúng tôi phân tích hoạt động, phong cách và mục tiêu của bạn để đề xuất các trang thiết bị phù hợp nhất.
+                    </p>
+                    <button class="btn btn-primary btn-lg gradient-btn">
+                        <i class="fas fa-comments me-2"></i>Tư vấn ngay
+                    </button>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="ai-visual text-center">
+                    <img src="/image/chatbot.png" alt="AI Assistant" class="img-fluid rounded-3 shadow">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recommended Products -->
+<section id="products" class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold text-dark">Sản phẩm đề xuất</h2>
+                <p class="lead text-muted">Những sản phẩm chất lượng dành riêng cho bạn</p>
+            </div>
+        </div>
+        
+        <div id="productCarousel" class="carousel slide product-marquee" data-bs-ride="carousel" data-bs-interval="3000">
+            <div class="carousel-inner">
+                <!-- Trang 1: Sản phẩm 1-4 -->
+                <div class="carousel-item active">
+                    <div class="row g-4">
+                        @if (Model.FeaturedProducts != null && Model.FeaturedProducts.Any())
+                        {
+                            foreach (var product in Model.FeaturedProducts.Take(4))
+                            {
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="product-card card h-100 border-0 shadow-sm">
+                                        <div class="product-img-wrapper">
+                                            @if (!string.IsNullOrEmpty(product.ImageURL))
+                                            {
+                                                <img src="~/upload/product/@product.ImageURL" class="card-img-top" alt="@product.Name">
+                                            }
+                                            else
+                                            {
+                                                <img src="/placeholder.svg?height=200&width=300&text=@product.Name" class="card-img-top" alt="@product.Name">
+                                            }
+                                            @if (product.CreatedAt >= DateTime.Now.AddDays(-7))
+                                            {
+                                                <div class="product-badge">
+                                                    <span class="badge bg-success">Mới</span>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold">@product.Name</h6>
+                                            <p class="card-text text-muted small">@(product.Description?.Length > 50 ? product.Description.Substring(0, 50) + "..." : product.Description)</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="h6 text-primary fw-bold mb-0">@product.Price.ToString("N0") đ</span>
+                                                <a asp-controller="Cart" asp-action="Add" asp-route-id="@product.ProductID" class="btn btn-sm btn-primary">Thêm vào giỏ</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                
+                <!-- Trang 2: Sản phẩm 5-8 -->
+                @if (Model.FeaturedProducts != null && Model.FeaturedProducts.Count() > 4)
+                {
+                    <div class="carousel-item">
+                        <div class="row g-4">
+                            @foreach (var product in Model.FeaturedProducts.Skip(4).Take(4))
+                            {
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="product-card card h-100 border-0 shadow-sm">
+                                        <div class="product-img-wrapper">
+                                            @if (!string.IsNullOrEmpty(product.ImageURL))
+                                            {
+                                                <img src="~/upload/product/@product.ImageURL" class="card-img-top" alt="@product.Name">
+                                            }
+                                            else
+                                            {
+                                                <img src="/placeholder.svg?height=200&width=300&text=@product.Name" class="card-img-top" alt="@product.Name">
+                                            }
+                                            @if (product.CreatedAt >= DateTime.Now.AddDays(-7))
+                                            {
+                                                <div class="product-badge">
+                                                    <span class="badge bg-success">Mới</span>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold">@product.Name</h6>
+                                            <p class="card-text text-muted small">@(product.Description?.Length > 50 ? product.Description.Substring(0, 50) + "..." : product.Description)</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="h6 text-primary fw-bold mb-0">@product.Price.ToString("N0") đ</span>
+                                                <a asp-controller="Cart" asp-action="Add" asp-route-id="@product.ProductID" class="btn btn-sm btn-primary">Thêm vào giỏ</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12 text-center">
+                        <p>Không đủ sản phẩm để hiển thị.</p>
+                    </div>
+                }
+            </div>
+            
+            <!-- Carousel Indicators -->
+            <div class="carousel-indicators-container mt-4">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                    @if (Model.FeaturedProducts != null && Model.FeaturedProducts.Count() > 4)
+                    {
+                        <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                    }
+                </div>
+            </div>
+            
+            <!-- Carousel Controls - optional, có thể ẩn đi nếu muốn auto scroll không bị gián đoạn -->
+            <div class="carousel-control-container">
+                <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact-section" class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold text-dark">Liên hệ với chúng tôi</h2>
+                <p class="lead text-muted">Chúng tôi luôn sẵn sàng hỗ trợ bạn</p>
+            </div>
+        </div>
+        
+        <div class="row g-4 align-items-stretch">
+            <!-- Google Map -->
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="map-container shadow-sm rounded-3 overflow-hidden h-100">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.669726976133!2d106.67999361480042!3d10.761243192330742!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f1b7c3ed289%3A0xa06651894598e488!2sHo%20Chi%20Minh%20City%20University%20of%20Science!5e0!3m2!1sen!2s!4v1629789458051!5m2!1sen!2s" 
+                        width="100%" 
+                        height="100%" 
+                        style="border:0; min-height: 450px;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+            
+            <!-- Contact Form -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <h3 class="card-title fw-bold mb-4 text-primary">Gửi tin nhắn cho chúng tôi</h3>
+                        
+                        <form asp-controller="Contact" asp-action="Send" method="post" class="contact-form">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="name" name="Name" placeholder="Họ và tên" required>
+                                        <label for="name">Họ và tên</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="email" class="form-control" id="email" name="Email" placeholder="Email" required>
+                                        <label for="email">Email</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="subject" name="Subject" placeholder="Tiêu đề">
+                                        <label for="subject">Tiêu đề</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating mb-4">
+                                        <textarea class="form-control" id="message" name="Message" placeholder="Nội dung" style="height: 150px" required></textarea>
+                                        <label for="message">Nội dung</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100 gradient-btn">
+                                        <i class="fas fa-paper-plane me-2"></i>Gửi tin nhắn
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <div class="mt-5">
+                            <h4 class="h5 fw-bold mb-3">Thông tin liên hệ</h4>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-map-marker-alt text-primary"></i>
+                                </div>
+                                <p class="mb-0">227 Nguyễn Văn Cừ, Quận 5, TP Hồ Chí Minh</p>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-phone-alt text-primary"></i>
+                                </div>
+                                <p class="mb-0">(028) 3835 4266</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-envelope text-primary"></i>
+                                </div>
+                                <p class="mb-0">support@lolosport.com</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,80 @@
+@model SportShop.Models.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    ViewData["CustomCSS"] = "account.css";
+}
+
+<div class="auth-container">
+    <div class="auth-decoration auth-decoration-1"></div>
+    <div class="auth-decoration auth-decoration-2"></div>
+    
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <span class="text-pink">LoLo</span>Sport
+            </div>
+            <h1 class="auth-title">Chào mừng quay trở lại!</h1>
+            <p class="auth-subtitle">Đăng nhập để tiếp tục mua sắm</p>
+        </div>
+        
+        <div class="auth-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success mb-3">
+                    @TempData["SuccessMessage"]
+                </div>
+            }
+            
+            <form asp-controller="Account" asp-action="Login" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                
+                <div class="form-floating">
+                    <input asp-for="Username" class="form-control" placeholder=" " autocomplete="username" />
+                    <label asp-for="Username"></label>
+                    <span asp-validation-for="Username" class="invalid-feedback"></span>
+                </div>
+                
+                <div class="form-floating">
+                    <input asp-for="Password" class="form-control" placeholder=" " autocomplete="current-password" />
+                    <label asp-for="Password"></label>
+                    <span asp-validation-for="Password" class="invalid-feedback"></span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label"></label>
+                    </div>
+                    <a href="#" class="text-decoration-none small">Quên mật khẩu?</a>
+                </div>
+                
+                <button type="submit" class="btn btn-auth mt-4">Đăng nhập</button>
+            </form>
+            
+            <div class="auth-divider">
+                <span class="auth-divider-text">Hoặc đăng nhập với</span>
+            </div>
+            
+            <div class="social-login">
+                <a href="#" class="social-btn google">
+                    <i class="fab fa-google"></i>
+                </a>
+                <a href="#" class="social-btn facebook">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="social-btn github">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
+            
+            <div class="auth-footer">
+                Chưa có tài khoản? <a asp-controller="Account" asp-action="Register">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/account.js" asp-append-version="true"></script>
+}

@@ -31,6 +31,9 @@ builder.Services.AddScoped<PayPalService>();
 builder.Services.AddHttpClient<MoMoService>();
 builder.Services.AddScoped<MoMoService>();
 
+// Thêm VnPay Service
+builder.Services.AddScoped<VnPayServiceNew>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

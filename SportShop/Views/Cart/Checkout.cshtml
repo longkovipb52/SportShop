@@ -45,6 +45,25 @@
                             <br>
                             <small>Thanh toán bằng mã QR MoMo</small>
                         </div>
+                    </div>
+
+                    <!-- VNPay Container -->
+                    <div class="vnpay-container" id="vnpayContainer" style="display: none;">
+                        <h6 class="mb-3">Thanh toán với VNPay</h6>
+                        <p class="text-muted mb-3">Bạn sẽ được chuyển đến cổng thanh toán VNPay để hoàn tất giao dịch.</p>
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Hướng dẫn thanh toán VNPay</h6>
+                            <ul class="mb-0">
+                                <li>Chọn ngân hàng và nhập thông tin thẻ</li>
+                                <li>Xác thực OTP từ ngân hàng</li>
+                                <li>Hoàn tất thanh toán</li>
+                            </ul>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-university" style="font-size: 2rem; color: #1976d2;"></i>
+                            <br>
+                            <small>Thanh toán an toàn qua VNPay</small>
+                        </div>
                     </div>600;
         margin-bottom: 10px;
     }
@@ -334,51 +353,6 @@
                         </div>
                     </div>
 
-                    <div class="payment-method" data-method="CreditCard">
-                        <div class="d-flex align-items-center">
-                            <div class="payment-icon d-flex align-items-center justify-content-center bg-primary text-white rounded">
-                                <i class="fas fa-credit-card"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1">Thẻ tín dụng/Ghi nợ</h6>
-                                <small class="text-muted">Visa, MasterCard, JCB</small>
-                            </div>
-                            <div class="ms-auto">
-                                <input type="radio" name="PaymentMethod" value="CreditCard" class="form-check-input">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="payment-method" data-method="BankTransfer">
-                        <div class="d-flex align-items-center">
-                            <div class="payment-icon d-flex align-items-center justify-content-center bg-success text-white rounded">
-                                <i class="fas fa-university"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1">Chuyển khoản ngân hàng</h6>
-                                <small class="text-muted">Chuyển khoản qua Internet Banking</small>
-                            </div>
-                            <div class="ms-auto">
-                                <input type="radio" name="PaymentMethod" value="BankTransfer" class="form-check-input">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="payment-method" data-method="EWallet">
-                        <div class="d-flex align-items-center">
-                            <div class="payment-icon d-flex align-items-center justify-content-center bg-info text-white rounded">
-                                <i class="fas fa-mobile-alt"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1">Ví điện tử</h6>
-                                <small class="text-muted">MoMo, ZaloPay, ViettelPay</small>
-                            </div>
-                            <div class="ms-auto">
-                                <input type="radio" name="PaymentMethod" value="EWallet" class="form-check-input">
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="payment-method" data-method="PayPal">
                         <div class="d-flex align-items-center">
                             <div class="payment-icon d-flex align-items-center justify-content-center" style="background: #0070ba;">
@@ -409,27 +383,17 @@
                         </div>
                     </div>
 
-                    <!-- Form thông tin thẻ tín dụng -->
-                    <div class="card-form" id="cardForm">
-                        <h6 class="mb-3">Thông tin thẻ tín dụng</h6>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="CardHolderName" class="form-label">Tên chủ thẻ</label>
-                                <input asp-for="CardHolderName" class="form-control" placeholder="Nhập tên chủ thẻ">
+                    <div class="payment-method" data-method="VNPay">
+                        <div class="d-flex align-items-center">
+                            <div class="payment-icon d-flex align-items-center justify-content-center" style="background: #1976d2;">
+                                <i class="fas fa-credit-card text-white"></i>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="CardNumber" class="form-label">Số thẻ</label>
-                                <input asp-for="CardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19">
+                            <div>
+                                <h6 class="mb-1">VNPay</h6>
+                                <small class="text-muted">Thanh toán qua thẻ ATM/Internet Banking</small>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="ExpiryDate" class="form-label">Tháng/Năm hết hạn</label>
-                                <input asp-for="ExpiryDate" class="form-control" placeholder="MM/YY" maxlength="5">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="CVV" class="form-label">CVV</label>
-                                <input asp-for="CVV" class="form-control" placeholder="123" maxlength="4">
+                            <div class="ms-auto">
+                                <input type="radio" name="PaymentMethod" value="VNPay" class="form-check-input">
                             </div>
                         </div>
                     </div>
@@ -535,7 +499,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Xử lý chọn phương thức thanh toán
             const paymentMethods = document.querySelectorAll('.payment-method');
-            const cardForm = document.getElementById('cardForm');
             const paypalContainer = document.getElementById('paypalContainer');
 
             paymentMethods.forEach(method => {
@@ -554,43 +517,13 @@
                     const selectedMethod = this.dataset.method;
                     
                     // Hide all forms first
-                    cardForm.style.display = 'none';
-                    paypalContainer.style.display = 'none';
-                    const momoContainer = document.getElementById('momoContainer');
-                    if (momoContainer) momoContainer.style.display = 'none';
+                    if (paypalContainer) paypalContainer.style.display = 'none';
                     
-                    if (selectedMethod === 'CreditCard') {
-                        cardForm.style.display = 'block';
-                    } else if (selectedMethod === 'PayPal') {
-                        paypalContainer.style.display = 'block';
-                    } else if (selectedMethod === 'MoMo') {
-                        if (momoContainer) momoContainer.style.display = 'block';
+                    if (selectedMethod === 'PayPal') {
+                        if (paypalContainer) paypalContainer.style.display = 'block';
                     }
                 });
             });
-
-            // Format card number input
-            const cardNumberInput = document.querySelector('input[name="CardNumber"]');
-            if (cardNumberInput) {
-                cardNumberInput.addEventListener('input', function(e) {
-                    let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
-                    let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-                    if (formattedValue.length > 19) formattedValue = formattedValue.slice(0, 19);
-                    e.target.value = formattedValue;
-                });
-            }
-
-            // Format expiry date input
-            const expiryInput = document.querySelector('input[name="ExpiryDate"]');
-            if (expiryInput) {
-                expiryInput.addEventListener('input', function(e) {
-                    let value = e.target.value.replace(/\D/g, '');
-                    if (value.length >= 2) {
-                        value = value.substring(0, 2) + '/' + value.substring(2, 4);
-                    }
-                    e.target.value = value;
-                });
-            }
 
             // Form validation and submission
             const form = document.getElementById('checkoutForm');
@@ -632,28 +565,23 @@
                     form.submit();
                     return;
                 }
-                
-                // Validate credit card if selected
-                if (selectedPayment.value === 'CreditCard') {
-                    const cardHolder = document.querySelector('input[name="CardHolderName"]').value;
-                    const cardNumber = document.querySelector('input[name="CardNumber"]').value.replace(/\s/g, '');
-                    const expiry = document.querySelector('input[name="ExpiryDate"]').value;
-                    const cvv = document.querySelector('input[name="CVV"]').value;
+
+                // Handle VNPay payment
+                if (selectedPayment.value === 'VNPay') {
+                    e.preventDefault();
                     
-                    if (!cardHolder || !cardNumber || !expiry || !cvv) {
-                        e.preventDefault();
-                        alert('Vui lòng điền đầy đủ thông tin thẻ tín dụng');
-                        return;
-                    }
+                    // Show loading state
+                    const submitBtn = document.querySelector('.btn-checkout');
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang chuyển đến VNPay...';
+                    submitBtn.disabled = true;
                     
-                    if (cardNumber.length < 13) {
-                        e.preventDefault();
-                        alert('Số thẻ không hợp lệ');
-                        return;
-                    }
+                    // Submit to VNPay creation endpoint
+                    form.action = '/Cart/CreateVnPayPayment';
+                    form.submit();
+                    return;
                 }
                 
-                // Show loading state for other payment methods
+                // Show loading state for other payment methods (COD)
                 const submitBtn = form.querySelector('.btn-checkout');
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
                 submitBtn.disabled = true;

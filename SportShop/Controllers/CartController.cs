@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SportShop.Data;
 using SportShop.Models;
 using SportShop.Models.ViewModels;
@@ -20,12 +21,16 @@ namespace SportShop.Controllers
         private readonly ApplicationDbContext _context;
         private readonly PayPalService _payPalService;
         private readonly MoMoService _moMoService;
+        private readonly VnPayServiceNew _vnPayService;
+        private readonly IConfiguration _configuration;
 
-        public CartController(ApplicationDbContext context, PayPalService payPalService, MoMoService moMoService)
+        public CartController(ApplicationDbContext context, PayPalService payPalService, MoMoService moMoService, VnPayServiceNew vnPayService, IConfiguration configuration)
         {
             _context = context;
             _payPalService = payPalService;
             _moMoService = moMoService;
+            _vnPayService = vnPayService;
+            _configuration = configuration;
         }
 
         // GET: Cart - Hiển thị trang giỏ hàng
@@ -1635,6 +1640,270 @@ namespace SportShop.Controllers
             {
                 return Json(new { success = false, failed = true, message = "Lỗi kiểm tra trạng thái thanh toán" });
             }
+        }
+
+        // VnPay Payment Methods
+
+        // Tạo VnPay Payment
+        [HttpPost]
+        [Route("CreateVnPayPayment")]
+        public async Task<IActionResult> CreateVnPayPayment([FromForm] CheckoutViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["Error"] = "Thông tin thanh toán không hợp lệ";
+                    return RedirectToAction("Checkout");
+                }
+
+                var cartItems = await GetCartItemsAsync();
+                if (!cartItems.Any())
+                {
+                    TempData["Error"] = "Giỏ hàng trống";
+                    return RedirectToAction("Index");
+                }
+
+                // Tính tổng tiền
+                decimal subtotal = cartItems.Sum(item => item.TotalPrice);
+                decimal shippingFee = CalculateShippingFee(subtotal);
+                decimal totalAmount = subtotal + shippingFee;
+
+                // Debug: Log cart calculation
+                Console.WriteLine($"Cart calculation:");
+                Console.WriteLine($"  Cart items count: {cartItems.Count}");
+                foreach (var item in cartItems)
+                {
+                    Console.WriteLine($"  Item: {item.ProductName} - Price: {item.Price} - Qty: {item.Quantity} - Total: {item.TotalPrice}");
+                }
+                Console.WriteLine($"  Subtotal: {subtotal}");
+                Console.WriteLine($"  Shipping fee: {shippingFee}");
+                Console.WriteLine($"  Total amount: {totalAmount}");
+
+                // Tạo orderId unique
+                var orderId = $"VNPAY_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8]}";
+                var orderInfo = $"Payment_for_order_{orderId}"; // Loại bỏ dấu cách và ký tự tiếng Việt
+                var ipAddress = GetClientIPAddress();
+
+                // Lưu thông tin checkout vào session
+                HttpContext.Session.SetString("CheckoutInfo", JsonSerializer.Serialize(model));
+                HttpContext.Session.SetString("VnPayOrderId", orderId);
+                HttpContext.Session.SetString("TotalAmount", totalAmount.ToString());
+
+                // Tạo URL thanh toán VNPay
+                var paymentUrl = _vnPayService.CreatePaymentUrl(orderId, totalAmount, orderInfo, ipAddress);
+                
+                return Redirect(paymentUrl);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Có lỗi xảy ra khi tạo thanh toán VNPay";
+                return RedirectToAction("Checkout");
+            }
+        }
+
+        // VnPay Return - Callback từ VNPay
+        [Route("VnPayReturn")]
+        public async Task<IActionResult> VnPayReturn()
+        {
+            try
+            {
+                var vnpayData = Request.Query;
+                Console.WriteLine($"VNPay Return received: {Request.QueryString}");
+
+                // Kiểm tra chữ ký từ VNPay
+                var hashSecret = _configuration["Vnpay:HashSecret"];
+                if (string.IsNullOrEmpty(hashSecret))
+                {
+                    Console.WriteLine("VNPay HashSecret not configured");
+                    TempData["Error"] = "Cấu hình VNPay không đúng";
+                    return RedirectToAction("Index");
+                }
+
+                bool isValidSignature = _vnPayService.ValidateSignature(vnpayData, hashSecret);
+
+                if (!isValidSignature)
+                {
+                    Console.WriteLine("VNPay signature validation failed");
+                    TempData["Error"] = "Chữ ký không hợp lệ từ VNPay";
+                    return RedirectToAction("Index");
+                }
+
+                // Lấy thông tin thanh toán từ VNPay
+                var responseCode = vnpayData["vnp_ResponseCode"].FirstOrDefault();
+                var transactionStatus = vnpayData["vnp_TransactionStatus"].FirstOrDefault();
+                var orderId = vnpayData["vnp_TxnRef"].FirstOrDefault();
+                var amount = vnpayData["vnp_Amount"].FirstOrDefault();
+                var transactionId = vnpayData["vnp_TransactionNo"].FirstOrDefault();
+
+                Console.WriteLine($"VNPay Response - Code: {responseCode}, Status: {transactionStatus}, OrderId: {orderId}, Amount: {amount}");
+
+                // Kiểm tra thanh toán thành công
+                if (responseCode == "00" && transactionStatus == "00")
+                {
+                    // Lấy thông tin checkout từ session
+                    var checkoutJson = HttpContext.Session.GetString("CheckoutInfo");
+                    if (string.IsNullOrEmpty(checkoutJson))
+                    {
+                        Console.WriteLine("No checkout info found in session");
+                        TempData["Error"] = "Không tìm thấy thông tin đơn hàng";
+                        return RedirectToAction("Index");
+                    }
+
+                    var checkoutInfo = System.Text.Json.JsonSerializer.Deserialize<CheckoutViewModel>(checkoutJson);
+                    if (checkoutInfo == null)
+                    {
+                        Console.WriteLine("Failed to deserialize checkout info");
+                        TempData["Error"] = "Thông tin đơn hàng không hợp lệ";
+                        return RedirectToAction("Index");
+                    }
+
+                    if (string.IsNullOrEmpty(amount))
+                    {
+                        Console.WriteLine("Amount is null or empty");
+                        TempData["Error"] = "Số tiền thanh toán không hợp lệ";
+                        return RedirectToAction("Index");
+                    }
+
+                    var totalAmount = decimal.Parse(amount) / 100; // VNPay trả về amount * 100
+
+                    // Tạo đơn hàng
+                    var newOrderId = await CreateOrderFromVnPay(checkoutInfo, totalAmount, transactionId ?? "");
+
+                    if (newOrderId > 0)
+                    {
+                        // Xóa giỏ hàng sau khi đặt hàng thành công
+                        await ClearCartAsync();
+
+                        // Xóa session checkout
+                        HttpContext.Session.Remove("CheckoutInfo");
+
+                        // Redirect đến trang thành công
+                        return RedirectToAction("OrderSuccess", new { orderId = newOrderId });
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to create order from VNPay payment");
+                        TempData["Error"] = "Có lỗi khi tạo đơn hàng từ thanh toán VNPay";
+                        return RedirectToAction("Index");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"VNPay payment failed - Code: {responseCode}, Status: {transactionStatus}");
+                    TempData["Error"] = $"Thanh toán VNPay thất bại. Mã lỗi: {responseCode}";
+                    return RedirectToAction("Index");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"VNPay Return Error: {ex.Message}");
+                TempData["Error"] = "Có lỗi xảy ra khi xử lý thanh toán VNPay";
+                return RedirectToAction("Index");
+            }
+        }
+
+        // VnPay IPN - Instant Payment Notification từ VNPay
+        [Route("VnPayIpn")]
+        [HttpGet]
+        public IActionResult VnPayIpn()
+        {
+            try
+            {
+                var vnpayData = Request.Query;
+                
+                // TODO: Implement ProcessVnPayIpn properly later
+                Console.WriteLine($"VNPay IPN received: {Request.QueryString}");
+
+                // Return success for now
+                return Json(new { RspCode = "00", Message = "Confirm Success" });
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"VNPay IPN Error");
+                return Json(new { RspCode = "99", Message = "Input data required" });
+            }
+        }
+
+        // Tạo đơn hàng từ VnPay payment
+        private async Task<int> CreateOrderFromVnPay(CheckoutViewModel model, decimal totalAmount, string transactionId)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetInt32("UserId");
+                var user = userId.HasValue ? await _context.Users.FindAsync(userId.Value) : null;
+
+                var order = new Order
+                {
+                    UserID = userId ?? 0,
+                    OrderDate = DateTime.Now,
+                    Status = "Chờ xử lý", // Theo yêu cầu
+                    TotalAmount = totalAmount,
+                    ShippingName = model.ShippingName ?? (user?.FullName ?? ""),
+                    ShippingAddress = model.ShippingAddress ?? (user?.Address ?? ""),
+                    ShippingPhone = model.ShippingPhone ?? (user?.Phone ?? ""),
+                    Note = model.Note ?? ""
+                };
+
+                _context.Orders.Add(order);
+                await _context.SaveChangesAsync();
+
+                // Tạo OrderItems từ giỏ hàng
+                var cartItems = await GetCartItemsAsync();
+                foreach (var item in cartItems)
+                {
+                    var orderItem = new OrderItem
+                    {
+                        OrderID = order.OrderID,
+                        ProductID = item.ProductId,
+                        AttributeID = item.AttributeId,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.Price
+                    };
+                    _context.OrderItems.Add(orderItem);
+                }
+
+                // Tạo Payment record
+                var payment = new Payment
+                {
+                    OrderID = order.OrderID,
+                    Method = "VNPay",
+                    Status = "Đã thanh toán", // Theo yêu cầu
+                    Amount = totalAmount,
+                    PaymentDate = DateTime.Now
+                };
+                _context.Payments.Add(payment);
+
+                await _context.SaveChangesAsync();
+
+                return order.OrderID;
+            }
+            catch (Exception ex)
+            {
+                return 0;
+            }
+        }
+
+        // Helper method để lấy IP address
+        private string GetClientIPAddress()
+        {
+            string ipAddress = Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? "";
+            if (string.IsNullOrEmpty(ipAddress) || (ipAddress.ToLower() == "unknown"))
+                ipAddress = Request.Headers["X-Real-IP"].FirstOrDefault() ?? "";
+            if (string.IsNullOrEmpty(ipAddress) || (ipAddress.ToLower() == "unknown"))
+                ipAddress = Request.Headers["HTTP_X_FORWARDED_FOR"].FirstOrDefault() ?? "";
+            if (string.IsNullOrEmpty(ipAddress) || (ipAddress.ToLower() == "unknown"))
+            {
+                var remoteIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+                // Convert IPv6 localhost to IPv4
+                if (remoteIp == "::1")
+                    ipAddress = "127.0.0.1";
+                else
+                    ipAddress = remoteIp;
+            }
+            if (string.IsNullOrEmpty(ipAddress) || (ipAddress.ToLower() == "unknown"))
+                ipAddress = "127.0.0.1";
+            return ipAddress;
         }
         
 

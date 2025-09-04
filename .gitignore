@@ -16,6 +16,8 @@ obj/
 # Secrets
 appsettings.Development.json
 appsettings.*.json
+appsettings.json
+
 
 # Others
 *.db

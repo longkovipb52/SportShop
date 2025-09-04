@@ -150,21 +150,6 @@
     margin: 0 auto;
 }
 
-/* Card Form Styles */
-#cardForm {
-    margin-top: 20px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 10px;
-    border: 1px solid #e9ecef;
-    display: none;
-    transition: all 0.3s ease;
-}
-
-#cardForm.show {
-    display: block;
-}
-
 .order-item {
     display: flex;
     align-items: center;
@@ -242,18 +227,6 @@
     padding: 15px;
     margin-top: 20px;
     text-align: center;
-}
-
-.card-form {
-    display: none;
-    margin-top: 20px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 10px;
-}
-
-.card-form.show {
-    display: block;
 }
 
 /* Order Success Page Styles */

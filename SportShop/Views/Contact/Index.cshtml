@@ -1,0 +1,321 @@
+@model SportShop.Models.ViewModels.ContactFormViewModel
+@{
+    ViewData["Title"] = "Liên hệ";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Hero Section -->
+<section class="contact-hero">
+    <div class="hero-overlay"></div>
+    <div class="container">
+        <div class="row align-items-center min-vh-50">
+            <div class="col-12 text-center">
+                <div class="hero-content text-white">
+                    <h1 class="display-4 fw-bold mb-4 animate-fade-in">
+                        Liên hệ với chúng tôi
+                    </h1>
+                    <p class="lead mb-5 animate-fade-in-delay">
+                        Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn. Hãy để lại thông tin, chúng tôi sẽ phản hồi sớm nhất có thể.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Information Cards -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="contact-info-card card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-4">
+                        <div class="contact-icon mb-3">
+                            <i class="fas fa-map-marker-alt fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Địa chỉ</h5>
+                        <p class="card-text text-muted">227 Nguyễn Văn Cừ, Quận 5, TP Hồ Chí Minh</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="contact-info-card card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-4">
+                        <div class="contact-icon mb-3">
+                            <i class="fas fa-phone-alt fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Điện thoại</h5>
+                        <p class="card-text text-muted">(028) 3835 4266</p>
+                        <small class="text-muted">Thứ 2 - Chủ nhật: 8:00 - 22:00</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="contact-info-card card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-4">
+                        <div class="contact-icon mb-3">
+                            <i class="fas fa-envelope fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Email</h5>
+                        <p class="card-text text-muted">support@lolosport.com</p>
+                        <small class="text-muted">Phản hồi trong vòng 24h</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Contact Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 align-items-stretch">
+            <!-- Google Map -->
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="map-container shadow-sm rounded-3 overflow-hidden h-100">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.669726976133!2d106.67999361480042!3d10.761243192330742!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f1b7c3ed289%3A0xa06651894598e488!2sHo%20Chi%20Minh%20City%20University%20of%20Science!5e0!3m2!1sen!2s!4v1629789458051!5m2!1sen!2s" 
+                        width="100%" 
+                        height="100%" 
+                        style="border:0; min-height: 500px;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+            
+            <!-- Contact Form -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <h3 class="card-title fw-bold mb-4 text-primary">Gửi tin nhắn cho chúng tôi</h3>
+                        
+                        <form asp-controller="Contact" asp-action="Send" method="post" class="contact-form">
+                            @Html.AntiForgeryToken()
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Name" type="text" class="form-control" id="name" placeholder="Họ và tên" required>
+                                        <label for="name">Họ và tên</label>
+                                        <span asp-validation-for="Name" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Email" type="email" class="form-control" id="email" placeholder="Email" required>
+                                        <label for="email">Email</label>
+                                        <span asp-validation-for="Email" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Title" type="text" class="form-control" id="title" placeholder="Tiêu đề">
+                                        <label for="title">Tiêu đề</label>
+                                        <span asp-validation-for="Title" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Phone" type="tel" class="form-control" id="phone" placeholder="Số điện thoại">
+                                        <label for="phone">Số điện thoại</label>
+                                        <span asp-validation-for="Phone" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating mb-4">
+                                        <textarea asp-for="Message" class="form-control" id="message" placeholder="Nội dung" style="height: 150px" required></textarea>
+                                        <label for="message">Nội dung</label>
+                                        <span asp-validation-for="Message" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100 gradient-btn">
+                                        <i class="fas fa-paper-plane me-2"></i>Gửi tin nhắn
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold text-dark">Câu hỏi thường gặp</h2>
+                <p class="lead text-muted">Những câu hỏi khách hàng thường quan tâm</p>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                <i class="fas fa-shipping-fast me-2 text-primary"></i>
+                                Chính sách giao hàng như thế nào?
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" 
+                             aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Chúng tôi giao hàng toàn quốc với thời gian giao hàng từ 2-5 ngày làm việc. 
+                                Miễn phí giao hàng cho đơn hàng từ 500.000đ trở lên. 
+                                Đối với những đơn hàng dưới 500.000đ, phí giao hàng là 30.000đ.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                <i class="fas fa-undo-alt me-2 text-primary"></i>
+                                Làm thế nào để đổi trả sản phẩm?
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" 
+                             aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Bạn có thể đổi trả sản phẩm trong vòng 30 ngày kể từ ngày nhận hàng. 
+                                Sản phẩm phải còn nguyên vẹn, chưa qua sử dụng và còn đầy đủ nhãn mác. 
+                                Vui lòng liên hệ với chúng tôi để được hướng dẫn chi tiết.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                <i class="fas fa-credit-card me-2 text-primary"></i>
+                                Các hình thức thanh toán được hỗ trợ?
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" 
+                             aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Chúng tôi hỗ trợ nhiều hình thức thanh toán: Thanh toán khi nhận hàng (COD), 
+                                chuyển khoản ngân hàng, thẻ tín dụng/ghi nợ, ví điện tử (VNPay, MoMo, PayPal). 
+                                Tất cả giao dịch đều được bảo mật tuyệt đối.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header" id="headingFour">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                <i class="fas fa-medal me-2 text-primary"></i>
+                                Sản phẩm có được bảo hành không?
+                            </button>
+                        </h2>
+                        <div id="collapseFour" class="accordion-collapse collapse" 
+                             aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Tất cả sản phẩm tại LoLoSport đều được bảo hành theo chính sách của từng thương hiệu. 
+                                Thời gian bảo hành từ 6 tháng đến 2 năm tùy thuộc vào loại sản phẩm. 
+                                Chúng tôi cam kết hỗ trợ khách hàng trong suốt quá trình sử dụng.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Additional Contact Methods -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold text-dark">Kết nối với chúng tôi</h2>
+                <p class="lead text-muted">Theo dõi chúng tôi trên các mạng xã hội để cập nhật tin tức mới nhất</p>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="row g-4">
+                    <div class="col-md-3 col-6">
+                        <div class="social-card text-center">
+                            <a href="#" class="social-link facebook">
+                                <div class="social-icon mb-3">
+                                    <i class="fab fa-facebook-f fa-2x"></i>
+                                </div>
+                                <h6 class="fw-bold">Facebook</h6>
+                                <p class="small text-muted">@@LoLoSport</p>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-6">
+                        <div class="social-card text-center">
+                            <a href="#" class="social-link instagram">
+                                <div class="social-icon mb-3">
+                                    <i class="fab fa-instagram fa-2x"></i>
+                                </div>
+                                <h6 class="fw-bold">Instagram</h6>
+                                <p class="small text-muted">@@lolosport_official</p>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-6">
+                        <div class="social-card text-center">
+                            <a href="#" class="social-link youtube">
+                                <div class="social-icon mb-3">
+                                    <i class="fab fa-youtube fa-2x"></i>
+                                </div>
+                                <h6 class="fw-bold">YouTube</h6>
+                                <p class="small text-muted">LoLoSport Channel</p>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-6">
+                        <div class="social-card text-center">
+                            <a href="#" class="social-link zalo">
+                                <div class="social-icon mb-3">
+                                    <i class="fas fa-comments fa-2x"></i>
+                                </div>
+                                <h6 class="fw-bold">Zalo</h6>
+                                <p class="small text-muted">Chat ngay</p>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/contact.js" asp-append-version="true"></script>
+}

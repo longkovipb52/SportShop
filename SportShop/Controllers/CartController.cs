@@ -525,6 +525,22 @@ namespace SportShop.Controllers
             return count;
         }
 
+        // Public endpoint để lấy số lượng sản phẩm trong giỏ hàng
+        [HttpGet("GetCartCount")]
+        public async Task<IActionResult> GetCartCount()
+        {
+            try
+            {
+                int count = await GetCartCountAsync();
+                return Json(new { count = count });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting cart count: {ex.Message}");
+                return Json(new { count = 0 });
+            }
+        }
+
         // Sửa đổi phương thức hiện tại để đặt tên route cụ thể
         [HttpPost("AddToCartForm")]
         public async Task<IActionResult> AddToCartForm(int productId, int quantity = 1, int? attributeId = null)

@@ -1,17 +1,9 @@
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SportShop.Models
+namespace SportShop.Models.ViewModels
 {
-    [Table("Contact")]
-    public class Contact
+    public class ContactFormViewModel
     {
-        [Key]
-        public int ContactID { get; set; }
-        
-        public int? UserID { get; set; }
-        
         [Required(ErrorMessage = "Vui lòng nhập họ tên")]
         public required string Name { get; set; }
         
@@ -25,15 +17,5 @@ namespace SportShop.Models
         
         [Required(ErrorMessage = "Vui lòng nhập nội dung")]
         public required string Message { get; set; }
-        
-        public string? Status { get; set; }
-        
-        public DateTime? CreatedAt { get; set; }
-        
-        public string? Reply { get; set; }
-        
-        public int? RepliedBy { get; set; }
-        
-        public DateTime? RepliedAt { get; set; }
     }
 }

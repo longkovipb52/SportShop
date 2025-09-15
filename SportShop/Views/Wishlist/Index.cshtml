@@ -1,0 +1,678 @@
+@model List<SportShop.Models.Wishlist>
+@{
+    ViewData["Title"] = "Danh sách yêu thích";
+    ViewData["CustomCSS"] = "wishlist.css";
+}
+
+<section class="wishlist-hero py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center">
+                    <h1 class="display-5 fw-bold text-dark mb-3">
+                        <i class="fas fa-heart text-danger me-2"></i>
+                        Danh sách yêu thích
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb justify-content-center mb-0">
+                            <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Trang chủ</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Yêu thích</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="wishlist-content py-5">
+    <div class="container">
+        @if (Model.Any())
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <span class="text-muted">Bạn có</span>
+                            <span class="fw-bold text-primary">@Model.Count</span>
+                            <span class="text-muted">sản phẩm yêu thích</span>
+                        </h4>
+                        <button class="btn btn-outline-danger" onclick="clearAllWishlist()">
+                            <i class="fas fa-trash me-2"></i>Xóa tất cả
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                @foreach (var item in Model)
+                {
+                    <div class="col-lg-3 col-md-4 col-sm-6" data-product-id="@item.ProductID">
+                        <div class="wishlist-card card h-100 shadow-sm">
+                            <div class="position-relative">
+                                <a href="/Product/Details/@item.Product.ProductID">
+                                    <img src="@(!string.IsNullOrEmpty(item.Product.ImageURL) ? "/upload/product/" + item.Product.ImageURL : "/image/product-placeholder.png")" 
+                                         class="card-img-top" 
+                                         alt="@item.Product.Name"
+                                         style="height: 250px; object-fit: cover;">
+                                </a>
+                                
+                                <!-- Remove from wishlist button -->
+                                <button class="btn btn-sm btn-danger position-absolute remove-wishlist-btn" 
+                                        data-product-id="@item.ProductID"
+                                        onclick="removeFromWishlist(@item.ProductID)"
+                                        title="Xóa khỏi yêu thích">
+                                    <i class="fas fa-times"></i>
+                                </button>
+
+                                <!-- Product badges -->
+                                @if (item.Product.Price > 3000000)
+                                {
+                                    <span class="badge bg-danger position-absolute discount-badge">
+                                        Cao cấp
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="card-body d-flex flex-column">
+                                <div class="product-info flex-grow-1">
+                                    <h6 class="card-title">
+                                        <a href="/Product/Details/@item.Product.ProductID" 
+                                           class="text-decoration-none text-dark stretched-link-overlay">
+                                            @item.Product.Name
+                                        </a>
+                                    </h6>
+                                    
+                                    <p class="text-muted small mb-2">
+                                        <i class="fas fa-tag me-1"></i>@item.Product.Category?.Name
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-copyright me-1"></i>@item.Product.Brand?.Name
+                                    </p>
+
+                                    <!-- Rating -->
+                                    @if (item.Product.Reviews != null && item.Product.Reviews.Any(r => r.Status == "Approved"))
+                                    {
+                                        var approvedReviews = item.Product.Reviews.Where(r => r.Status == "Approved" && r.Rating.HasValue).ToList();
+                                        if (approvedReviews.Any())
+                                        {
+                                            var averageRating = approvedReviews.Average(r => r.Rating!.Value);
+                                            var reviewCount = approvedReviews.Count;
+                                            
+                                            <div class="rating mb-2">
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <i class="fas fa-star @(i <= averageRating ? "text-warning" : "text-muted")"></i>
+                                                }
+                                                <span class="text-muted small ms-1">(@reviewCount)</span>
+                                            </div>
+                                        }
+                                    }
+
+                                    <!-- Price -->
+                                    <div class="price-info mb-3">
+                                        <span class="current-price fw-bold text-primary fs-5">@string.Format("{0:N0}đ", item.Product.Price)</span>
+                                    </div>
+                                </div>
+
+                                <!-- Action buttons -->
+                                <div class="action-buttons d-flex gap-2">
+                                    @if (item.Product.Stock > 0)
+                                    {
+                                        <button class="btn btn-primary flex-grow-1" 
+                                                onclick="addToCartFromWishlist(@item.ProductID)">
+                                            <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-secondary flex-grow-1" disabled>
+                                            <i class="fas fa-times me-2"></i>Hết hàng
+                                        </button>
+                                    }
+                                    
+                                    <button class="btn btn-outline-primary quick-view" 
+                                            data-id="@item.Product.ProductID"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#quickViewModal"
+                                            title="Xem nhanh">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Added date -->
+                            <div class="card-footer bg-light text-muted small">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Thêm vào: @item.CreatedAt.ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <!-- Empty wishlist -->
+            <div class="empty-wishlist text-center py-5">
+                <div class="empty-icon mb-4">
+                    <i class="fas fa-heart text-muted" style="font-size: 5rem; opacity: 0.3;"></i>
+                </div>
+                <h3 class="text-muted mb-3">Danh sách yêu thích trống</h3>
+                <p class="text-muted mb-4">Bạn chưa có sản phẩm nào trong danh sách yêu thích.</p>
+                <a href="/Product" class="btn btn-primary btn-lg">
+                    <i class="fas fa-shopping-bag me-2"></i>Khám phá sản phẩm
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xem nhanh sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <img src="" alt="Product" id="quick-view-image" class="img-fluid">
+                        </div>
+                        <div class="col-md-6">
+                            <h4 id="quick-view-title"></h4>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rating" id="quick-view-rating">
+                                    <!-- Stars sẽ được thêm động bởi JavaScript -->
+                                </div>
+                            </div>
+                            <p class="fw-bold fs-4 mb-3" id="quick-view-price"></p>
+                            <p class="mb-3" id="quick-view-description"></p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Màu sắc</label>
+                                <div class="color-options d-flex flex-wrap" id="quick-view-colors"></div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Kích cỡ</label>
+                                <div class="size-options d-flex flex-wrap" id="quick-view-sizes"></div>
+                            </div>
+                            
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="quantity-controls d-flex" style="border: 1px solid #ced4da; border-radius: 0.375rem; overflow: hidden;">
+                                    <button type="button" class="qty-btn qty-decrease" id="quick-view-decrease-quantity" 
+                                            style="width: 40px; height: 40px; border: none; background: #f8f9fa; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                            onclick="quickViewDecreaseQuantity();">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" class="form-control text-center" value="1" min="1" id="product-quantity"
+                                           style="width: 70px; border: none; border-left: 1px solid #ced4da; border-right: 1px solid #ced4da;">
+                                    <button type="button" class="qty-btn qty-increase" id="quick-view-increase-quantity" 
+                                            style="width: 40px; height: 40px; border: none; background: #f8f9fa; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                            onclick="quickViewIncreaseQuantity();">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <button id="quick-view-add-to-cart" class="btn btn-primary ms-3">Thêm vào giỏ hàng</button>
+                            </div>
+                            
+                            <div class="product-meta">
+                                <p class="mb-2">
+                                    <span class="fw-bold">Danh mục:</span> 
+                                    <span id="quick-view-category"></span>
+                                </p>
+                                <p class="mb-0">
+                                    <span class="fw-bold">Thương hiệu:</span> 
+                                    <span id="quick-view-brand"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Remove single item from wishlist
+        function removeFromWishlist(productId) {
+            if (!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi danh sách yêu thích?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/Wishlist/Remove',
+                type: 'POST',
+                data: { productId: productId },
+                success: function(response) {
+                    if (response.success) {
+                        // Remove the product card from view
+                        $(`[data-product-id="${productId}"]`).fadeOut(300, function() {
+                            $(this).remove();
+                            
+                            // Update count or show empty state
+                            updateWishlistView();
+                        });
+                        
+                        showNotification(response.message, 'success');
+                    } else {
+                        showNotification(response.message, 'error');
+                        
+                        if (response.requireLogin) {
+                            setTimeout(() => {
+                                window.location.href = '/Account/Login';
+                            }, 2000);
+                        }
+                    }
+                },
+                error: function() {
+                    showNotification('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+                }
+            });
+        }
+
+        // Add to cart from wishlist
+        function addToCartFromWishlist(productId) {
+            $.ajax({
+                url: '/Wishlist/AddToCart',
+                type: 'POST',
+                data: { productId: productId, quantity: 1 },
+                success: function(response) {
+                    if (response.success) {
+                        showNotification(response.message, 'success');
+                        // Update cart counter if exists
+                        updateCartCounter();
+                    } else {
+                        showNotification(response.message, 'error');
+                        
+                        if (response.requireLogin) {
+                            setTimeout(() => {
+                                window.location.href = '/Account/Login';
+                            }, 2000);
+                        }
+                    }
+                },
+                error: function() {
+                    showNotification('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+                }
+            });
+        }
+
+        // Clear all wishlist
+        function clearAllWishlist() {
+            if (!confirm('Bạn có chắc muốn xóa tất cả sản phẩm khỏi danh sách yêu thích?')) {
+                return;
+            }
+
+            const productIds = [];
+            $('[data-product-id]').each(function() {
+                productIds.push($(this).data('product-id'));
+            });
+
+            Promise.all(productIds.map(productId => {
+                return $.ajax({
+                    url: '/Wishlist/Remove',
+                    type: 'POST',
+                    data: { productId: productId }
+                });
+            })).then(() => {
+                location.reload();
+            }).catch(() => {
+                showNotification('Có lỗi xảy ra khi xóa danh sách yêu thích.', 'error');
+            });
+        }
+
+        // Update wishlist view after removing items
+        function updateWishlistView() {
+            const remainingItems = $('[data-product-id]').length;
+            
+            if (remainingItems === 0) {
+                // Show empty state
+                $('.wishlist-content .container').html(`
+                    <div class="empty-wishlist text-center py-5">
+                        <div class="empty-icon mb-4">
+                            <i class="fas fa-heart text-muted" style="font-size: 5rem; opacity: 0.3;"></i>
+                        </div>
+                        <h3 class="text-muted mb-3">Danh sách yêu thích trống</h3>
+                        <p class="text-muted mb-4">Bạn chưa có sản phẩm nào trong danh sách yêu thích.</p>
+                        <a href="/Product" class="btn btn-primary btn-lg">
+                            <i class="fas fa-shopping-bag me-2"></i>Khám phá sản phẩm
+                        </a>
+                    </div>
+                `);
+            } else {
+                // Update count
+                $('.text-primary').text(remainingItems);
+            }
+        }
+
+        // Update cart counter
+        function updateCartCounter() {
+            // Fetch cart count from server
+            fetch('/Cart/GetCartCount')
+                .then(response => response.json())
+                .then(data => {
+                    const cartCountElement = document.querySelector('.cart-count');
+                    if (cartCountElement) {
+                        cartCountElement.textContent = data.count || '0';
+                        
+                        // Animation effect
+                        cartCountElement.classList.add('pulse');
+                        setTimeout(() => {
+                            cartCountElement.classList.remove('pulse');
+                        }, 1000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating cart counter:', error);
+                });
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = $(`
+                <div class="alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+            
+            $('body').append(notification);
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                notification.fadeOut();
+            }, 3000);
+        }
+
+        // Quick View functionality
+        $(document).ready(function() {
+            // Initialize quick view buttons
+            $('.quick-view').click(function(e) {
+                e.preventDefault();
+                const productId = $(this).attr('data-id');
+                
+                // Show loading state
+                showQuickViewLoading();
+                
+                // Fetch product data
+                fetch(`/Product/GetProductJson?id=${productId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Không thể tải thông tin sản phẩm');
+                        }
+                        return response.json();
+                    })
+                    .then(product => {
+                        populateQuickView(product);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching product:', error);
+                        showNotification('Không thể tải thông tin sản phẩm', 'error');
+                    });
+            });
+        });
+
+        // Show loading state in quick view modal
+        function showQuickViewLoading() {
+            document.getElementById('quick-view-image').src = '/image/loading-placeholder.png';
+            document.getElementById('quick-view-title').textContent = 'Đang tải...';
+            document.getElementById('quick-view-price').textContent = '';
+            document.getElementById('quick-view-description').textContent = 'Đang tải thông tin sản phẩm...';
+            document.getElementById('quick-view-colors').innerHTML = '';
+            document.getElementById('quick-view-sizes').innerHTML = '';
+            document.getElementById('quick-view-category').textContent = '';
+            document.getElementById('quick-view-brand').textContent = '';
+            document.getElementById('quick-view-rating').innerHTML = '';
+        }
+
+        // Populate quick view modal with product data
+        function populateQuickView(product) {
+            // Product image
+            const imageElement = document.getElementById('quick-view-image');
+            if (imageElement) {
+                imageElement.src = product.imageURL 
+                    ? `/upload/product/${product.imageURL}` 
+                    : '/image/product-placeholder.png';
+            }
+            
+            // Product title
+            const titleElement = document.getElementById('quick-view-title');
+            if (titleElement) {
+                titleElement.textContent = product.name;
+            }
+            
+            // Product price
+            const priceElement = document.getElementById('quick-view-price');
+            if (priceElement) {
+                priceElement.textContent = new Intl.NumberFormat('vi-VN').format(product.price) + 'đ';
+            }
+            
+            // Product description
+            const descriptionElement = document.getElementById('quick-view-description');
+            if (descriptionElement) {
+                const maxLength = 150;
+                descriptionElement.textContent = product.description && product.description.length > maxLength 
+                    ? product.description.substring(0, maxLength) + '...' 
+                    : product.description || 'Không có mô tả';
+            }
+            
+            // Category and brand
+            const categoryElement = document.getElementById('quick-view-category');
+            if (categoryElement) {
+                categoryElement.textContent = product.categoryName;
+            }
+            
+            const brandElement = document.getElementById('quick-view-brand');
+            if (brandElement) {
+                brandElement.textContent = product.brandName;
+            }
+            
+            // Rating information
+            const ratingElement = document.getElementById('quick-view-rating');
+            if (ratingElement) {
+                ratingElement.innerHTML = '';
+                
+                if (product.averageRating > 0) {
+                    const starCount = 5;
+                    for (let i = 1; i <= starCount; i++) {
+                        const star = document.createElement('i');
+                        star.className = i <= product.averageRating ? 'fas fa-star text-warning' : 'far fa-star text-warning';
+                        ratingElement.appendChild(star);
+                    }
+                    
+                    const ratingText = document.createElement('span');
+                    ratingText.className = 'ms-2';
+                    ratingText.textContent = `${product.averageRating.toFixed(1)} (${product.reviewCount} đánh giá)`;
+                    ratingElement.appendChild(ratingText);
+                } else {
+                    const noRatingText = document.createElement('span');
+                    noRatingText.textContent = 'Chưa có đánh giá';
+                    ratingElement.appendChild(noRatingText);
+                }
+            }
+            
+            // Handle colors and sizes
+            const colorsElement = document.getElementById('quick-view-colors');
+            const sizesElement = document.getElementById('quick-view-sizes');
+            
+            // Store product attributes globally for later reference
+            window.productAttributes = product.attributes || [];
+            
+            if (colorsElement && sizesElement && product.attributes) {
+                // Extract unique colors and sizes
+                const uniqueColors = [...new Set(product.attributes.map(attr => attr.color))];
+                const uniqueSizes = [...new Set(product.attributes.map(attr => attr.size))];
+                
+                // Populate colors
+                colorsElement.innerHTML = '';
+                uniqueColors.forEach(color => {
+                    const colorButton = document.createElement('button');
+                    colorButton.className = 'btn btn-outline-secondary btn-sm me-2 mb-2';
+                    colorButton.textContent = color;
+                    colorButton.onclick = () => selectAttribute('color', color);
+                    colorsElement.appendChild(colorButton);
+                });
+                
+                // Populate sizes
+                sizesElement.innerHTML = '';
+                uniqueSizes.forEach(size => {
+                    const sizeButton = document.createElement('button');
+                    sizeButton.className = 'btn btn-outline-secondary btn-sm me-2 mb-2';
+                    sizeButton.textContent = size;
+                    sizeButton.onclick = () => selectAttribute('size', size);
+                    sizesElement.appendChild(sizeButton);
+                });
+                
+                // Auto-select first options
+                if (uniqueColors.length > 0) {
+                    selectAttribute('color', uniqueColors[0]);
+                }
+                if (uniqueSizes.length > 0) {
+                    selectAttribute('size', uniqueSizes[0]);
+                }
+            } else {
+                // No attributes available
+                if (colorsElement) colorsElement.innerHTML = '<span class="text-muted">Không có lựa chọn</span>';
+                if (sizesElement) sizesElement.innerHTML = '<span class="text-muted">Không có lựa chọn</span>';
+            }
+            
+            // Set product ID for add to cart button
+            const quickViewAddToCartBtn = document.getElementById('quick-view-add-to-cart');
+            if (quickViewAddToCartBtn) {
+                quickViewAddToCartBtn.setAttribute('data-product-id', product.productID);
+                
+                // Add click event for add to cart
+                quickViewAddToCartBtn.onclick = function() {
+                    const quantity = parseInt(document.getElementById('product-quantity').value) || 1;
+                    addToCartFromQuickView(product.productID, quantity);
+                };
+            }
+        }
+
+        // Add to cart from quick view
+        function addToCartFromQuickView(productId, quantity) {
+            const button = document.getElementById('quick-view-add-to-cart');
+            const originalText = button.innerHTML;
+            
+            // Get selected attributes
+            const selectedColor = getSelectedAttribute('color');
+            const selectedSize = getSelectedAttribute('size');
+            
+            // Find matching attribute ID
+            let attributeId = null;
+            if (window.productAttributes && window.productAttributes.length > 0) {
+                const matchingAttribute = window.productAttributes.find(attr => 
+                    attr.color === selectedColor && attr.size === selectedSize
+                );
+                if (matchingAttribute) {
+                    attributeId = matchingAttribute.attributeID;
+                }
+            }
+            
+            // Show loading state
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang thêm...';
+            button.disabled = true;
+            
+            // Prepare request data
+            const requestData = {
+                productId: parseInt(productId),
+                quantity: parseInt(quantity),
+                attributeId: attributeId
+            };
+            
+            // Use the same endpoint as product page
+            fetch('/Cart/AddToCartJson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    // Close modal
+                    $('#quickViewModal').modal('hide');
+                    // Update cart counter if exists
+                    updateCartCounter();
+                } else {
+                    showNotification(data.message || 'Có lỗi xảy ra', 'error');
+                    
+                    if (data.requireLogin) {
+                        setTimeout(() => {
+                            window.location.href = '/Account/Login';
+                        }, 2000);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error adding to cart:', error);
+                showNotification('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        // Quick View quantity functions
+        function quickViewDecreaseQuantity() {
+            const input = document.getElementById('product-quantity');
+            if (input) {
+                let currentValue = parseInt(input.value) || 1;
+                if (currentValue > 1) {
+                    input.value = currentValue - 1;
+                }
+            }
+        }
+        
+        function quickViewIncreaseQuantity() {
+            const input = document.getElementById('product-quantity');
+            if (input) {
+                let currentValue = parseInt(input.value) || 1;
+                const maxStock = 999;
+                if (currentValue < maxStock) {
+                    input.value = currentValue + 1;
+                }
+            }
+        }
+        
+        // Handle attribute selection
+        function selectAttribute(type, value) {
+            const container = type === 'color' ? 'quick-view-colors' : 'quick-view-sizes';
+            const buttons = document.querySelectorAll(`#${container} .btn`);
+            
+            // Remove active class from all buttons
+            buttons.forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-secondary');
+            });
+            
+            // Add active class to selected button
+            buttons.forEach(btn => {
+                if (btn.textContent === value) {
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-primary');
+                }
+            });
+        }
+        
+        // Get selected attribute value
+        function getSelectedAttribute(type) {
+            const container = type === 'color' ? 'quick-view-colors' : 'quick-view-sizes';
+            const activeButton = document.querySelector(`#${container} .btn-primary`);
+            return activeButton ? activeButton.textContent : null;
+        }
+    </script>
+}

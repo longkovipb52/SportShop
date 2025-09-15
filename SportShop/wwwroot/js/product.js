@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize add to cart
     initAddToCart();
     
+    // Initialize wishlist
+    initWishlist();
+    
     // Initialize price range slider
     initPriceRange();
     
@@ -596,6 +599,85 @@ function initAddToCart() {
     }
 }
 
+// Initialize wishlist functionality
+function initWishlist() {
+    const wishlistButtons = document.querySelectorAll('.add-to-wishlist');
+    const checkedProductIds = new Set(); // Tránh check duplicate cho cùng productId
+    
+    wishlistButtons.forEach(button => {
+        const productId = parseInt(button.getAttribute('data-id'), 10);
+        
+        // Check if product is already in wishlist (chỉ check 1 lần cho mỗi productId)
+        if (!checkedProductIds.has(productId)) {
+            checkWishlistStatusForAllButtons(productId);
+            checkedProductIds.add(productId);
+        }
+        
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Show loading state cho tất cả button cùng productId
+            const allButtons = document.querySelectorAll(`[data-id="${productId}"].add-to-wishlist`);
+            allButtons.forEach(btn => {
+                const icon = btn.querySelector('i');
+                icon.className = 'fas fa-spinner fa-spin';
+                btn.disabled = true;
+            });
+            
+            toggleWishlist(productId);
+            
+            // Button state sẽ được reset trong response của toggleWishlist
+        });
+    });
+}
+
+// Check wishlist status for all buttons of a product
+function checkWishlistStatusForAllButtons(productId) {
+    fetch(`/Wishlist/Check?productId=${productId}`)
+    .then(response => response.json())
+    .then(data => {
+        // Update ALL buttons with this productId
+        const allButtons = document.querySelectorAll(`[data-id="${productId}"].add-to-wishlist`);
+        allButtons.forEach(button => {
+            const icon = button.querySelector('i');
+            if (data.inWishlist) {
+                // Trong wishlist: solid heart màu đỏ
+                icon.classList.remove('far', 'fa-heart-o');
+                icon.classList.add('fas', 'fa-heart', 'text-danger');
+            } else {
+                // Không trong wishlist: outline heart không màu
+                icon.classList.remove('fas', 'fa-heart', 'text-danger');
+                icon.classList.add('far', 'fa-heart');
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error checking wishlist status:', error);
+    });
+}
+
+// Check wishlist status for a product (legacy function for compatibility)
+function checkWishlistStatus(productId, button) {
+    fetch(`/Wishlist/Check?productId=${productId}`)
+    .then(response => response.json())
+    .then(data => {
+        const icon = button.querySelector('i');
+        if (data.inWishlist) {
+            // Trong wishlist: solid heart màu đỏ
+            icon.classList.remove('far', 'fa-heart-o');
+            icon.classList.add('fas', 'fa-heart', 'text-danger');
+        } else {
+            // Không trong wishlist: outline heart không màu
+            icon.classList.remove('fas', 'fa-heart', 'text-danger');
+            icon.classList.add('far', 'fa-heart');
+        }
+    })
+    .catch(error => {
+        console.error('Error checking wishlist status:', error);
+    });
+}
+
 // Cập nhật hàm addToCart để chuyển đổi productId thành số
 function addToCart(productId, quantity, attributeId = null, buttonElement = null) {
     console.log("Adding to cart:", { productId, quantity, attributeId });
@@ -819,33 +901,6 @@ function initAnimations() {
             this.querySelector('.product-actions')?.classList.remove('show');
         });
     });
-    
-    // Add to wishlist animation
-    const wishlistButtons = document.querySelectorAll('.add-to-wishlist');
-    
-    wishlistButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const productId = this.getAttribute('data-id');
-            
-            // Toggle heart icon
-            const heartIcon = this.querySelector('i');
-            if (heartIcon.classList.contains('far')) {
-                heartIcon.classList.remove('far');
-                heartIcon.classList.add('fas', 'text-danger');
-                showNotification('Đã thêm vào danh sách yêu thích', 'success');
-            } else {
-                heartIcon.classList.remove('fas', 'text-danger');
-                heartIcon.classList.add('far');
-                showNotification('Đã xóa khỏi danh sách yêu thích', 'info');
-            }
-            
-            // Call API to add/remove from wishlist
-            toggleWishlist(productId);
-        });
-    });
 }
 
 // Format currency to VND
@@ -855,20 +910,84 @@ function formatCurrency(value) {
 
 // Toggle wishlist API call
 function toggleWishlist(productId) {
-    fetch(`/api/Wishlist/toggle/${productId}`, {
+    console.log('toggleWishlist called for productId:', productId);
+    
+    fetch('/Wishlist/Toggle', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-        }
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `productId=${productId}`
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+    .then(response => response.json())
+    .then(data => {
+        console.log('Wishlist toggle response:', data);
+        
+        if (data.success) {
+            // Show appropriate notification based on action
+            if (data.action === 'added') {
+                showNotification('Đã thêm sản phẩm vào yêu thích!', 'success');
+            } else {
+                showNotification('Đã xóa sản phẩm khỏi yêu thích!', 'success');
+            }
+            
+            // Update ALL heart icons for this product (use querySelectorAll instead of querySelector)
+            const heartButtons = document.querySelectorAll(`[data-id="${productId}"].add-to-wishlist`);
+            console.log('Found heart buttons:', heartButtons.length);
+            
+            heartButtons.forEach(heartButton => {
+                const icon = heartButton.querySelector('i');
+                console.log('Before update - icon classes:', icon.className);
+                
+                // Clear loading state first
+                icon.classList.remove('fa-spinner', 'fa-spin');
+                heartButton.disabled = false;
+                
+                if (data.action === 'added') {
+                    // Thêm vào yêu thích: solid heart màu đỏ
+                    icon.className = 'fas fa-heart text-danger';
+                } else {
+                    // Xóa khỏi yêu thích: outline heart không màu
+                    icon.className = 'far fa-heart';
+                }
+                
+                console.log('After update - icon classes:', icon.className);
+            });
+            
+            // Update wishlist count in dropdown
+            updateWishlistCount();
+        } else {
+            // Clear loading state for all buttons on error
+            const heartButtons = document.querySelectorAll(`[data-id="${productId}"].add-to-wishlist`);
+            heartButtons.forEach(heartButton => {
+                const icon = heartButton.querySelector('i');
+                icon.classList.remove('fa-spinner', 'fa-spin');
+                heartButton.disabled = false;
+            });
+            
+            showNotification(data.message, 'error');
+            
+            if (data.requireLogin) {
+                setTimeout(() => {
+                    window.location.href = '/Account/Login';
+                }, 2000);
+            }
         }
-        return response.json();
     })
     .catch(error => {
         console.error('Error toggling wishlist:', error);
+        
+        // Clear loading state for all buttons on error
+        const heartButtons = document.querySelectorAll(`[data-id="${productId}"].add-to-wishlist`);
+        heartButtons.forEach(heartButton => {
+            const icon = heartButton.querySelector('i');
+            icon.classList.remove('fa-spinner', 'fa-spin');
+            heartButton.disabled = false;
+            // Restore original heart icon
+            icon.classList.add('far', 'fa-heart');
+        });
+        
+        showNotification('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
     });
 }
 
@@ -959,4 +1078,20 @@ function initSidebarScroll() {
         // Kiểm tra ban đầu
         checkStickyState();
     }
+}
+
+// Update wishlist count in dropdown
+function updateWishlistCount() {
+    fetch('/Wishlist/Count')
+        .then(response => response.json())
+        .then(data => {
+            // Update count in dropdown
+            const wishlistCountElement = document.querySelector('.wishlist-count');
+            if (wishlistCountElement) {
+                wishlistCountElement.textContent = data.count || '0';
+            }
+        })
+        .catch(error => {
+            console.error('Error updating wishlist count:', error);
+        });
 }

@@ -1,0 +1,347 @@
+/* Wishlist Page Styles */
+
+/* Hero Section */
+.wishlist-hero {
+    background: linear-gradient(135deg, #ff69b4 0%, #ffd700 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.wishlist-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('/image/sport-banner.png') center/cover;
+    opacity: 0.1;
+    z-index: 1;
+}
+
+.wishlist-hero .container {
+    position: relative;
+    z-index: 2;
+}
+
+/* Filter Section */
+.filter-section {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.filter-controls {
+    align-items: center;
+}
+
+.filter-controls .btn {
+    transition: all 0.3s ease;
+}
+
+.filter-controls .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sort-options select {
+    min-width: 180px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.sort-options select:focus {
+    border-color: #ff69b4;
+    box-shadow: 0 0 0 0.2rem rgba(255, 105, 180, 0.25);
+}
+
+/* Active Filters */
+#activeFilters .badge {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+#activeFilters .badge:hover {
+    transform: scale(1.05);
+}
+
+#activeFilters .btn-close {
+    margin-left: 0.5rem;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+#activeFilters .btn-close:hover {
+    opacity: 1;
+}
+
+/* Filter Collapse Panel */
+#filterCollapse .card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+#filterCollapse .card-body {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+#filterCollapse .form-label {
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+#filterCollapse .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+#filterCollapse .form-select:focus {
+    border-color: #ff69b4;
+    box-shadow: 0 0 0 0.2rem rgba(255, 105, 180, 0.25);
+}
+
+/* Wishlist Cards */
+.wishlist-card {
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.wishlist-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.wishlist-card .card-img-top {
+    transition: transform 0.3s ease;
+    border-radius: 15px 15px 0 0;
+}
+
+.wishlist-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+/* Remove wishlist button */
+.remove-wishlist-btn {
+    top: 10px;
+    right: 10px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.remove-wishlist-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Product badges */
+.discount-badge {
+    top: 10px;
+    left: 10px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 5;
+}
+
+/* Card body */
+.wishlist-card .card-body {
+    padding: 1.5rem;
+}
+
+.wishlist-card .card-title a {
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.wishlist-card .card-title a:hover {
+    color: #ff69b4 !important;
+}
+
+/* Rating stars */
+.rating .fa-star {
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+/* Price styling */
+.price-info .current-price {
+    font-size: 1.25rem;
+    color: #ff69b4;
+}
+
+/* Action buttons */
+.action-buttons .btn {
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 0.6rem 1.2rem;
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.action-buttons .btn-primary {
+    background: linear-gradient(135deg, #ff69b4 0%, #ffd700 100%);
+    border: none;
+}
+
+.action-buttons .btn-primary:hover {
+    background: linear-gradient(135deg, #ffd700 0%, #ff69b4 100%);
+}
+
+.action-buttons .btn-outline-primary {
+    border-color: #ff69b4;
+    color: #ff69b4;
+    width: 45px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-buttons .btn-outline-primary:hover {
+    background: #ff69b4;
+    border-color: #ff69b4;
+    color: white;
+}
+
+/* Card footer */
+.wishlist-card .card-footer {
+    border-top: 1px solid #f0f0f0;
+    background: rgba(248, 249, 250, 0.8);
+    padding: 1rem 1.5rem;
+    font-size: 0.85rem;
+}
+
+/* Empty state */
+.empty-wishlist {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-wishlist .empty-icon {
+    font-size: 5rem;
+    color: #dee2e6;
+    margin-bottom: 2rem;
+}
+
+.empty-wishlist h3 {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.empty-wishlist p {
+    color: #adb5bd;
+    margin-bottom: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem !important;
+    }
+    
+    .sort-options {
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .sort-options select {
+        min-width: 150px;
+    }
+    
+    #filterCollapse .row {
+        flex-direction: column;
+    }
+    
+    #activeFilters {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .wishlist-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .wishlist-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .filter-controls .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .sort-options {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .sort-options select {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Animation for filter toggle */
+#filterCollapse {
+    transition: all 0.3s ease;
+}
+
+/* Loading state for filter application */
+.wishlist-item {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.wishlist-item.filtering {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for filter dropdown */
+.form-select {
+    scrollbar-width: thin;
+    scrollbar-color: #ff69b4 #f1f1f1;
+}
+
+.form-select::-webkit-scrollbar {
+    width: 6px;
+}
+
+.form-select::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.form-select::-webkit-scrollbar-thumb {
+    background: #ff69b4;
+    border-radius: 3px;
+}
+
+.form-select::-webkit-scrollbar-thumb:hover {
+    background: #e91e63;
+}

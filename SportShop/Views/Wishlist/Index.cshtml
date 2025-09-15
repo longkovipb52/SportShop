@@ -13,12 +13,94 @@
                         <i class="fas fa-heart text-danger me-2"></i>
                         Danh sách yêu thích
                     </h1>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb justify-content-center mb-0">
-                            <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Trang chủ</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Yêu thích</li>
-                        </ol>
-                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Filter Section -->
+<section class="filter-section py-3 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-controls d-flex flex-wrap align-items-center gap-3">
+                    <!-- Filter Toggle Button -->
+                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                        <i class="fas fa-filter me-2"></i>Bộ lọc
+                    </button>
+                    
+                    <!-- Quick Sort Options -->
+                    <div class="sort-options d-flex align-items-center gap-2">
+                        <span class="text-muted small">Sắp xếp:</span>
+                        <select class="form-select form-select-sm" style="width: auto;" id="sortBy" onchange="applySorting()">
+                            <option value="newest">Mới nhất</option>
+                            <option value="oldest">Cũ nhất</option>
+                            <option value="price-low">Giá thấp đến cao</option>
+                            <option value="price-high">Giá cao đến thấp</option>
+                            <option value="name-az">Tên A-Z</option>
+                            <option value="name-za">Tên Z-A</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Active Filters Display -->
+                    <div id="activeFilters" class="d-flex flex-wrap gap-2">
+                        <!-- Active filter badges will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Collapsible Filter Panel -->
+                <div class="collapse mt-3" id="filterCollapse">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Category Filter -->
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-tags me-2"></i>Danh mục
+                                    </label>
+                                    <select class="form-select" id="categoryFilter" onchange="applyFilters()">
+                                        <option value="">Tất cả danh mục</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Brand Filter -->
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-copyright me-2"></i>Thương hiệu
+                                    </label>
+                                    <select class="form-select" id="brandFilter" onchange="applyFilters()">
+                                        <option value="">Tất cả thương hiệu</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Price Range Filter -->
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-dollar-sign me-2"></i>Khoảng giá
+                                    </label>
+                                    <select class="form-select" id="priceFilter" onchange="applyFilters()">
+                                        <option value="">Tất cả mức giá</option>
+                                        <option value="0-500000">Dưới 500.000đ</option>
+                                        <option value="500000-1000000">500.000đ - 1.000.000đ</option>
+                                        <option value="1000000-2000000">1.000.000đ - 2.000.000đ</option>
+                                        <option value="2000000-5000000">2.000.000đ - 5.000.000đ</option>
+                                        <option value="5000000-999999999">Trên 5.000.000đ</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">&nbsp;</label>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-danger btn-sm" onclick="clearAllFilters()">
+                                            <i class="fas fa-times me-1"></i>Xóa bộ lọc
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -32,11 +114,6 @@
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">
-                            <span class="text-muted">Bạn có</span>
-                            <span class="fw-bold text-primary">@Model.Count</span>
-                            <span class="text-muted">sản phẩm yêu thích</span>
-                        </h4>
                         <button class="btn btn-outline-danger" onclick="clearAllWishlist()">
                             <i class="fas fa-trash me-2"></i>Xóa tất cả
                         </button>
@@ -47,7 +124,13 @@
             <div class="row g-4">
                 @foreach (var item in Model)
                 {
-                    <div class="col-lg-3 col-md-4 col-sm-6" data-product-id="@item.ProductID">
+                    <div class="col-lg-3 col-md-4 col-sm-6 wishlist-item" 
+                         data-product-id="@item.ProductID"
+                         data-category="@item.Product.Category?.Name"
+                         data-brand="@item.Product.Brand?.Name"
+                         data-price="@item.Product.Price"
+                         data-name="@item.Product.Name"
+                         data-created="@item.CreatedAt.Ticks">
                         <div class="wishlist-card card h-100 shadow-sm">
                             <div class="position-relative">
                                 <a href="/Product/Details/@item.Product.ProductID">
@@ -673,6 +756,206 @@
             const container = type === 'color' ? 'quick-view-colors' : 'quick-view-sizes';
             const activeButton = document.querySelector(`#${container} .btn-primary`);
             return activeButton ? activeButton.textContent : null;
+        }
+
+        // Filter and Sort Functions
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFilters();
+        });
+
+        function initializeFilters() {
+            // Populate category filter options
+            const categoryFilter = document.getElementById('categoryFilter');
+            const brandFilter = document.getElementById('brandFilter');
+            
+            if (categoryFilter && brandFilter) {
+                const categories = new Set();
+                const brands = new Set();
+                
+                document.querySelectorAll('.wishlist-item').forEach(item => {
+                    const category = item.getAttribute('data-category');
+                    const brand = item.getAttribute('data-brand');
+                    
+                    if (category && category !== 'null') categories.add(category);
+                    if (brand && brand !== 'null') brands.add(brand);
+                });
+                
+                // Populate category options
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categoryFilter.appendChild(option);
+                });
+                
+                // Populate brand options
+                brands.forEach(brand => {
+                    const option = document.createElement('option');
+                    option.value = brand;
+                    option.textContent = brand;
+                    brandFilter.appendChild(option);
+                });
+            }
+        }
+
+        function applyFilters() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const brandFilter = document.getElementById('brandFilter').value;
+            const priceFilter = document.getElementById('priceFilter').value;
+            
+            let priceMin = 0, priceMax = Infinity;
+            if (priceFilter) {
+                const [min, max] = priceFilter.split('-').map(Number);
+                priceMin = min;
+                priceMax = max;
+            }
+            
+            const items = document.querySelectorAll('.wishlist-item');
+            let visibleCount = 0;
+            
+            items.forEach(item => {
+                const itemCategory = item.getAttribute('data-category');
+                const itemBrand = item.getAttribute('data-brand');
+                const itemPrice = parseFloat(item.getAttribute('data-price'));
+                
+                let shouldShow = true;
+                
+                // Filter by category
+                if (categoryFilter && itemCategory !== categoryFilter) {
+                    shouldShow = false;
+                }
+                
+                // Filter by brand
+                if (brandFilter && itemBrand !== brandFilter) {
+                    shouldShow = false;
+                }
+                
+                // Filter by price
+                if (itemPrice < priceMin || itemPrice > priceMax) {
+                    shouldShow = false;
+                }
+                
+                // Show/hide item
+                if (shouldShow) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Update result count
+            updateResultCount(visibleCount);
+            updateActiveFilters();
+        }
+
+        function applySorting() {
+            const sortBy = document.getElementById('sortBy').value;
+            const container = document.querySelector('.row.g-4');
+            const items = Array.from(document.querySelectorAll('.wishlist-item'));
+            
+            items.sort((a, b) => {
+                switch (sortBy) {
+                    case 'newest':
+                        return parseInt(b.getAttribute('data-created')) - parseInt(a.getAttribute('data-created'));
+                    case 'oldest':
+                        return parseInt(a.getAttribute('data-created')) - parseInt(b.getAttribute('data-created'));
+                    case 'price-low':
+                        return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+                    case 'price-high':
+                        return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+                    case 'name-az':
+                        return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+                    case 'name-za':
+                        return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+                    default:
+                        return 0;
+                }
+            });
+            
+            // Re-append sorted items
+            items.forEach(item => container.appendChild(item));
+        }
+
+        function clearAllFilters() {
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('brandFilter').value = '';
+            document.getElementById('priceFilter').value = '';
+            document.getElementById('sortBy').value = 'newest';
+            
+            // Show all items
+            document.querySelectorAll('.wishlist-item').forEach(item => {
+                item.style.display = 'block';
+            });
+            
+            updateResultCount(document.querySelectorAll('.wishlist-item').length);
+            updateActiveFilters();
+            applySorting();
+        }
+
+        function updateResultCount(count) {
+            const resultText = document.querySelector('.wishlist-content h4');
+            if (resultText) {
+                const totalCount = document.querySelectorAll('.wishlist-item').length;
+                if (count === totalCount) {
+                    resultText.innerHTML = `
+                        <span class="text-muted">Bạn có</span>
+                        <span class="fw-bold text-primary">${count}</span>
+                        <span class="text-muted">sản phẩm yêu thích</span>
+                    `;
+                } else {
+                    resultText.innerHTML = `
+                        <span class="text-muted">Hiển thị</span>
+                        <span class="fw-bold text-primary">${count}</span>
+                        <span class="text-muted">trong tổng số</span>
+                        <span class="fw-bold text-primary">${totalCount}</span>
+                        <span class="text-muted">sản phẩm yêu thích</span>
+                    `;
+                }
+            }
+        }
+
+        function updateActiveFilters() {
+            const activeFiltersContainer = document.getElementById('activeFilters');
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const brandFilter = document.getElementById('brandFilter').value;
+            const priceFilter = document.getElementById('priceFilter').value;
+            
+            activeFiltersContainer.innerHTML = '';
+            
+            if (categoryFilter) {
+                addActiveFilterBadge(activeFiltersContainer, 'Danh mục: ' + categoryFilter, () => {
+                    document.getElementById('categoryFilter').value = '';
+                    applyFilters();
+                });
+            }
+            
+            if (brandFilter) {
+                addActiveFilterBadge(activeFiltersContainer, 'Thương hiệu: ' + brandFilter, () => {
+                    document.getElementById('brandFilter').value = '';
+                    applyFilters();
+                });
+            }
+            
+            if (priceFilter) {
+                const priceText = document.getElementById('priceFilter').selectedOptions[0].textContent;
+                addActiveFilterBadge(activeFiltersContainer, 'Giá: ' + priceText, () => {
+                    document.getElementById('priceFilter').value = '';
+                    applyFilters();
+                });
+            }
+        }
+
+        function addActiveFilterBadge(container, text, removeCallback) {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-primary d-flex align-items-center';
+            badge.innerHTML = `
+                ${text}
+                <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.7em;"></button>
+            `;
+            
+            badge.querySelector('.btn-close').addEventListener('click', removeCallback);
+            container.appendChild(badge);
         }
     </script>
 }

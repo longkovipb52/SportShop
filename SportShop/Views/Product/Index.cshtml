@@ -38,12 +38,6 @@
     <div class="container position-relative hero-content">
         <div class="text-center py-5">
             <h1 class="display-4 fw-bold text-white">Sản phẩm thể thao</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb justify-content-center mb-0">
-                    <li class="breadcrumb-item"><a href="/" class="text-white">Trang chủ</a></li>
-                    <li class="breadcrumb-item active text-white" aria-current="page">Sản phẩm</li>
-                </ol>
-            </nav>
         </div>
     </div>
 </section>
@@ -219,7 +213,7 @@
                     </div>
 
                     <!-- Products Grid -->
-                    <div id="products-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    <div id="products-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 grid-view">
                         @foreach (var product in Model.Products)
                         {
                             <div class="col product-item" data-aos="fade-up">
@@ -227,18 +221,6 @@
                                     <div class="card-img-top-container position-relative overflow-hidden">
                                         <img src="@(string.IsNullOrEmpty(product.ImageURL) ? "/images/product-placeholder.jpg" : $"/upload/product/{product.ImageURL}")" 
                                              class="card-img-top" alt="@product.Name">
-                                        
-                                        <div class="product-actions">
-                                            <button class="btn btn-sm btn-light rounded-circle quick-view" data-id="@product.ProductID">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-light rounded-circle add-to-wishlist" data-id="@product.ProductID">
-                                                <i class="far fa-heart"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-light rounded-circle add-to-cart" data-id="@product.ProductID">
-                                                <i class="fas fa-shopping-cart"></i>
-                                            </button>
-                                        </div>
                                         
                                         @if (product.Price > 3000000)
                                         {
@@ -251,41 +233,43 @@
                                     </div>
                                     
                                     <div class="card-body">
-                                        <h5 class="card-title product-title">
-                                            <a href="@Url.Action("Details", "Product", new { id = product.ProductID })" class="text-decoration-none text-dark stretched-link">
-                                                @product.Name
-                                            </a>
-                                        </h5>
-                                        
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div class="brand-badge">
+                                        <div class="product-info">
+                                            <h5 class="card-title product-title">
+                                                <a href="@Url.Action("Details", "Product", new { id = product.ProductID })" class="text-decoration-none text-dark">
+                                                    @product.Name
+                                                </a>
+                                            </h5>
+                                            
+                                            <!-- Product Description (hidden in grid, shown in list) -->
+                                            <p class="card-text product-description">
+                                                @(string.IsNullOrEmpty(product.Description) ? "Không có mô tả sản phẩm." : 
+                                                  (product.Description.Length > 150 ? product.Description.Substring(0, 150) + "..." : product.Description))
+                                            </p>
+                                            
+                                            <div class="product-meta mb-2">
                                                 @if (product.Brand != null)
                                                 {
-                                                    <span class="badge bg-light text-dark">@product.Brand.Name</span>
+                                                    <span class="badge bg-light text-dark me-1">@product.Brand.Name</span>
                                                 }
                                                 <span class="badge bg-secondary">@product.Category.Name</span>
                                             </div>
-                                        </div>
-                                        
-                                        <div class="product-description d-none">
-                                            <p class="card-text text-muted small">@product.Description</p>
-                                        </div>
-                                        
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div class="product-price">
-                                                <span class="fw-bold">@string.Format("{0:N0}", product.Price)đ</span>
-                                            </div>
-                                            <div class="product-rating">
-                                                <i class="fas fa-star text-warning"></i>
-                                                <span>
-                                                    @{
-                                                        double avgRating = Model.GetProductRating(product.ProductID);
-                                                        int reviewCount = Model.GetProductReviewCount(product.ProductID);
+                                            
+                                            <!-- Rating -->
+                                            <div class="rating mb-2">
+                                                @{
+                                                    double avgRating = Model.GetProductRating(product.ProductID);
+                                                    int reviewCount = Model.GetProductReviewCount(product.ProductID);
+                                                }
+                                                <div class="stars">
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <i class="fas fa-star @(i <= avgRating ? "text-warning" : "text-muted")"></i>
                                                     }
+                                                </div>
+                                                <span class="text-muted small ms-1">
                                                     @if(avgRating > 0)
                                                     {
-                                                        <text>@avgRating.ToString("0.0")</text>
-                                                        <span class="text-muted small">(@reviewCount)</span>
+                                                        @avgRating.ToString("0.0") <text>(@reviewCount)</text>
                                                     }
                                                     else
                                                     {
@@ -293,6 +277,49 @@
                                                     }
                                                 </span>
                                             </div>
+                                        </div>
+                                        
+                                        <!-- Price and Actions Section -->
+                                        <div class="price-section">
+                                            <div class="product-price">
+                                                <span class="price fw-bold fs-5 text-primary">@string.Format("{0:N0}", product.Price)đ</span>
+                                                @if (product.Stock > 0)
+                                                {
+                                                    <div class="stock-info small">
+                                                        <i class="fas fa-check-circle text-success"></i> Còn @product.Stock sản phẩm
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="stock-info small text-danger">
+                                                        <i class="fas fa-times-circle"></i> Hết hàng
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Action Buttons (positioned differently for grid vs list) -->
+                                        <div class="product-actions mt-auto">
+                                            @if (product.Stock > 0)
+                                            {
+                                                <button class="btn btn-primary add-to-cart" data-id="@product.ProductID" title="Thêm vào giỏ hàng">
+                                                    <i class="fas fa-shopping-cart"></i>
+                                                    <span class="d-none d-lg-inline ms-2 grid-view-text">Thêm vào giỏ</span>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-secondary" disabled title="Hết hàng">
+                                                    <i class="fas fa-times"></i>
+                                                    <span class="d-none d-lg-inline ms-2 grid-view-text">Hết hàng</span>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-primary quick-view" data-id="@product.ProductID" title="Xem nhanh">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger add-to-wishlist" data-id="@product.ProductID" title="Thêm vào yêu thích">
+                                                <i class="far fa-heart"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

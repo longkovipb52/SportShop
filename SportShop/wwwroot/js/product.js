@@ -225,27 +225,53 @@ function initViewSwitcher() {
     
     if (gridViewBtn && listViewBtn && productsContainer) {
         gridViewBtn.addEventListener('click', function() {
+            // Remove list-view class and add grid-view class
             productsContainer.classList.remove('list-view');
             productsContainer.classList.add('grid-view');
+            
+            // Update button states
             gridViewBtn.classList.add('active');
             listViewBtn.classList.remove('active');
+            
+            // Save preference
             localStorage.setItem('product-view', 'grid');
+            
+            // Update container classes for proper grid layout
+            productsContainer.className = 'row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 grid-view';
         });
         
         listViewBtn.addEventListener('click', function() {
+            // Remove grid-view class and add list-view class
             productsContainer.classList.remove('grid-view');
             productsContainer.classList.add('list-view');
+            
+            // Update button states
             listViewBtn.classList.add('active');
             gridViewBtn.classList.remove('active');
+            
+            // Save preference
             localStorage.setItem('product-view', 'list');
+            
+            // Update container classes for list layout
+            productsContainer.className = 'row g-3 list-view';
         });
         
         // Apply saved view preference if exists
         const savedView = localStorage.getItem('product-view');
         if (savedView === 'list') {
-            listViewBtn.click();
+            // Set list view
+            productsContainer.classList.remove('grid-view');
+            productsContainer.classList.add('list-view');
+            productsContainer.className = 'row g-3 list-view';
+            listViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
         } else {
-            gridViewBtn.click();
+            // Set grid view (default)
+            productsContainer.classList.remove('list-view');
+            productsContainer.classList.add('grid-view');
+            productsContainer.className = 'row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 grid-view';
+            gridViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
         }
     }
 }

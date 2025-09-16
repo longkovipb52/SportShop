@@ -1,0 +1,344 @@
+@model SportShop.Models.ViewModels.OrderDetailViewModel
+@{
+    ViewData["Title"] = $"Chi tiết đơn hàng #{Model.OrderID}";
+    ViewData["CustomCSS"] = "order.css";
+}
+
+<section class="order-detail-hero">
+    <div class="order-hero-overlay"></div>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="hero-content">
+                    <nav aria-label="breadcrumb" class="mb-3">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="/OrderHistory" class="text-white-50">
+                                    <i class="fas fa-history me-1"></i>Lịch sử đơn hàng
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">
+                                Chi tiết đơn hàng #@Model.OrderID
+                            </li>
+                        </ol>
+                    </nav>
+                    <h1 class="display-6 fw-bold text-white mb-2">
+                        <i class="fas fa-receipt me-3"></i>
+                        Đơn hàng #@Model.OrderID
+                    </h1>
+                    <p class="lead text-white-50">
+                        Đặt hàng lúc @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="order-detail-content py-5">
+    <div class="container">
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show animate__animated animate__shakeX" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row g-4">
+            <!-- Order Status Timeline -->
+            <div class="col-12">
+                <div class="timeline-card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-route me-2"></i>
+                            Trạng thái đơn hàng
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="order-timeline">
+                            @foreach (var timeline in Model.Timeline)
+                            {
+                                <div class="timeline-item @(timeline.IsCompleted ? "completed" : "") @(timeline.IsCurrent ? "current" : "")">
+                                    <div class="timeline-marker">
+                                        @if (timeline.IsCompleted)
+                                        {
+                                            <i class="fas fa-check"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-circle"></i>
+                                        }
+                                    </div>
+                                    <div class="timeline-content">
+                                        <h6 class="timeline-title">@timeline.Description</h6>
+                                        @if (timeline.Date != DateTime.MinValue)
+                                        {
+                                            <p class="timeline-date">@timeline.Date.ToString("dd/MM/yyyy HH:mm")</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Information -->
+            <div class="col-lg-8">
+                <!-- Order Items -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-box me-2"></i>
+                            Sản phẩm đã đặt (@Model.Items.Count sản phẩm)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="order-items-detail">
+                            @foreach (var item in Model.Items)
+                            {
+                                <div class="order-item-detail">
+                                    <div class="item-image">
+                                        @if (!string.IsNullOrEmpty(item.ProductImage))
+                                        {
+                                            <img src="~/upload/product/@item.ProductImage" alt="@item.ProductName" 
+                                                 onerror="this.src='~/image/loading-placeholder.png'">
+                                        }
+                                        else
+                                        {
+                                            <img src="~/image/loading-placeholder.png" alt="@item.ProductName">
+                                        }
+                                    </div>
+                                    <div class="item-details">
+                                        <h6 class="item-name">
+                                            <a href="/Product/Details/@item.ProductID" class="text-decoration-none">
+                                                @item.ProductName
+                                            </a>
+                                        </h6>
+                                        @if (!string.IsNullOrEmpty(item.BrandName))
+                                        {
+                                            <p class="item-brand">
+                                                <i class="fas fa-tag me-1"></i>@item.BrandName
+                                            </p>
+                                        }
+                                        <p class="item-description">@item.ProductDescription</p>
+                                        <div class="item-attributes">
+                                            @if (!string.IsNullOrEmpty(item.Size))
+                                            {
+                                                <span class="attribute-badge">
+                                                    <i class="fas fa-ruler me-1"></i>Size: @item.Size
+                                                </span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(item.Color))
+                                            {
+                                                <span class="attribute-badge">
+                                                    <i class="fas fa-palette me-1"></i>@item.Color
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="item-pricing">
+                                        <div class="quantity">
+                                            <span class="label">Số lượng:</span>
+                                            <span class="value">@item.Quantity</span>
+                                        </div>
+                                        <div class="unit-price">
+                                            <span class="label">Đơn giá:</span>
+                                            <span class="value">@item.UnitPrice.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</span>
+                                        </div>
+                                        <div class="total-price">
+                                            <span class="label">Thành tiền:</span>
+                                            <span class="value">@item.TotalPrice.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping Information -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-truck me-2"></i>
+                            Thông tin giao hàng
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="shipping-info">
+                            <div class="info-row">
+                                <span class="label">
+                                    <i class="fas fa-user me-2"></i>Người nhận:
+                                </span>
+                                <span class="value">@Model.ShippingName</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Địa chỉ:
+                                </span>
+                                <span class="value">@Model.ShippingAddress</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">
+                                    <i class="fas fa-phone me-2"></i>Số điện thoại:
+                                </span>
+                                <span class="value">@Model.ShippingPhone</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.Note))
+                            {
+                                <div class="info-row">
+                                    <span class="label">
+                                        <i class="fas fa-sticky-note me-2"></i>Ghi chú:
+                                    </span>
+                                    <span class="value">@Model.Note</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <div class="col-lg-4">
+                <!-- Order Status Card -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Thông tin đơn hàng
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="order-status-info">
+                            <div class="status-display">
+                                <span class="status-badge-large @Model.StatusClass">@Model.StatusDisplay</span>
+                            </div>
+                            <div class="order-meta">
+                                <div class="meta-item">
+                                    <span class="label">Mã đơn hàng:</span>
+                                    <span class="value">#@Model.OrderID</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="label">Ngày đặt:</span>
+                                    <span class="value">@Model.OrderDate.ToString("dd/MM/yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Thanh toán
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="payment-info">
+                            <div class="info-row">
+                                <span class="label">Phương thức:</span>
+                                <span class="value">@Model.PaymentMethod</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Trạng thái:</span>
+                                <span class="value payment-status-@Model.PaymentStatus.ToLower()">
+                                    @(Model.PaymentStatus == "Completed" ? "Đã thanh toán" : 
+                                      Model.PaymentStatus == "Pending" ? "Chờ thanh toán" : Model.PaymentStatus)
+                                </span>
+                            </div>
+                            @if (Model.PaymentDate.HasValue)
+                            {
+                                <div class="info-row">
+                                    <span class="label">Ngày thanh toán:</span>
+                                    <span class="value">@Model.PaymentDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Total -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-calculator me-2"></i>
+                            Tổng cộng
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="order-total">
+                            <div class="total-breakdown">
+                                <div class="breakdown-item">
+                                    <span class="label">Tạm tính:</span>
+                                    <span class="value">@Model.TotalAmount.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span class="label">Phí vận chuyển:</span>
+                                    <span class="value">Miễn phí</span>
+                                </div>
+                            </div>
+                            <div class="total-final">
+                                <span class="label">Tổng thanh toán:</span>
+                                <span class="value">@Model.TotalAmount.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="order-actions mt-4">
+                    <a href="/OrderHistory" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+                    </a>
+                    @if (Model.Status == "Completed")
+                    {
+                        <a href="@Url.Action("Print", new { id = Model.OrderID })" 
+                           class="btn btn-primary w-100" target="_blank">
+                            <i class="fas fa-print me-2"></i>In hóa đơn
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-hide alerts
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.classList.add('animate__animated', 'animate__fadeOut');
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 1000);
+                }, 5000);
+            });
+
+            // Animate timeline items
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            timelineItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.add('animate__animated', 'animate__fadeInLeft');
+                }, index * 200);
+            });
+
+            // Animate order items
+            const orderItems = document.querySelectorAll('.order-item-detail');
+            orderItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.add('animate__animated', 'animate__fadeInUp');
+                }, index * 100);
+            });
+        });
+    </script>
+}

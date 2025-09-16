@@ -366,6 +366,47 @@ namespace SportShop.Controllers
             }
         }
 
+        // API để lấy gợi ý sản phẩm khi tìm kiếm
+        [HttpGet]
+        public async Task<IActionResult> SearchSuggestions(string term, int limit = 5)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(term) || term.Length < 2)
+                {
+                    return Json(new { success = true, suggestions = new List<object>() });
+                }
+
+                var suggestions = await _context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.Brand)
+                    .Where(p => p.Name.Contains(term) || 
+                               p.Description.Contains(term) ||
+                               p.Category.Name.Contains(term) ||
+                               p.Brand.Name.Contains(term))
+                    .Take(limit)
+                    .Select(p => new {
+                        id = p.ProductID,
+                        name = p.Name,
+                        price = p.Price,
+                        imageUrl = !string.IsNullOrEmpty(p.ImageURL) ? 
+                                  (p.ImageURL.StartsWith("/") ? p.ImageURL : $"/upload/product/{p.ImageURL}") :
+                                  "/image/loading-placeholder.png",
+                        categoryName = p.Category.Name,
+                        brandName = p.Brand.Name,
+                        url = $"/Product/Details/{p.ProductID}"
+                    })
+                    .ToListAsync();
+
+                return Json(new { success = true, suggestions = suggestions });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SearchSuggestions: {ex.Message}");
+                return Json(new { success = false, suggestions = new List<object>() });
+            }
+        }
+
         // Thêm vào ProductController
         [HttpGet]
         public async Task<IActionResult> GetProductAttributes(int productId)

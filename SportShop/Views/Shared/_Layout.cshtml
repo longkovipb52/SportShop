@@ -71,28 +71,54 @@
                     <!-- Thanh tìm kiếm ở đây -->
                     <div class="search-container mx-auto">
                         <form class="d-flex position-relative search-form" action="/Product/Search" method="get">
-                            <input type="search" name="keyword" class="form-control search-input" placeholder="Tìm kiếm sản phẩm..." aria-label="Search">
+                            <input type="search" name="keyword" class="form-control search-input" placeholder="Tìm kiếm sản phẩm..." aria-label="Search" autocomplete="off">
+                            <button class="btn btn-clear d-none" type="button" onclick="clearSearch(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
                             <button class="btn btn-search" type="submit">
                                 <i class="fas fa-search"></i>
                             </button>
+                            
+                            <!-- Container cho search suggestions -->
+                            <div class="search-suggestions d-none">
+                                <div class="suggestions-header">
+                                    <small class="text-muted">Gợi ý sản phẩm</small>
+                                </div>
+                                <div class="suggestions-list">
+                                    <!-- Suggestions sẽ được thêm vào đây bằng JavaScript -->
+                                </div>
+                                <div class="suggestions-loading d-none">
+                                    <div class="d-flex align-items-center justify-content-center py-2">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <small class="text-muted">Đang tìm kiếm...</small>
+                                    </div>
+                                </div>
+                                <div class="suggestions-empty d-none">
+                                    <div class="text-center py-2">
+                                        <small class="text-muted">Không tìm thấy sản phẩm phù hợp</small>
+                                    </div>
+                                </div>
+                            </div>
                         </form>
                     </div>
                     
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Home" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")" href="/">Trang chủ</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")" href="/">Trang chủ</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "About" ? "active" : "")" href="/About">Giới thiệu</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "About" ? "active" : "")" href="/About">Giới thiệu</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Product" ? "active" : "")" href="/Product">Sản phẩm</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Product" ? "active" : "")" href="/Product">Sản phẩm</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Blog" ? "active" : "")" href="/Blog">Tin tức</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Blog" ? "active" : "")" href="/Blog">Tin tức</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Contact" ? "active" : "")" href="/Contact">Liên hệ</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Contact" ? "active" : "")" href="/Contact">Liên hệ</a>
                         </li>
                         
                         <!-- Thêm icon tìm kiếm cho mobile -->
@@ -115,8 +141,8 @@
                         <!-- User/Login button -->
                         <li class="nav-item ms-lg-3">
                             @{
-                                string username = null;
-                                string fullName = null;
+                                string? username = null;
+                                string? fullName = null;
                                 try
                                 {
                                     username = Context.Session.GetString("Username");
@@ -136,8 +162,8 @@
                                         <i class="fas fa-user me-1"></i> @(string.IsNullOrEmpty(fullName) ? username : fullName)
                                     </a>
                                     <ul class="dropdown-menu" aria-labelledby="userDropdown">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Tài khoản</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-bag me-2"></i>Đơn hàng</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Profile", "Account")"><i class="fas fa-user-circle me-2"></i>Tài khoản</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Index", "OrderHistory")"><i class="fas fa-shopping-bag me-2"></i>Đơn hàng</a></li>
                                         <li>
                                             <a class="dropdown-item d-flex justify-content-between align-items-center" href="@Url.Action("Index", "Wishlist")">
                                                 <span><i class="fas fa-heart me-2"></i>Yêu thích</span>
@@ -157,7 +183,7 @@
                             }
                             else
                             {
-                                <a class="nav-link btn btn-outline-primary rounded-pill px-4 @(ViewContext.RouteData.Values["Controller"].ToString() == "Account" && ViewContext.RouteData.Values["Action"].ToString() == "Login" ? "active" : "")" 
+                                <a class="nav-link btn btn-outline-primary rounded-pill px-4 @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Account" && ViewContext.RouteData.Values["Action"]?.ToString() == "Login" ? "active" : "")" 
                                     asp-controller="Account" asp-action="Login">
                                     <i class="fas fa-user me-1"></i> Đăng nhập
                                 </a>
@@ -303,14 +329,40 @@
                 </div>
                 <div class="modal-body">
                     <form class="position-relative search-form" action="/Product/Search" method="get">
-                        <input type="search" name="keyword" class="form-control search-input" placeholder="Nhập từ khóa tìm kiếm..." aria-label="Search">
+                        <input type="search" name="keyword" class="form-control search-input" placeholder="Nhập từ khóa tìm kiếm..." aria-label="Search" autocomplete="off">
+                        <button class="btn btn-clear d-none" type="button" onclick="clearSearch(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
                         <button class="btn btn-search" type="submit">
                             <i class="fas fa-search"></i>
                         </button>
+                        
+                        <!-- Container cho search suggestions trong modal -->
+                        <div class="search-suggestions d-none">
+                            <div class="suggestions-header">
+                                <small class="text-muted">Gợi ý sản phẩm</small>
+                            </div>
+                            <div class="suggestions-list">
+                                <!-- Suggestions sẽ được thêm vào đây bằng JavaScript -->
+                            </div>
+                            <div class="suggestions-loading d-none">
+                                <div class="d-flex align-items-center justify-content-center py-2">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <small class="text-muted">Đang tìm kiếm...</small>
+                                </div>
+                            </div>
+                            <div class="suggestions-empty d-none">
+                                <div class="text-center py-2">
+                                    <small class="text-muted">Không tìm thấy sản phẩm phù hợp</small>
+                                </div>
+                            </div>
+                        </div>
                     </form>
                     
                     <!-- Popular searches -->
-                    <div class="mt-3">
+                    <div class="mt-3 popular-searches">
                         <p class="mb-2 text-muted">Tìm kiếm phổ biến:</p>
                         <div class="d-flex flex-wrap gap-2">
                             <a href="/Product/Search?keyword=Giày bóng đá" class="badge bg-light text-dark text-decoration-none">Giày bóng đá</a>
@@ -333,6 +385,48 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/script.js" asp-append-version="true"></script>
+    
+    <script>
+        // Search functionality
+        function clearSearch(button) {
+            const form = button.closest('form');
+            const input = form.querySelector('.search-input');
+            const clearBtn = form.querySelector('.btn-clear');
+            
+            input.value = '';
+            clearBtn.classList.add('d-none');
+            input.focus();
+        }
+        
+        // Show/hide clear button based on input content
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInputs = document.querySelectorAll('.search-input');
+            
+            searchInputs.forEach(input => {
+                const form = input.closest('form');
+                const clearBtn = form.querySelector('.btn-clear');
+                
+                if (clearBtn) {
+                    // Show/hide clear button based on input value
+                    function toggleClearButton() {
+                        if (input.value.trim() !== '') {
+                            clearBtn.classList.remove('d-none');
+                        } else {
+                            clearBtn.classList.add('d-none');
+                        }
+                    }
+                    
+                    // Check on page load
+                    toggleClearButton();
+                    
+                    // Check on input
+                    input.addEventListener('input', toggleClearButton);
+                    input.addEventListener('keyup', toggleClearButton);
+                }
+            });
+        });
+    </script>
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

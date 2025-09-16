@@ -226,9 +226,10 @@ function isValidEmail(email) {
   return emailRegex.test(email)
 }
 
-// Product Search Functionality
+// Product Search Functionality với Live Suggestions
 function initProductSearch() {
   const searchInputs = document.querySelectorAll('.search-input');
+  let searchTimeout = null; // Debounce timer
   
   searchInputs.forEach(searchInput => {
     if (searchInput) {
@@ -238,21 +239,110 @@ function initProductSearch() {
       
       // Hiệu ứng đổi placeholder
       setInterval(() => {
-        searchInput.setAttribute('placeholder', searchTerms[currentIndex]);
-        currentIndex = (currentIndex + 1) % searchTerms.length;
+        if (searchInput.value === '' && document.activeElement !== searchInput) {
+          searchInput.setAttribute('placeholder', `Tìm kiếm ${searchTerms[currentIndex]}...`);
+          currentIndex = (currentIndex + 1) % searchTerms.length;
+        }
       }, 3000);
       
-      // Xử lý sự kiện nhập
+      // Xử lý sự kiện nhập với debounce
       searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        if (searchTerm.length > 2) {
-          showSearchSuggestions(searchTerm, this);
+        const searchTerm = this.value.trim();
+        const suggestionsContainer = this.parentElement.querySelector('.search-suggestions');
+        
+        // Clear timeout trước đó
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+        }
+        
+        if (searchTerm.length >= 2) {
+          // Hiển thị loading state
+          showLoadingState(suggestionsContainer);
+          
+          // Debounce API call (chờ 300ms sau khi user ngừng gõ)
+          searchTimeout = setTimeout(() => {
+            fetchSearchSuggestions(searchTerm, this);
+          }, 300);
         } else {
           // Ẩn suggestions nếu từ khóa quá ngắn
+          hideSuggestions(suggestionsContainer);
+        }
+      });
+      
+      // Hiển thị suggestions khi focus vào input có giá trị
+      searchInput.addEventListener('focus', function() {
+        const searchTerm = this.value.trim();
+        if (searchTerm.length >= 2) {
           const suggestionsContainer = this.parentElement.querySelector('.search-suggestions');
-          if (suggestionsContainer) {
-            suggestionsContainer.style.display = 'none';
+          if (suggestionsContainer && !suggestionsContainer.classList.contains('d-none')) {
+            suggestionsContainer.classList.remove('d-none');
           }
+        }
+      });
+      
+      // Ẩn suggestions khi blur (với delay dài hơn để cho phép click vào suggestion)
+      searchInput.addEventListener('blur', function() {
+        const inputElement = this;
+        
+        // Clear any existing timeout
+        if (inputElement.blurTimeout) {
+          clearTimeout(inputElement.blurTimeout);
+        }
+        
+        inputElement.blurTimeout = setTimeout(() => {
+          // Kiểm tra xem có đang hover trên suggestions không
+          const suggestionsContainer = inputElement.parentElement.querySelector('.search-suggestions');
+          if (suggestionsContainer) {
+            const isHovering = suggestionsContainer.matches(':hover');
+            console.log('Blur timeout triggered, isHovering:', isHovering);
+            
+            if (!isHovering) {
+              hideSuggestions(suggestionsContainer);
+            } else {
+              console.log('Not hiding suggestions because user is hovering');
+            }
+          }
+        }, 500); // Tăng từ 200ms lên 500ms
+      });
+      
+      // Xử lý phím mũi tên và Enter cho navigation trong suggestions
+      searchInput.addEventListener('keydown', function(e) {
+        const suggestionsContainer = this.parentElement.querySelector('.search-suggestions');
+        const suggestionItems = suggestionsContainer?.querySelectorAll('.suggestion-item');
+        
+        if (!suggestionItems || suggestionItems.length === 0) return;
+        
+        let currentSelected = suggestionsContainer.querySelector('.suggestion-item.selected');
+        let currentIndex = currentSelected ? Array.from(suggestionItems).indexOf(currentSelected) : -1;
+        
+        switch(e.key) {
+          case 'ArrowDown':
+            e.preventDefault();
+            if (currentSelected) currentSelected.classList.remove('selected');
+            currentIndex = (currentIndex + 1) % suggestionItems.length;
+            suggestionItems[currentIndex].classList.add('selected');
+            suggestionItems[currentIndex].scrollIntoView({ block: 'nearest' });
+            break;
+            
+          case 'ArrowUp':
+            e.preventDefault();
+            if (currentSelected) currentSelected.classList.remove('selected');
+            currentIndex = currentIndex <= 0 ? suggestionItems.length - 1 : currentIndex - 1;
+            suggestionItems[currentIndex].classList.add('selected');
+            suggestionItems[currentIndex].scrollIntoView({ block: 'nearest' });
+            break;
+            
+          case 'Enter':
+            if (currentSelected) {
+              e.preventDefault();
+              currentSelected.click();
+            }
+            break;
+            
+          case 'Escape':
+            hideSuggestions(suggestionsContainer);
+            this.blur();
+            break;
         }
       });
       
@@ -268,77 +358,310 @@ function initProductSearch() {
   
   // Đóng suggestions khi click ra ngoài
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-container')) {
+    if (!e.target.closest('.search-form')) {
       const suggestions = document.querySelectorAll('.search-suggestions');
-      suggestions.forEach(el => el.style.display = 'none');
+      suggestions.forEach(el => hideSuggestions(el));
     }
   });
 }
 
-// Hiển thị gợi ý tìm kiếm
-function showSearchSuggestions(term, inputElement) {
-  // Kiểm tra xem đã có suggestions chưa
-  let suggestionsContainer = inputElement.parentElement.querySelector('.search-suggestions');
-  
-  // Nếu chưa có, tạo mới
-  if (!suggestionsContainer) {
-    suggestionsContainer = document.createElement('div');
-    suggestionsContainer.className = 'search-suggestions';
-    inputElement.parentElement.appendChild(suggestionsContainer);
-  }
-  
-  // Giả lập API tìm kiếm với một số kết quả mẫu
-  const mockProducts = [
-    { id: 1, name: 'Giày Nike Air Max 270', price: '2.890.000đ', image: '/img/products/shoe1.jpg' },
-    { id: 2, name: 'Áo đấu Manchester United', price: '1.250.000đ', image: '/img/products/shirt1.jpg' },
-    { id: 3, name: 'Quần thể thao Adidas', price: '850.000đ', image: '/img/products/pants1.jpg' },
-    { id: 4, name: 'Balo thể thao Nike', price: '1.350.000đ', image: '/img/products/bag1.jpg' }
-  ];
-  
-  // Lọc sản phẩm theo từ khóa
-  const filteredProducts = mockProducts.filter(product => 
-    product.name.toLowerCase().includes(term)
-  );
-  
-  // Hiển thị kết quả
-  if (filteredProducts.length > 0) {
-    let html = '';
+// Fetch suggestions từ API
+async function fetchSearchSuggestions(term, inputElement) {
+  try {
+    console.log('Fetching suggestions for:', term);
+    const response = await fetch(`/Product/SearchSuggestions?term=${encodeURIComponent(term)}&limit=6`);
+    const data = await response.json();
     
-    filteredProducts.forEach(product => {
-      html += `
-        <div class="suggestion-item" data-id="${product.id}">
-          <div class="suggestion-img-container">
-            <div style="width: 40px; height: 40px; background-color: #f0f0f0; border-radius: 5px;"></div>
-          </div>
-          <div class="ms-2">
-            <div class="suggestion-name">${product.name}</div>
-            <div class="suggestion-price">${product.price}</div>
+    console.log('API Response:', data);
+    
+    if (data.success) {
+      displaySuggestions(data.suggestions, inputElement);
+    } else {
+      showEmptyState(inputElement.parentElement.querySelector('.search-suggestions'));
+    }
+  } catch (error) {
+    console.error('Error fetching search suggestions:', error);
+    showEmptyState(inputElement.parentElement.querySelector('.search-suggestions'));
+  }
+}
+
+// Hiển thị suggestions
+function displaySuggestions(suggestions, inputElement) {
+  const suggestionsContainer = inputElement.parentElement.querySelector('.search-suggestions');
+  const suggestionsList = suggestionsContainer.querySelector('.suggestions-list');
+  const loadingState = suggestionsContainer.querySelector('.suggestions-loading');
+  const emptyState = suggestionsContainer.querySelector('.suggestions-empty');
+  
+  // Ẩn loading và empty states
+  loadingState.classList.add('d-none');
+  emptyState.classList.add('d-none');
+  
+  if (suggestions.length > 0) {
+    // Build HTML for suggestions
+    const html = suggestions.map(product => `
+      <div class="suggestion-item" data-id="${product.id}" role="button" tabindex="0">
+        <img src="${product.imageUrl}" alt="${product.name}" class="suggestion-img" loading="lazy" 
+             onerror="this.src='/image/loading-placeholder.png';">
+        <div class="suggestion-content">
+          <div class="suggestion-name">${escapeHtml(product.name)}</div>
+          <div class="suggestion-meta">
+            <span class="suggestion-price">${formatPrice(product.price)}</span>
+            <span class="suggestion-category">${escapeHtml(product.categoryName)}</span>
           </div>
         </div>
-      `;
-    });
+      </div>
+    `).join('');
     
-    suggestionsContainer.innerHTML = html;
-    suggestionsContainer.style.display = 'block';
+    suggestionsList.innerHTML = html;
+    suggestionsContainer.classList.remove('d-none');
     
-    // Thêm sự kiện click cho các suggestion
-    const suggestionItems = suggestionsContainer.querySelectorAll('.suggestion-item');
-    suggestionItems.forEach(item => {
-      item.addEventListener('click', () => {
-        const productId = item.getAttribute('data-id');
-        console.log(`Navigating to product ${productId}`);
-        // Trong thực tế: window.location.href = `/product/${productId}`;
-        
-        // Hiển thị thông báo
-        showNotification(`Đang chuyển đến trang sản phẩm: ${item.querySelector('.suggestion-name').textContent}`, 'success');
-        
-        // Đóng suggestions
-        suggestionsContainer.style.display = 'none';
-      });
-    });
+    // Attach event listeners to suggestion items
+    attachSuggestionListeners(suggestionsList, suggestionsContainer);
   } else {
-    suggestionsContainer.innerHTML = '<div class="p-2 text-muted">Không tìm thấy sản phẩm phù hợp</div>';
-    suggestionsContainer.style.display = 'block';
+    showEmptyState(suggestionsContainer);
+  }
+}
+
+// Attach event listeners to suggestion items
+function attachSuggestionListeners(suggestionsList, suggestionsContainer) {
+  const suggestionItems = suggestionsList.querySelectorAll('.suggestion-item');
+  
+  suggestionItems.forEach(item => {
+    // Click event
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const productId = this.getAttribute('data-id');
+      if (productId) {
+        suggestionsContainer.classList.add('d-none');
+        goToProduct(parseInt(productId));
+      }
+    });
+    
+    // Keyboard navigation for accessibility
+    item.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+    
+    // Prevent blur hiding when hovering over suggestions
+    item.addEventListener('mouseenter', function() {
+      const searchInput = suggestionsContainer.parentElement.querySelector('.search-input');
+      if (searchInput && searchInput.blurTimeout) {
+        clearTimeout(searchInput.blurTimeout);
+        searchInput.blurTimeout = null;
+      }
+    });
+    
+    // Touch support for mobile
+    item.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      const productId = this.getAttribute('data-id');
+      if (productId) {
+        suggestionsContainer.classList.add('d-none');
+        goToProduct(parseInt(productId));
+      }
+    });
+  });
+}
+
+// Hiển thị loading state
+function showLoadingState(suggestionsContainer) {
+  if (!suggestionsContainer) return;
+  
+  const suggestionsList = suggestionsContainer.querySelector('.suggestions-list');
+  const loadingState = suggestionsContainer.querySelector('.suggestions-loading');
+  const emptyState = suggestionsContainer.querySelector('.suggestions-empty');
+  
+  suggestionsList.innerHTML = '';
+  loadingState.classList.remove('d-none');
+  emptyState.classList.add('d-none');
+  suggestionsContainer.classList.remove('d-none');
+}
+
+// Hiển thị empty state
+function showEmptyState(suggestionsContainer) {
+  if (!suggestionsContainer) return;
+  
+  const suggestionsList = suggestionsContainer.querySelector('.suggestions-list');
+  const loadingState = suggestionsContainer.querySelector('.suggestions-loading');
+  const emptyState = suggestionsContainer.querySelector('.suggestions-empty');
+  
+  suggestionsList.innerHTML = '';
+  loadingState.classList.add('d-none');
+  emptyState.classList.remove('d-none');
+  suggestionsContainer.classList.remove('d-none');
+}
+
+// Ẩn suggestions
+function hideSuggestions(suggestionsContainer) {
+  if (suggestionsContainer) {
+    suggestionsContainer.classList.add('d-none');
+    // Remove selected states
+    const selectedItems = suggestionsContainer.querySelectorAll('.suggestion-item.selected');
+    selectedItems.forEach(item => item.classList.remove('selected'));
+  }
+}
+
+// Utility functions
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatPrice(price) {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(price);
+}
+
+// Function để chuyển đến trang sản phẩm hoặc mở modal
+function goToProduct(productId) {
+  // Ẩn suggestions
+  const suggestions = document.querySelectorAll('.search-suggestions');
+  suggestions.forEach(el => hideSuggestions(el));
+  
+  // Kiểm tra xem có modal quick view không
+  const modal = document.getElementById('quickViewModal');
+  
+  if (modal) {
+    openQuickViewModal(productId);
+  } else {
+    // Nếu không có modal, chuyển đến trang product index với tham số để mở modal
+    window.location.href = `/Product/Index?openModal=${productId}`;
+  }
+}
+
+// Function để mở modal quick view
+function openQuickViewModal(productId) {
+  const modal = document.getElementById('quickViewModal');
+  if (modal) {
+    // Show loading state
+    try {
+      if (typeof showQuickViewLoading === 'function') {
+        showQuickViewLoading();
+      } else {
+        // Simple loading state
+        const imageEl = document.getElementById('quick-view-image');
+        const titleEl = document.getElementById('quick-view-title');
+        const priceEl = document.getElementById('quick-view-price');
+        
+        if (imageEl) imageEl.src = '/image/loading-placeholder.png';
+        if (titleEl) titleEl.textContent = 'Đang tải...';
+        if (priceEl) priceEl.textContent = 'Đang tải giá...';
+      }
+    } catch (error) {
+      console.error('Error in loading state:', error);
+    }
+    
+    // Show modal
+    try {
+      const bsModal = new bootstrap.Modal(modal);
+      bsModal.show();
+    } catch (error) {
+      console.error('Error showing modal:', error);
+      return;
+    }
+    
+    // Fetch product data
+    fetch(`/Product/GetProductJson?id=${productId}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Kiểm tra nếu có error property (từ catch exception)
+        if (data.error) {
+          console.error('API returned error:', data.error);
+          showProductError();
+          return;
+        }
+        
+        // Kiểm tra nếu có productID (data hợp lệ)
+        if (data.productID) {
+          if (typeof populateQuickView === 'function') {
+            populateQuickView(data);
+          } else {
+            simplePopulateQuickView(data);
+          }
+        } else {
+          console.error('Invalid product data received:', data);
+          showProductError();
+        }
+      })
+      .catch(error => {
+        console.error('Error loading product:', error);
+        showProductError();
+      });
+  } else {
+    console.error('Quick view modal not found');
+  }
+}
+
+// Simple fallback function để populate modal
+function simplePopulateQuickView(product) {
+  try {
+    const imageEl = document.getElementById('quick-view-image');
+    const titleEl = document.getElementById('quick-view-title');
+    const priceEl = document.getElementById('quick-view-price');
+    const descEl = document.getElementById('quick-view-description');
+    const categoryEl = document.getElementById('quick-view-category');
+    const brandEl = document.getElementById('quick-view-brand');
+    
+    // Product image với đường dẫn đúng
+    if (imageEl) {
+      const imagePath = product.imageURL ? 
+        (product.imageURL.startsWith('/') ? product.imageURL : `/upload/product/${product.imageURL}`) :
+        '/image/loading-placeholder.png';
+      imageEl.src = imagePath;
+      imageEl.alt = product.name || 'Sản phẩm';
+    }
+    
+    if (titleEl) {
+      titleEl.textContent = product.name || 'Sản phẩm';
+    }
+    
+    if (priceEl) {
+      priceEl.textContent = formatPrice(product.price || 0);
+    }
+    
+    if (descEl) {
+      descEl.textContent = product.description || 'Đang cập nhật thông tin sản phẩm...';
+    }
+    
+    if (categoryEl) {
+      categoryEl.textContent = product.categoryName || 'Chưa phân loại';
+    }
+    
+    if (brandEl) {
+      brandEl.textContent = product.brandName || 'Không có thương hiệu';
+    }
+  } catch (error) {
+    console.error('Error in simple populate:', error);
+  }
+}
+
+// Function để hiển thị lỗi trong modal
+function showProductError() {
+  try {
+    const imageEl = document.getElementById('quick-view-image');
+    const titleEl = document.getElementById('quick-view-title');
+    const priceEl = document.getElementById('quick-view-price');
+    const descEl = document.getElementById('quick-view-description');
+    
+    if (imageEl) imageEl.src = '/image/loading-placeholder.png';
+    if (titleEl) titleEl.textContent = 'Lỗi tải sản phẩm';
+    if (priceEl) priceEl.textContent = '';
+    if (descEl) descEl.textContent = 'Không thể tải thông tin sản phẩm. Vui lòng thử lại sau.';
+  } catch (error) {
+    console.error('Error showing product error:', error);
   }
 }
 
@@ -446,19 +769,21 @@ function initProductMarquee() {
       touch: true     // Cho phép chạm để điều khiển trên thiết bị di động
     });
     
-    // Thêm hiệu ứng fade khi chuyển slide
+    // Thêm hiệu ứng fade khi chuyển slide (sử dụng CSS transition thay vì GSAP)
     productCarousel.addEventListener('slide.bs.carousel', function (e) {
       const activeItem = this.querySelector('.carousel-item.active');
       const nextItem = e.relatedTarget;
       
-      // Áp dụng hiệu ứng fade out cho item hiện tại
-      gsap.to(activeItem, { opacity: 0, duration: 0.5 });
+      // Áp dụng hiệu ứng fade với CSS
+      if (activeItem) {
+        activeItem.style.transition = 'opacity 0.5s ease';
+        activeItem.style.opacity = '0.5';
+      }
       
-      // Áp dụng hiệu ứng fade in cho item tiếp theo
-      gsap.fromTo(nextItem, 
-        { opacity: 0 }, 
-        { opacity: 1, duration: 0.5, delay: 0.3 }
-      );
+      if (nextItem) {
+        nextItem.style.transition = 'opacity 0.5s ease';
+        nextItem.style.opacity = '1';
+      }
     });
 
     // Tự động cuộn carousel sau mỗi khoảng thời gian

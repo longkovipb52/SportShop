@@ -1,0 +1,362 @@
+@model SportShop.Models.ViewModels.OrderDetailViewModel
+@{
+    ViewData["Title"] = $"Hóa đơn #{Model.OrderID}";
+    Layout = null; // No layout for print view
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @@media print {
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            body { font-size: 12px; }
+            .container { max-width: 100%; }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            line-height: 1.4;
+        }
+        
+        .invoice-header {
+            border-bottom: 3px solid #ff69b4;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .company-info {
+            text-align: center;
+        }
+        
+        .company-name {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff69b4;
+            margin-bottom: 0.5rem;
+        }
+        
+        .invoice-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 1rem 0;
+            color: #333;
+        }
+        
+        .invoice-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .table th {
+            background: #ff69b4;
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .table td {
+            border-color: #dee2e6;
+            vertical-align: middle;
+        }
+        
+        .total-row {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .signature-section {
+            margin-top: 3rem;
+            text-align: center;
+        }
+        
+        .signature-box {
+            display: inline-block;
+            text-align: center;
+            margin: 0 2rem;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 3rem;
+            padding-top: 0.5rem;
+            width: 200px;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-processing { background: #d1ecf1; color: #0c5460; }
+        .status-shipping { background: #ffd6f0; color: #7a2a5c; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+        
+        .product-image {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Print Button -->
+        <div class="no-print mb-3">
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-print me-2"></i>In hóa đơn
+            </button>
+            <button onclick="window.close()" class="btn btn-secondary ms-2">
+                <i class="fas fa-times me-2"></i>Đóng
+            </button>
+        </div>
+
+        <!-- Invoice Header -->
+        <div class="invoice-header">
+            <div class="row">
+                <div class="col-6">
+                    <div class="company-info text-start">
+                        <div class="company-name">LoLoSport</div>
+                        <div class="company-details">
+                            <p class="mb-1">
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                123 Đường ABC, Quận XYZ, TP.HCM
+                            </p>
+                            <p class="mb-1">
+                                <i class="fas fa-phone me-2"></i>
+                                Hotline: 1900-1234
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-envelope me-2"></i>
+                                Email: info@lolosport.com
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 text-end">
+                    <h2 class="invoice-title">HÓA ĐƠN BÁN HÀNG</h2>
+                    <p class="mb-1"><strong>Số:</strong> #@Model.OrderID</p>
+                    <p class="mb-0"><strong>Ngày:</strong> @Model.OrderDate.ToString("dd/MM/yyyy")</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="row mb-4">
+            <div class="col-6">
+                <div class="invoice-info">
+                    <h6 class="fw-bold mb-2">
+                        <i class="fas fa-user me-2"></i>Thông tin khách hàng
+                    </h6>
+                    <p class="mb-1"><strong>Họ tên:</strong> @ViewBag.CustomerName</p>
+                    <p class="mb-1"><strong>Email:</strong> @ViewBag.CustomerEmail</p>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="invoice-info">
+                    <h6 class="fw-bold mb-2">
+                        <i class="fas fa-truck me-2"></i>Thông tin giao hàng
+                    </h6>
+                    <p class="mb-1"><strong>Người nhận:</strong> @Model.ShippingName</p>
+                    <p class="mb-1"><strong>Điện thoại:</strong> @Model.ShippingPhone</p>
+                    <p class="mb-0"><strong>Địa chỉ:</strong> @Model.ShippingAddress</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Status and Payment -->
+        <div class="row mb-4">
+            <div class="col-6">
+                <div class="invoice-info">
+                    <h6 class="fw-bold mb-2">
+                        <i class="fas fa-info-circle me-2"></i>Trạng thái đơn hàng
+                    </h6>
+                    @{
+                        var statusClass = Model.Status switch
+                        {
+                            "Pending" => "status-pending",
+                            "Processing" => "status-processing", 
+                            "Shipping" => "status-shipping",
+                            "Completed" => "status-completed",
+                            "Cancelled" => "status-cancelled",
+                            _ => "status-unknown"
+                        };
+                        
+                        var statusText = Model.Status switch
+                        {
+                            "Pending" => "Chờ xử lý",
+                            "Processing" => "Đang xử lý",
+                            "Shipping" => "Đang giao",
+                            "Completed" => "Hoàn thành", 
+                            "Cancelled" => "Đã hủy",
+                            _ => "Không xác định"
+                        };
+                    }
+                    <span class="status-badge @statusClass">@statusText</span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="invoice-info">
+                    <h6 class="fw-bold mb-2">
+                        <i class="fas fa-credit-card me-2"></i>Thông tin thanh toán
+                    </h6>
+                    <p class="mb-1"><strong>Phương thức:</strong> @Model.PaymentMethod</p>
+                    <p class="mb-0"><strong>Trạng thái:</strong> 
+                        @(Model.PaymentStatus == "Completed" ? "Đã thanh toán" : 
+                          Model.PaymentStatus == "Pending" ? "Chờ thanh toán" : Model.PaymentStatus)
+                    </p>
+                    @if (Model.PaymentDate.HasValue)
+                    {
+                        <p class="mb-0"><strong>Ngày thanh toán:</strong> @Model.PaymentDate.Value.ToString("dd/MM/yyyy")</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="mb-4">
+            <h6 class="fw-bold mb-3">
+                <i class="fas fa-box me-2"></i>Chi tiết đơn hàng
+            </h6>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="10%">Hình ảnh</th>
+                        <th width="35%">Sản phẩm</th>
+                        <th width="15%">Thông tin</th>
+                        <th width="10%">Số lượng</th>
+                        <th width="12.5%">Đơn giá</th>
+                        <th width="12.5%">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        var item = Model.Items[i];
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.ProductImage))
+                                {
+                                    <img src="~/upload/product/@item.ProductImage" alt="@item.ProductName" 
+                                         class="product-image" onerror="this.style.display='none'">
+                                }
+                                else
+                                {
+                                    <div class="product-image bg-light d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-image text-muted"></i>
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <strong>@item.ProductName</strong>
+                                @if (!string.IsNullOrEmpty(item.BrandName))
+                                {
+                                    <br><small class="text-muted">@item.BrandName</small>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.Size))
+                                {
+                                    <div><small>Size: @item.Size</small></div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Color))
+                                {
+                                    <div><small>Màu: @item.Color</small></div>
+                                }
+                            </td>
+                            <td class="text-center">@item.Quantity</td>
+                            <td class="text-end">@item.UnitPrice.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</td>
+                            <td class="text-end">@item.TotalPrice.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="6" class="text-end"><strong>Tạm tính:</strong></td>
+                        <td class="text-end"><strong>@Model.TotalAmount.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</strong></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="6" class="text-end"><strong>Phí vận chuyển:</strong></td>
+                        <td class="text-end"><strong>Miễn phí</strong></td>
+                    </tr>
+                    <tr class="total-row" style="background: #ff69b4; color: white;">
+                        <td colspan="6" class="text-end"><strong>TỔNG CỘNG:</strong></td>
+                        <td class="text-end"><strong>@Model.TotalAmount.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <div class="mb-4">
+                <h6 class="fw-bold">
+                    <i class="fas fa-sticky-note me-2"></i>Ghi chú
+                </h6>
+                <div class="invoice-info">
+                    <p class="mb-0">@Model.Note</p>
+                </div>
+            </div>
+        }
+
+        <!-- Signature Section -->
+        <div class="signature-section no-print">
+            <div class="row">
+                <div class="col-6">
+                    <div class="signature-box">
+                        <p><strong>Khách hàng</strong></p>
+                        <p><em>(Ký và ghi rõ họ tên)</em></p>
+                        <div class="signature-line"></div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="signature-box">
+                        <p><strong>Người bán hàng</strong></p>
+                        <p><em>(Ký và ghi rõ họ tên)</em></p>
+                        <div class="signature-line"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-4">
+            <hr>
+            <p class="text-muted small">
+                Cảm ơn quý khách đã mua hàng tại LoLoSport!<br>
+                Hotline hỗ trợ: 1900-1234 | Website: www.lolosport.com
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Auto print when page loads
+        window.onload = function() {
+            // Remove auto-print to let user decide
+            // window.print();
+        }
+    </script>
+</body>
+</html>

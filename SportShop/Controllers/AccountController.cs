@@ -21,7 +21,7 @@ namespace SportShop.Controllers
         }
 
         [HttpGet]
-        public IActionResult Login(string returnUrl = null)
+        public IActionResult Login(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             return View();
@@ -29,7 +29,7 @@ namespace SportShop.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
@@ -213,6 +213,139 @@ namespace SportShop.Controllers
                 Console.WriteLine($"Password verification error: {ex.Message}");
                 return false;
             }
+        }
+
+        // GET: Account/Profile - Hiển thị trang tài khoản
+        public async Task<IActionResult> Profile()
+        {
+            // Kiểm tra xem user đã đăng nhập chưa
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.UserID == userId.Value);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var viewModel = new ProfileViewModel
+            {
+                UserID = user.UserID,
+                Username = user.Username,
+                FullName = user.FullName,
+                Email = user.Email,
+                Phone = user.Phone ?? "",
+                Address = user.Address ?? "",
+                RoleName = user.Role.RoleName,
+                CreatedAt = user.CreatedAt
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: Account/UpdateProfile - Cập nhật thông tin tài khoản
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile(UpdateProfileViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Vui lòng kiểm tra lại thông tin đã nhập.";
+                return RedirectToAction("Profile");
+            }
+
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var user = await _context.Users.FindAsync(userId.Value);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Kiểm tra email đã tồn tại chưa (ngoại trừ email hiện tại)
+            var existingEmailUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == model.Email && u.UserID != userId.Value);
+            
+            if (existingEmailUser != null)
+            {
+                TempData["ErrorMessage"] = "Email này đã được sử dụng bởi tài khoản khác.";
+                return RedirectToAction("Profile");
+            }
+
+            // Cập nhật thông tin
+            user.FullName = model.FullName;
+            user.Email = model.Email;
+            user.Phone = model.Phone;
+            user.Address = model.Address;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Cập nhật thông tin thành công!";
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.";
+            }
+
+            return RedirectToAction("Profile");
+        }
+
+        // POST: Account/ChangePassword - Đổi mật khẩu
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Vui lòng kiểm tra lại thông tin đã nhập.";
+                return RedirectToAction("Profile");
+            }
+
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var user = await _context.Users.FindAsync(userId.Value);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Kiểm tra mật khẩu hiện tại
+            if (!VerifyPassword(model.CurrentPassword, user.PasswordHash))
+            {
+                TempData["ErrorMessage"] = "Mật khẩu hiện tại không đúng.";
+                return RedirectToAction("Profile");
+            }
+
+            // Cập nhật mật khẩu mới với BCrypt
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Đổi mật khẩu thành công!";
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi đổi mật khẩu. Vui lòng thử lại.";
+            }
+
+            return RedirectToAction("Profile");
         }
     }
 }

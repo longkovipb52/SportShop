@@ -1,0 +1,402 @@
+@model SportShop.Models.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "Tài khoản của tôi";
+    ViewData["CustomCSS"] = "account.css";
+}
+
+<section class="account-hero">
+    <div class="account-hero-overlay"></div>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <div class="hero-content">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <h1 class="display-5 fw-bold text-white mb-2">Xin chào, @Model.FullName!</h1>
+                    <p class="lead text-white-50">Quản lý thông tin tài khoản và cài đặt của bạn</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="account-content py-5">
+    <div class="container">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show animate__animated animate__bounceIn" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show animate__animated animate__shakeX" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row g-4">
+            <!-- Sidebar thông tin tài khoản -->
+            <div class="col-lg-4">
+                <div class="account-sidebar">
+                    <div class="user-info-card">
+                        <div class="user-avatar-large">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <h4 class="user-name">@Model.FullName</h4>
+                            <p class="user-username">@@@Model.Username</p>
+                            <div class="user-badge">
+                                <i class="fas fa-crown me-1"></i>
+                                @Model.RoleName
+                            </div>
+                            <div class="join-date">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Tham gia: @Model.CreatedAt.ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Menu -->
+                    <div class="account-menu">
+                        <ul class="nav nav-pills flex-column" id="account-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="profile-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#profile-pane" type="button" role="tab">
+                                    <i class="fas fa-user me-2"></i>
+                                    Thông tin cá nhân
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="security-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#security-pane" type="button" role="tab">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    Đổi mật khẩu
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" href="/OrderHistory">
+                                    <i class="fas fa-history me-2"></i>
+                                    Lịch sử đơn hàng
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <div class="col-lg-8">
+                <div class="tab-content" id="account-tabContent">
+                    <!-- Tab thông tin cá nhân -->
+                    <div class="tab-pane fade show active" id="profile-pane" role="tabpanel">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-user me-2"></i>
+                                    Thông tin cá nhân
+                                </h3>
+                                <p class="card-subtitle">Cập nhật thông tin tài khoản của bạn</p>
+                            </div>
+                            <div class="card-body">
+                                <form asp-action="UpdateProfile" method="post" class="profile-form">
+                                    @Html.AntiForgeryToken()
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control" id="fullName" 
+                                                       name="FullName" value="@Model.FullName" required>
+                                                <label for="fullName">
+                                                    <i class="fas fa-user me-1"></i>
+                                                    Họ và tên
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="email" class="form-control" id="email" 
+                                                       name="Email" value="@Model.Email" required>
+                                                <label for="email">
+                                                    <i class="fas fa-envelope me-1"></i>
+                                                    Email
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="tel" class="form-control" id="phone" 
+                                                       name="Phone" value="@Model.Phone">
+                                                <label for="phone">
+                                                    <i class="fas fa-phone me-1"></i>
+                                                    Số điện thoại
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="readonly-field">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" value="@Model.Username" readonly>
+                                                    <label>
+                                                        <i class="fas fa-at me-1"></i>
+                                                        Tên đăng nhập
+                                                    </label>
+                                                </div>
+                                                <small class="text-muted">Không thể thay đổi tên đăng nhập</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <textarea class="form-control" id="address" name="Address" 
+                                                          style="height: 100px">@Model.Address</textarea>
+                                                <label for="address">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                                    Địa chỉ
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-primary btn-save">
+                                            <i class="fas fa-save me-2"></i>
+                                            Lưu thay đổi
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary">
+                                            <i class="fas fa-undo me-2"></i>
+                                            Hủy bỏ
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab bảo mật -->
+                    <div class="tab-pane fade" id="security-pane" role="tabpanel">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    Bảo mật tài khoản
+                                </h3>
+                                <p class="card-subtitle">Thay đổi mật khẩu để bảo vệ tài khoản</p>
+                            </div>
+                            <div class="card-body">
+                                <form asp-action="ChangePassword" method="post" class="security-form">
+                                    @Html.AntiForgeryToken()
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <input type="password" class="form-control" id="currentPassword" 
+                                                       name="CurrentPassword" required>
+                                                <label for="currentPassword">
+                                                    <i class="fas fa-lock me-1"></i>
+                                                    Mật khẩu hiện tại
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="password" class="form-control" id="newPassword" 
+                                                       name="NewPassword" required>
+                                                <label for="newPassword">
+                                                    <i class="fas fa-key me-1"></i>
+                                                    Mật khẩu mới
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="password" class="form-control" id="confirmPassword" 
+                                                       name="ConfirmPassword" required>
+                                                <label for="confirmPassword">
+                                                    <i class="fas fa-check-double me-1"></i>
+                                                    Xác nhận mật khẩu
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Password strength indicator -->
+                                    <div class="password-strength mt-3">
+                                        <div class="strength-label">Độ mạnh mật khẩu:</div>
+                                        <div class="strength-bar">
+                                            <div class="strength-fill"></div>
+                                        </div>
+                                        <div class="strength-text">Nhập mật khẩu để kiểm tra</div>
+                                    </div>
+
+                                    <!-- Password requirements -->
+                                    <div class="password-requirements mt-3">
+                                        <p class="requirements-title">Yêu cầu mật khẩu:</p>
+                                        <ul class="requirements-list">
+                                            <li id="length-req"><i class="fas fa-times"></i> Ít nhất 6 ký tự</li>
+                                            <li id="number-req"><i class="fas fa-times"></i> Có ít nhất 1 số</li>
+                                            <li id="letter-req"><i class="fas fa-times"></i> Có ít nhất 1 chữ cái</li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-primary btn-save">
+                                            <i class="fas fa-shield-alt me-2"></i>
+                                            Đổi mật khẩu
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-2"></i>
+                                            Hủy bỏ
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Password strength checker
+            const newPasswordInput = document.getElementById('newPassword');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            
+            if (newPasswordInput) {
+                newPasswordInput.addEventListener('input', function() {
+                    checkPasswordStrength(this.value);
+                    checkPasswordRequirements(this.value);
+                });
+            }
+            
+            if (confirmPasswordInput) {
+                confirmPasswordInput.addEventListener('input', function() {
+                    checkPasswordMatch();
+                });
+            }
+            
+            // Form animations
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+                        submitBtn.disabled = true;
+                    }
+                });
+            });
+            
+            // Auto-hide alerts
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.classList.add('animate__animated', 'animate__fadeOut');
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 1000);
+                }, 5000);
+            });
+        });
+        
+        function checkPasswordStrength(password) {
+            const strengthBar = document.querySelector('.strength-fill');
+            const strengthText = document.querySelector('.strength-text');
+            
+            let strength = 0;
+            let text = '';
+            let color = '';
+            
+            if (password.length >= 6) strength += 1;
+            if (password.match(/[0-9]/)) strength += 1;
+            if (password.match(/[a-z]/)) strength += 1;
+            if (password.match(/[A-Z]/)) strength += 1;
+            if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+            
+            switch (strength) {
+                case 0:
+                case 1:
+                    text = 'Rất yếu';
+                    color = '#ff4757';
+                    break;
+                case 2:
+                    text = 'Yếu';
+                    color = '#ff6b6b';
+                    break;
+                case 3:
+                    text = 'Trung bình';
+                    color = '#ffa502';
+                    break;
+                case 4:
+                    text = 'Mạnh';
+                    color = '#2ed573';
+                    break;
+                case 5:
+                    text = 'Rất mạnh';
+                    color = '#1dd1a1';
+                    break;
+            }
+            
+            strengthBar.style.width = (strength * 20) + '%';
+            strengthBar.style.backgroundColor = color;
+            strengthText.textContent = text;
+            strengthText.style.color = color;
+        }
+        
+        function checkPasswordRequirements(password) {
+            const lengthReq = document.getElementById('length-req');
+            const numberReq = document.getElementById('number-req');
+            const letterReq = document.getElementById('letter-req');
+            
+            // Length requirement
+            if (password.length >= 6) {
+                lengthReq.innerHTML = '<i class="fas fa-check text-success"></i> Ít nhất 6 ký tự';
+                lengthReq.classList.add('valid');
+            } else {
+                lengthReq.innerHTML = '<i class="fas fa-times text-danger"></i> Ít nhất 6 ký tự';
+                lengthReq.classList.remove('valid');
+            }
+            
+            // Number requirement
+            if (password.match(/[0-9]/)) {
+                numberReq.innerHTML = '<i class="fas fa-check text-success"></i> Có ít nhất 1 số';
+                numberReq.classList.add('valid');
+            } else {
+                numberReq.innerHTML = '<i class="fas fa-times text-danger"></i> Có ít nhất 1 số';
+                numberReq.classList.remove('valid');
+            }
+            
+            // Letter requirement
+            if (password.match(/[a-zA-Z]/)) {
+                letterReq.innerHTML = '<i class="fas fa-check text-success"></i> Có ít nhất 1 chữ cái';
+                letterReq.classList.add('valid');
+            } else {
+                letterReq.innerHTML = '<i class="fas fa-times text-danger"></i> Có ít nhất 1 chữ cái';
+                letterReq.classList.remove('valid');
+            }
+        }
+        
+        function checkPasswordMatch() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const confirmInput = document.getElementById('confirmPassword');
+            
+            if (confirmPassword && newPassword !== confirmPassword) {
+                confirmInput.setCustomValidity('Mật khẩu xác nhận không khớp');
+            } else {
+                confirmInput.setCustomValidity('');
+            }
+        }
+    </script>
+}

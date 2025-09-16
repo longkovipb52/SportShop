@@ -331,15 +331,25 @@ function populateQuickView(product) {
     // Product image - Sử dụng đường dẫn đúng
     const imageElement = document.getElementById('quick-view-image');
     if (imageElement) {
-        imageElement.src = product.imageURL 
-            ? `/upload/product/${product.imageURL}` 
-            : '/images/product-placeholder.jpg';
+        let imagePath = '/image/loading-placeholder.png'; // default fallback
+        
+        if (product.imageURL) {
+            // Nếu imageURL đã bao gồm đường dẫn đầy đủ (bắt đầu với /)
+            if (product.imageURL.startsWith('/')) {
+                imagePath = product.imageURL;
+            } else {
+                // Nếu chỉ là tên file
+                imagePath = `/upload/product/${product.imageURL}`;
+            }
+        }
+        
+        imageElement.src = imagePath;
     }
     
     // Product title
     const titleElement = document.getElementById('quick-view-title');
     if (titleElement) {
-        titleElement.textContent = product.name;
+        titleElement.textContent = product.name || 'Sản phẩm';
     }
     
     // Product price

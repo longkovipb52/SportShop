@@ -137,7 +137,7 @@ body {
 .search-input {
   border-radius: 30px;
   padding: 0.6rem 1.2rem;
-  padding-right: 50px; /* Tăng khoảng cách cho nút tìm kiếm */
+  padding-right: 90px; /* Tăng thêm khoảng cách cho cả clear button và search button */
   border: 1px solid #e0e0e0;
   background-color: #f8f9fa;
   transition: all 0.3s ease;
@@ -146,11 +146,54 @@ body {
   height: 44px; /* Chiều cao cố định để tránh bị co giãn */
 }
 
+/* Ẩn clear button mặc định của input type="search" */
+.search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.search-input::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .search-input:focus {
   background-color: #fff;
   box-shadow: 0 0 0 0.2rem rgba(255, 105, 180, 0.15);
   border-color: var(--primary-pink);
   width: 100%;
+}
+
+.btn-clear {
+  position: absolute;
+  right: 50px; /* Vị trí bên trái của search button */
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #999;
+  padding: 0.375rem 0.75rem;
+  transition: color 0.3s ease, background-color 0.3s ease; /* Chỉ transition color và background */
+  height: 32px;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  z-index: 10;
+  font-size: 0.8rem;
+}
+
+.btn-clear:hover {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+  transform: translateY(-50%) !important; 
 }
 
 .btn-search {
@@ -169,6 +212,7 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  z-index: 10; /* Đảm bảo button luôn hiển thị trên cùng */
 }
 
 .btn-search:hover {
@@ -205,24 +249,191 @@ body {
   }
 }
 
-/* Cải thiện hiển thị gợi ý tìm kiếm */
+/* Search Suggestions Styling - Cải thiện */
 .search-suggestions {
   position: absolute;
-  top: calc(100% + 5px); /* Khoảng cách với thanh tìm kiếm */
+  top: calc(100% + 8px); /* Khoảng cách với thanh tìm kiếm */
   left: 0;
   right: 0;
   background: white;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-  padding: 1rem;
-  z-index: 1000;
-  display: none;
-  border: 1px solid #eee;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e9ecef;
+  z-index: 9999; /* Tăng z-index */
+  max-height: 400px;
+  overflow-y: auto;
+  animation: slideDown 0.3s ease-out;
+  pointer-events: auto; /* Đảm bảo có thể click */
 }
 
-.search-input:focus ~ .search-suggestions,
-.search-input:active ~ .search-suggestions {
-  display: block;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Search suggestions header */
+.suggestions-header {
+  padding: 0.75rem 1rem 0.5rem;
+  border-bottom: 1px solid #f1f3f5;
+  background: #f8f9fa;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Suggestions list container */
+.suggestions-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Individual suggestion item */
+.suggestion-item {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0.75rem 1rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  border-bottom: 1px solid #f1f3f5 !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 10000 !important;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none !important;
+}
+
+.suggestion-item:hover {
+  background: linear-gradient(90deg, rgba(255, 105, 180, 0.05), rgba(255, 215, 0, 0.05)) !important;
+  color: var(--primary-pink) !important;
+  text-decoration: none !important;
+  /* Bỏ transform để tránh làm gián đoạn click events */
+  /* transform: translateX(5px) !important; */
+}
+
+/* Đảm bảo các phần tử con có thể click được */
+.suggestion-item * {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Suggestion image */
+.suggestion-img {
+  width: 45px;
+  height: 45px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-right: 0.75rem;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+/* Suggestion content */
+.suggestion-content {
+  flex: 1;
+  min-width: 0; /* Để text truncation hoạt động */
+}
+
+.suggestion-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: var(--dark-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.suggestion-price {
+  color: var(--primary-pink);
+  font-weight: 600;
+}
+
+.suggestion-category {
+  color: #6c757d;
+  background: #f8f9fa;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+/* Loading và empty states */
+.suggestions-loading,
+.suggestions-empty {
+  padding: 1rem;
+  text-align: center;
+}
+
+.suggestions-loading .spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Responsive cho search suggestions */
+@media (max-width: 768px) {
+  .search-suggestions {
+    left: -15px;
+    right: -15px;
+    border-radius: 8px;
+    max-height: 50vh;
+  }
+  
+  .suggestion-item {
+    padding: 0.6rem 0.75rem;
+  }
+  
+  .suggestion-img {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .suggestion-name {
+    font-size: 0.85rem;
+  }
+  
+  .suggestion-meta {
+    font-size: 0.75rem;
+  }
+}
+
+/* Ẩn popular searches khi có suggestions */
+.search-form:has(.search-suggestions:not(.d-none)) .popular-searches {
+  display: none;
+}
+
+/* Custom scrollbar cho suggestions */
+.suggestions-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.suggestions-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.suggestions-list::-webkit-scrollbar-thumb {
+  background: var(--primary-pink);
+  border-radius: 2px;
+}
+
+.suggestions-list::-webkit-scrollbar-thumb:hover {
+  background: #e0559e;
 }
 
 /* Badge cho tìm kiếm phổ biến */
@@ -249,51 +460,6 @@ body {
     max-width: 100%;
     margin: 0.5rem 0;
   }
-}
-
-/* Autocomplete suggestion box */
-.search-suggestions {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border-radius: 0 0 15px 15px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  z-index: 1000;
-  display: none;
-  margin-top: 5px;
-}
-
-.suggestion-item {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.suggestion-item:hover {
-  background-color: rgba(255, 105, 180, 0.1);
-}
-
-.suggestion-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 5px;
-  object-fit: cover;
-  margin-right: 0.75rem;
-}
-
-.suggestion-name {
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.suggestion-price {
-  font-size: 0.85rem;
-  color: var(--primary-pink);
 }
 
 /* Cart Button Styling */

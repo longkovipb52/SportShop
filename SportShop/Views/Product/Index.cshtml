@@ -496,6 +496,17 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Index page loaded');
             
+            // Check URL for openModal parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const openModalProductId = urlParams.get('openModal');
+            
+            if (openModalProductId && typeof openQuickViewModal === 'function') {
+                console.log('Auto-opening modal for product:', openModalProductId);
+                setTimeout(() => {
+                    openQuickViewModal(openModalProductId);
+                }, 500); // Small delay to ensure page is fully loaded
+            }
+            
             // Test when modal is shown
             const modal = document.getElementById('quickViewModal');
             if (modal) {

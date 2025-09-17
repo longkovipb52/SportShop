@@ -20,6 +20,10 @@ namespace SportShop.Controllers
 
         public async Task<IActionResult> Index()
         {
+            // Debug logging
+            Console.WriteLine($"HomeController.Index called - Request Path: {Request.Path}");
+            Console.WriteLine($"Request Headers: {string.Join(", ", Request.Headers.Select(h => $"{h.Key}: {h.Value}"))}");
+            
             // Lấy 3 danh mục nổi bật với thông tin sản phẩm
             var categories = await _context.Categories
                 .Include(c => c.Products)

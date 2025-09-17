@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SportShop.Data;
 using SportShop.Services;
 using System;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,20 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+// Thêm Authentication cho Admin
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Admin/Auth/Login";
+        options.LogoutPath = "/Admin/Auth/Logout";
+        options.AccessDeniedPath = "/Admin/Auth/AccessDenied";
+        options.Cookie.Name = "SportShopAdmin";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = true;
+    });
+
 // Thêm HTTP Context Accessor để sử dụng Session trong View
 builder.Services.AddHttpContextAccessor();
 
@@ -36,11 +51,9 @@ builder.Services.AddScoped<VnPayServiceNew>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -49,13 +62,17 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Thêm Session middleware (phải đặt trước UseAuthorization)
 app.UseSession();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
-// Đảm bảo đăng ký controller routes TRƯỚC các route mặc định
-app.MapControllers(); // Quan trọng! Đăng ký attribute routes
+app.MapControllers(); 
+
+app.MapAreaControllerRoute(
+    name: "admin",
+    areaName: "Admin",
+    pattern: "Admin/{controller=Dashboard}/{action=Index}/{id?}");
 
 // Các route mặc định
 app.MapControllerRoute(

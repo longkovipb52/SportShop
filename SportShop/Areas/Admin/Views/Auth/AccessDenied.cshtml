@@ -1,0 +1,56 @@
+@{
+    ViewData["Title"] = "Truy cập bị từ chối";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SportShop Admin</title>
+    <link rel="stylesheet" href="~/css/admin-login.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <div class="admin-login-container">
+        <div class="admin-login-background">
+            <div class="background-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+        
+        <div class="admin-login-card">
+            <div class="admin-login-header">
+                <div class="admin-logo" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h1 class="admin-title">Truy cập bị từ chối</h1>
+                <p class="admin-subtitle">Bạn không có quyền truy cập vào khu vực này</p>
+            </div>
+
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="alert-content">
+                    <p>Bạn cần đăng nhập với tài khoản quản trị viên để truy cập vào trang này.</p>
+                </div>
+            </div>
+
+            <div class="admin-login-footer" style="border-top: none; padding-top: 0;">
+                <a href="@Url.Action("Login", "Auth")" class="btn-login" style="margin-bottom: 20px; text-decoration: none;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Đăng nhập
+                </a>
+                
+                <a href="/" class="back-to-site">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,390 @@
+@model SportShop.Areas.Admin.Models.DashboardOverviewViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Stats Cards -->
+<div class="dashboard-grid">
+    <div class="stats-card revenue">
+        <div class="stats-header">
+            <div class="stats-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stats-meta">
+                <div class="stats-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    @Model.RevenueGrowthPercent.ToString("F1")%
+                </div>
+                <div class="stats-period">so với tháng trước</div>
+            </div>
+        </div>
+        <div class="stats-title">Doanh thu hôm nay</div>
+        <div class="stats-value">@Model.TodayRevenue.ToString("N0") ₫</div>
+    </div>
+
+    <div class="stats-card orders">
+        <div class="stats-header">
+            <div class="stats-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="stats-meta">
+                <div class="stats-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    @Model.OrderGrowthPercent.ToString("F1")%
+                </div>
+                <div class="stats-period">so với tháng trước</div>
+            </div>
+        </div>
+        <div class="stats-title">Đơn hàng hôm nay</div>
+        <div class="stats-value">@Model.TodayOrders</div>
+    </div>
+
+    <div class="stats-card customers">
+        <div class="stats-header">
+            <div class="stats-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stats-meta">
+                <div class="stats-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    @Model.CustomerGrowthPercent.ToString("F1")%
+                </div>
+                <div class="stats-period">so với tháng trước</div>
+            </div>
+        </div>
+        <div class="stats-title">Khách hàng mới</div>
+        <div class="stats-value">@Model.NewCustomersToday</div>
+    </div>
+
+    <div class="stats-card products">
+        <div class="stats-header">
+            <div class="stats-icon">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stats-meta">
+                <div class="stats-change negative">
+                    <i class="fas fa-arrow-down"></i>
+                    @Model.ProcessingOrders
+                </div>
+                <div class="stats-period">đang xử lý</div>
+            </div>
+        </div>
+        <div class="stats-title">Đơn hàng hoàn thành</div>
+        <div class="stats-value">@Model.CompletedOrders</div>
+    </div>
+</div>
+
+<!-- Revenue Chart -->
+<div class="chart-container">
+    <div class="chart-header">
+        <h3 class="chart-title">Biểu đồ doanh thu</h3>
+        <div class="chart-period">
+            <button class="period-btn active" data-period="week">7 ngày</button>
+            <button class="period-btn" data-period="month">30 ngày</button>
+            <button class="period-btn" data-period="year">12 tháng</button>
+        </div>
+    </div>
+    <div class="chart-canvas">
+        <canvas id="revenueChart"></canvas>
+    </div>
+</div>
+
+<!-- Top Items -->
+<div class="top-items">
+    <div class="top-item-card">
+        <div class="top-item-header">
+            <h3 class="top-item-title">Top sản phẩm bán chạy</h3>
+        </div>
+        <ul class="top-item-list">
+            @foreach (var product in Model.TopSellingProducts.Take(5))
+            {
+                <li class="top-item">
+                    <div class="item-rank">@(Model.TopSellingProducts.ToList().IndexOf(product) + 1)</div>
+                    <div class="item-info">
+                        <div class="item-name">@product.Name</div>
+                        <div class="item-meta">@product.CategoryName - @product.BrandName</div>
+                    </div>
+                    <div class="item-value">
+                        <div>@product.TotalSold</div>
+                        <small class="text-muted">đã bán</small>
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div class="top-item-card">
+        <div class="top-item-header">
+            <h3 class="top-item-title">Top danh mục</h3>
+        </div>
+        <ul class="top-item-list">
+            @foreach (var category in Model.TopCategories.Take(5))
+            {
+                <li class="top-item">
+                    <div class="item-rank">@(Model.TopCategories.ToList().IndexOf(category) + 1)</div>
+                    <div class="item-info">
+                        <div class="item-name">@category.Name</div>
+                        <div class="item-meta">@category.TotalProducts sản phẩm</div>
+                    </div>
+                    <div class="item-value">
+                        <div>@category.Revenue.ToString("N0") ₫</div>
+                        <small class="text-muted">doanh thu</small>
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
+<!-- Notifications -->
+<div class="notifications-card">
+    <div class="notifications-header">
+        <h3 class="notifications-title">Thông báo gần đây</h3>
+        <a href="#" class="view-all-btn">Xem tất cả</a>
+    </div>
+    <ul class="notification-list">
+        @foreach (var notification in Model.Notifications.Take(5))
+        {
+            <li class="notification-item @notification.Type.ToLower()">
+                <div class="notification-icon">
+                    @switch (notification.Type.ToLower())
+                    {
+                        case "info":
+                            <i class="fas fa-info-circle"></i>
+                            break;
+                        case "success":
+                            <i class="fas fa-check-circle"></i>
+                            break;
+                        case "warning":
+                            <i class="fas fa-exclamation-triangle"></i>
+                            break;
+                        case "danger":
+                            <i class="fas fa-times-circle"></i>
+                            break;
+                        default:
+                            <i class="fas fa-bell"></i>
+                            break;
+                    }
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">@notification.Title</div>
+                    <div class="notification-message">@notification.Message</div>
+                    <div class="notification-time">@notification.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+            </li>
+        }
+    </ul>
+</div>
+
+@section Scripts {
+    <script>
+        // Chart data from server
+        const chartData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueChartData));
+        
+        // Initialize charts and dashboard
+        $(document).ready(function() {
+            initializeRevenueChart();
+            initializePeriodButtons();
+        });
+
+        function initializeRevenueChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Store chart instance globally for later updates
+            window.revenueChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.map(d => d.Label),
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: chartData.map(d => d.Value),
+                        borderColor: '#5E72E4',
+                        backgroundColor: 'rgba(94, 114, 228, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#5E72E4',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            border: {
+                                display: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        point: {
+                            hoverBackgroundColor: '#5E72E4'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializePeriodButtons() {
+            $('.period-btn').on('click', function() {
+                $('.period-btn').removeClass('active');
+                $(this).addClass('active');
+                
+                const period = $(this).data('period');
+                loadChartData(period);
+            });
+        }
+
+        function loadChartData(period) {
+            // Show loading state
+            const chartContainer = $('.chart-canvas');
+            chartContainer.html('<div class="loading text-center p-4"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>');
+
+            // Make AJAX request to get new chart data
+            $.ajax({
+                url: '/Admin/Dashboard/GetChartData',
+                type: 'GET',
+                data: { period: period },
+                success: function(data) {
+                    console.log('Received chart data:', data);
+                    console.log('Data length:', data.length);
+                    
+                    // Remove loading and restore canvas
+                    chartContainer.html('<canvas id="revenueChart"></canvas>');
+                    
+                    // Check if data is valid
+                    if (data && data.length > 0) {
+                        updateRevenueChart(data);
+                    } else {
+                        console.warn('No data received for period:', period);
+                        chartContainer.html('<div class="text-center p-4 text-warning"><i class="fas fa-info-circle"></i> Không có dữ liệu cho khoảng thời gian này</div>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading chart data:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                    chartContainer.html('<div class="text-center p-4 text-danger"><i class="fas fa-exclamation-triangle"></i> Lỗi tải dữ liệu</div>');
+                }
+            });
+        }
+
+        function updateRevenueChart(newData) {
+            console.log('Updating chart with data:', newData);
+            
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window.revenueChartInstance) {
+                window.revenueChartInstance.destroy();
+            }
+            
+            // Validate data
+            if (!newData || newData.length === 0) {
+                console.warn('No data to display');
+                $('.chart-canvas').html('<div class="text-center p-4 text-muted"><i class="fas fa-chart-line"></i> Không có dữ liệu để hiển thị</div>');
+                return;
+            }
+            
+            try {
+                // Create new chart with updated data
+                window.revenueChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: newData.map(d => d.Label || d.label || ''),
+                        datasets: [{
+                            label: 'Doanh thu',
+                            data: newData.map(d => d.Value || d.value || 0),
+                            borderColor: '#5E72E4',
+                            backgroundColor: 'rgba(94, 114, 228, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#5E72E4',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                border: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                border: {
+                                    display: false
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        elements: {
+                            point: {
+                                hoverBackgroundColor: '#5E72E4'
+                            }
+                        }
+                    }
+                });
+                
+                console.log('Chart updated successfully');
+            } catch (error) {
+                console.error('Error creating chart:', error);
+                $('.chart-canvas').html('<div class="text-center p-4 text-danger"><i class="fas fa-exclamation-triangle"></i> Lỗi tạo biểu đồ</div>');
+            }
+        }
+    </script>
+}

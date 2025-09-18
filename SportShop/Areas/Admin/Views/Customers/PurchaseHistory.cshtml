@@ -1,0 +1,250 @@
+@model SportShop.Areas.Admin.Models.PurchaseHistoryViewModel
+@{
+    ViewData["Title"] = $"Lịch sử mua hàng - {Model.Customer.FullName}";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/purchase-history.css" asp-append-version="true" />
+}
+
+<div class="purchase-history-container">
+    <!-- Back Button -->
+    <div class="back-navigation">
+        <a href="@Url.Action("Details", new { id = Model.Customer.UserID })" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            Quay lại chi tiết khách hàng
+        </a>
+    </div>
+
+    <!-- Customer Header -->
+    <div class="customer-header">
+        <div class="customer-info">
+            <div class="customer-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="customer-details">
+                <h1 class="customer-name">@Model.Customer.FullName</h1>
+                <p class="customer-email">@Model.Customer.Email</p>
+            </div>
+        </div>
+        <div class="order-summary">
+            <div class="summary-stat">
+                <span class="stat-number">@Model.TotalOrders</span>
+                <span class="stat-label">Tổng đơn hàng</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders List -->
+    <div class="orders-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-shopping-cart"></i>
+                Lịch sử đơn hàng
+            </h2>
+        </div>
+
+        @if (Model.Orders.Any())
+        {
+            <div class="orders-list">
+                @foreach (var order in Model.Orders)
+                {
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-info">
+                                <div class="order-id">Đơn hàng #@order.OrderID</div>
+                                <div class="order-date">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                            <div class="order-status">
+                                <span class="status-badge status-@order.Status.ToLower()">
+                                    @order.Status
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="order-body">
+                            <div class="order-sections">
+                                <!-- Shipping Information -->
+                                <div class="shipping-info">
+                                    <h4><i class="fas fa-truck"></i> Thông tin giao hàng</h4>
+                                    <div class="shipping-details">
+                                        <div class="shipping-row">
+                                            <i class="fas fa-user"></i>
+                                            <span class="shipping-label">Người nhận:</span>
+                                            <span class="shipping-value">@order.ShippingName</span>
+                                        </div>
+                                        <div class="shipping-row">
+                                            <i class="fas fa-phone"></i>
+                                            <span class="shipping-label">Số điện thoại:</span>
+                                            <span class="shipping-value">@order.ShippingPhone</span>
+                                        </div>
+                                        <div class="shipping-row">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <span class="shipping-label">Địa chỉ:</span>
+                                            <span class="shipping-value">@order.ShippingAddress</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Order Items -->
+                                <div class="order-items">
+                                    <h4><i class="fas fa-shopping-bag"></i> Sản phẩm đã mua</h4>
+                                    <div class="items-list">
+                                        @foreach (var item in order.OrderItems)
+                                        {
+                                            <div class="item-row">
+                                                <div class="item-image">
+                                                    @if (!string.IsNullOrEmpty(item.Product.ImageURL))
+                                                    {
+                                                        <img src="~/upload/product/@item.Product.ImageURL" alt="@item.Product.Name" class="product-image">
+                                                    }
+                                                    else
+                                                    {
+                                                        <img src="~/image/product-placeholder.png" alt="No Image" class="product-image placeholder">
+                                                    }
+                                                </div>
+                                                <div class="item-details">
+                                                    <div class="item-info">
+                                                        <div class="product-name">@item.Product.Name</div>
+                                                        @if (item.Attribute != null)
+                                                        {
+                                                            <div class="product-variant">
+                                                                <span class="variant-label">Phân loại:</span>
+                                                                <span class="variant-value">@item.Attribute.Size - @item.Attribute.Color</span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div class="item-pricing">
+                                                        <div class="item-quantity">
+                                                            <span class="quantity-label">Số lượng</span>
+                                                            <span class="quantity-value">@item.Quantity</span>
+                                                        </div>
+                                                        <div class="item-price">
+                                                            <span class="price-label">Đơn giá</span>
+                                                            <span class="price-value">@item.UnitPrice.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</span>
+                                                        </div>
+                                                        <div class="item-total">
+                                                            <span class="total-label">Thành tiền</span>
+                                                            <span class="total-value">@((item.Quantity * item.UnitPrice).ToString("C0", new System.Globalization.CultureInfo("vi-VN")))</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="order-footer">
+                            <div class="order-note">
+                                @if (!string.IsNullOrEmpty(order.Note))
+                                {
+                                    <strong>Ghi chú:</strong> @order.Note
+                                }
+                            </div>
+                            <div class="order-total">
+                                <span class="total-label">Tổng cộng:</span>
+                                <span class="total-amount">@order.TotalAmount.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</span>
+                            </div>
+                        </div>
+
+                        <div class="order-actions">
+                            <a href="@Url.Action("OrderDetails", new { id = order.OrderID })" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Hiển thị @((Model.CurrentPage - 1) * Model.PageSize + 1) - @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalOrders) của @Model.TotalOrders đơn hàng
+                    </div>
+                    <nav class="pagination-nav">
+                        <ul class="pagination">
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("PurchaseHistory", new { id = Model.Customer.UserID, page = Model.CurrentPage - 1, pageSize = Model.PageSize })">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("PurchaseHistory", new { id = Model.Customer.UserID, page = i, pageSize = Model.PageSize })">@i</a>
+                                </li>
+                            }
+
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("PurchaseHistory", new { id = Model.Customer.UserID, page = Model.CurrentPage + 1, pageSize = Model.PageSize })">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <h3>Chưa có đơn hàng</h3>
+                <p>Khách hàng này chưa thực hiện đơn hàng nào.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click event for order cards
+            document.querySelectorAll('.order-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (!e.target.closest('.order-actions')) {
+                        const orderId = this.querySelector('.order-id').textContent.match(/\d+/)[0];
+                        window.location.href = `@Url.Action("OrderDetails")?id=${orderId}`;
+                    }
+                });
+            });
+
+            // Add animation for order cards
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.order-card').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                observer.observe(card);
+            });
+        });
+    </script>
+}

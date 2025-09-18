@@ -1,0 +1,231 @@
+@model SportShop.Areas.Admin.Models.CustomerListViewModel
+@{
+    ViewData["Title"] = "Quản lý khách hàng";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/customers-index.css" asp-append-version="true" />
+}
+
+<div class="customers-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <h2 class="page-title">
+                <i class="fas fa-users"></i>
+                Quản lý khách hàng
+            </h2>
+            <p class="page-description">Quản lý thông tin và theo dõi hoạt động của khách hàng</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-card">
+                <div class="stat-number">@Model.TotalCustomers</div>
+                <div class="stat-label">Tổng khách hàng</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="search-section">
+        <form method="get" class="search-form">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" value="@Model.Search" placeholder="Tìm kiếm theo tên, email, username hoặc số điện thoại..." class="search-input">
+                <button type="submit" class="search-btn">
+                    Tìm kiếm
+                </button>
+            </div>
+            <input type="hidden" name="page" value="1">
+        </form>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3 class="table-title">Danh sách khách hàng</h3>
+            <div class="table-actions">
+                <div class="items-per-page">
+                    <label>Hiển thị:</label>
+                    <select onchange="changePageSize(this.value)" class="page-size-selector">
+                        <option value="10" selected="@(Model.PageSize == 10)">10</option>
+                        <option value="25" selected="@(Model.PageSize == 25)">25</option>
+                        <option value="50" selected="@(Model.PageSize == 50)">50</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Customers.Any())
+        {
+            <div class="table-responsive">
+                <table class="customers-table">
+                    <thead>
+                        <tr>
+                            <th>Khách hàng</th>
+                            <th>Thông tin liên hệ</th>
+                            <th>Địa chỉ</th>
+                            <th>Số đơn hàng</th>
+                            <th>Tổng chi tiêu</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var customer in Model.Customers)
+                        {
+                            <tr class="customer-row" data-customer-id="@customer.UserID">
+                                <td class="customer-info">
+                                    <div class="customer-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="customer-details">
+                                        <div class="customer-name">@customer.FullName</div>
+                                        <div class="customer-username">@@@customer.Username</div>
+                                    </div>
+                                </td>
+                                <td class="contact-info">
+                                    <div class="email">
+                                        <i class="fas fa-envelope"></i>
+                                        @customer.Email
+                                    </div>
+                                    <div class="phone">
+                                        <i class="fas fa-phone"></i>
+                                        @(customer.Phone ?? "Chưa cập nhật")
+                                    </div>
+                                </td>
+                                <td class="address">
+                                    @(customer.Address ?? "Chưa cập nhật")
+                                </td>
+                                <td class="orders-count">
+                                    <span class="badge badge-primary">@customer.TotalOrders</span>
+                                </td>
+                                <td class="total-spent">
+                                    <span class="amount">@customer.TotalSpent.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</span>
+                                </td>
+                                <td class="created-date">
+                                    @customer.CreatedAt.ToString("dd/MM/yyyy")
+                                </td>
+                                <td class="actions">
+                                    <div class="action-buttons">
+                                        <a href="@Url.Action("Details", new { id = customer.UserID })" class="btn btn-sm btn-info" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("PurchaseHistory", new { id = customer.UserID })" class="btn btn-sm btn-success" title="Lịch sử mua hàng">
+                                            <i class="fas fa-shopping-cart"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Hiển thị @((Model.CurrentPage - 1) * Model.PageSize + 1) - @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCustomers) của @Model.TotalCustomers khách hàng
+                    </div>
+                    <nav class="pagination-nav">
+                        <ul class="pagination">
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1, search = Model.Search, pageSize = Model.PageSize })">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i, search = Model.Search, pageSize = Model.PageSize })">@i</a>
+                                </li>
+                            }
+
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1, search = Model.Search, pageSize = Model.PageSize })">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Không tìm thấy khách hàng</h3>
+                <p>@(string.IsNullOrEmpty(Model.Search) ? "Chưa có khách hàng nào trong hệ thống." : "Không có khách hàng nào phù hợp với từ khóa tìm kiếm.")</p>
+                @if (!string.IsNullOrEmpty(Model.Search))
+                {
+                    <a href="@Url.Action("Index")" class="btn btn-primary">Xóa bộ lọc</a>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Page size change function
+        function changePageSize(pageSize) {
+            console.log('Changing page size to:', pageSize);
+            const url = new URL(window.location);
+            url.searchParams.set('pageSize', pageSize);
+            url.searchParams.set('page', '1');
+            
+            // Preserve search parameter if exists
+            if (url.searchParams.get('search')) {
+                url.searchParams.set('search', url.searchParams.get('search'));
+            }
+            
+            window.location.href = url.toString();
+        }
+
+        // Row click to view details
+        document.querySelectorAll('.customer-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+                if (!e.target.closest('.action-buttons')) {
+                    const customerId = this.dataset.customerId;
+                    window.location.href = `@Url.Action("Details")?id=${customerId}`;
+                }
+            });
+        });
+
+        // Search on Enter key
+        const searchInput = document.querySelector('.customers-container .search-input');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.closest('form').submit();
+                }
+            });
+        }
+
+        // Initialize page size selector
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageSizeSelector = document.querySelector('.page-size-selector');
+            if (pageSizeSelector) {
+                console.log('Page size selector initialized, current value:', pageSizeSelector.value);
+                
+                // Add change event listener as backup
+                pageSizeSelector.addEventListener('change', function() {
+                    changePageSize(this.value);
+                });
+            }
+        });
+    </script>
+}

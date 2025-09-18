@@ -1,0 +1,171 @@
+
+.customers-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.customers-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    padding: 18px 20px;
+    text-align: left;
+    border-bottom: none;
+    font-size: 14px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+}
+
+.customers-table th:first-child {
+    border-radius: 0;
+}
+
+.customers-table th:last-child {
+    border-radius: 0;
+}
+
+.customers-table td {
+    padding: 20px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.customer-row {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: linear-gradient(90deg, transparent 0%, transparent 100%);
+}
+
+.customer-row:hover {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    transform: translateX(4px);
+    box-shadow: inset 4px 0 0 #667eea;
+}
+
+.customer-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.customer-avatar i {
+    font-size: 32px;
+    color: #9ca3af;
+}
+
+.customer-name {
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.customer-username {
+    color: #718096;
+    font-size: 12px;
+}
+
+.contact-info {
+    line-height: 1.5;
+}
+
+.contact-info .email,
+.contact-info .phone {
+    display: block;
+    color: #4a5568;
+    margin-bottom: 2px;
+    font-size: 13px;
+}
+
+.contact-info i {
+    margin-right: 6px;
+    color: #9ca3af;
+    width: 14px;
+}
+
+.address {
+    max-width: 200px;
+    color: #4a5568;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.orders-count .badge {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.total-spent .amount {
+    font-weight: 600;
+    color: #059669;
+    font-size: 14px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+/* ==================== RESPONSIVE FOR CUSTOMERS INDEX ==================== */
+@media (max-width: 768px) {
+    .customers-table {
+        font-size: 12px;
+    }
+    
+    .customers-table th,
+    .customers-table td {
+        padding: 12px 8px;
+    }
+    
+    .customer-avatar i {
+        font-size: 24px;
+    }
+    
+    .customer-name {
+        font-size: 13px;
+    }
+    
+    .customer-username,
+    .contact-info .email,
+    .contact-info .phone {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 640px) {
+    .customer-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .address {
+        max-width: 150px;
+        font-size: 12px;
+    }
+}

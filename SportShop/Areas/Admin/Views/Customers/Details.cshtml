@@ -1,0 +1,209 @@
+@model SportShop.Areas.Admin.Models.CustomerDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết khách hàng";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/customers-details.css" asp-append-version="true" />
+}
+
+<div class="customer-detail-container">
+    <!-- Back Button -->
+    <div class="back-navigation">
+        <a href="@Url.Action("Index")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            Quay lại danh sách
+        </a>
+    </div>
+
+    <!-- Customer Profile Header -->
+    <div class="customer-profile-header">
+        <div class="profile-avatar">
+            <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="profile-info">
+            <h1 class="customer-name">@Model.FullName</h1>
+            <p class="customer-username">@@@Model.Username</p>
+            <div class="customer-stats">
+                <div class="stat-item">
+                    <span class="stat-number">@Model.TotalOrders</span>
+                    <span class="stat-label">Đơn hàng</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">@Model.TotalSpent.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</span>
+                    <span class="stat-label">Tổng chi tiêu</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">@((DateTime.Now - Model.CreatedAt).Days)</span>
+                    <span class="stat-label">Ngày thành viên</span>
+                </div>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <a href="@Url.Action("PurchaseHistory", new { id = Model.UserID })" class="btn btn-primary">
+                <i class="fas fa-shopping-cart"></i>
+                Xem lịch sử mua hàng
+            </a>
+        </div>
+    </div>
+
+    <!-- Customer Information Grid -->
+    <div class="customer-info-grid">
+        <!-- Contact Information -->
+        <div class="info-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-address-card"></i>
+                    Thông tin liên hệ
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-envelope"></i>
+                        Email
+                    </div>
+                    <div class="info-value">@Model.Email</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-phone"></i>
+                        Số điện thoại
+                    </div>
+                    <div class="info-value">@(Model.Phone ?? "Chưa cập nhật")</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Địa chỉ
+                    </div>
+                    <div class="info-value">@(Model.Address ?? "Chưa cập nhật")</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-calendar-alt"></i>
+                        Ngày đăng ký
+                    </div>
+                    <div class="info-value">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Statistics -->
+        <div class="info-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Thống kê đơn hàng
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-icon orders">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">@Model.TotalOrders</div>
+                            <div class="stat-label">Tổng đơn hàng</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon revenue">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">@Model.TotalSpent.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</div>
+                            <div class="stat-label">Tổng chi tiêu</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon avg">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">@((Model.TotalOrders > 0 ? Model.TotalSpent / Model.TotalOrders : 0).ToString("C0", new System.Globalization.CultureInfo("vi-VN")))</div>
+                            <div class="stat-label">Trung bình/đơn</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    @if (Model.RecentOrders.Any())
+    {
+        <div class="recent-orders-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-history"></i>
+                    Đơn hàng gần đây
+                </h3>
+                <a href="@Url.Action("PurchaseHistory", new { id = Model.UserID })" class="view-all-link">
+                    Xem tất cả
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="orders-grid">
+                @foreach (var order in Model.RecentOrders)
+                {
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-id">#@order.OrderID</div>
+                            <div class="order-status status-@order.Status.ToLower()">
+                                @order.Status
+                            </div>
+                        </div>
+                        <div class="order-body">
+                            <div class="order-date">
+                                <i class="fas fa-calendar"></i>
+                                @order.OrderDate.ToString("dd/MM/yyyy")
+                            </div>
+                            <div class="order-items">
+                                <i class="fas fa-box"></i>
+                                Đơn hàng
+                            </div>
+                            <div class="order-amount">
+                                <i class="fas fa-money-bill"></i>
+                                @order.TotalAmount.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))
+                            </div>
+                        </div>
+                        <div class="order-actions">
+                            <a href="@Url.Action("OrderDetails", new { id = order.OrderID })" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                                Chi tiết
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="no-orders-section">
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <h3>Chưa có đơn hàng</h3>
+                <p>Khách hàng này chưa thực hiện đơn hàng nào.</p>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Add any specific JavaScript for customer details page here
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips if needed
+            const tooltips = document.querySelectorAll('[data-toggle="tooltip"]');
+            tooltips.forEach(function(tooltip) {
+                new bootstrap.Tooltip(tooltip);
+            });
+        });
+    </script>
+}

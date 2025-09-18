@@ -1,0 +1,248 @@
+@model SportShop.Models.Order
+@{
+    ViewData["Title"] = $"Chi tiết đơn hàng #{Model.OrderID}";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/order-details.css" asp-append-version="true" />
+}
+
+<div class="order-details-container">
+    <!-- Back Button -->
+    <div class="back-navigation">
+        <a href="@Url.Action("PurchaseHistory", new { id = Model.UserID })" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            Quay lại lịch sử mua hàng
+        </a>
+    </div>
+
+    <!-- Order Header -->
+    <div class="order-details-header">
+        <div class="order-info">
+            <h1 class="order-details-title">Đơn hàng #@Model.OrderID</h1>
+            <div class="order-details-meta">
+                <span class="order-details-date">
+                    <i class="fas fa-calendar"></i>
+                    @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                </span>
+                <span class="order-details-status status-@Model.Status.ToLower()">
+                    @Model.Status
+                </span>
+            </div>
+        </div>
+        <div class="order-details-total-summary">
+            <div class="order-details-total-amount">@Model.TotalAmount.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</div>
+            <div class="order-details-total-label">Tổng thanh toán</div>
+        </div>
+    </div>
+
+    <!-- Order Content Grid -->
+    <div class="order-details-content-grid">
+        <!-- Customer Information -->
+        <div class="order-details-info-section">
+            <div class="order-details-section-header">
+                <h3>
+                    <i class="fas fa-user"></i>
+                    Thông tin khách hàng
+                </h3>
+            </div>
+            <div class="order-details-section-content">
+                <div class="order-details-customer-info">
+                    <div class="order-details-customer-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="order-details-customer-details">
+                        <div class="customer-name">@Model.User.FullName</div>
+                        <div class="customer-email">@Model.User.Email</div>
+                        <div class="customer-username">@@Model.User.Username</div>
+                        @if (!string.IsNullOrEmpty(Model.User.Phone))
+                        {
+                            <div class="customer-phone">
+                                <i class="fas fa-phone"></i>
+                                @Model.User.Phone
+                            </div>
+                        }
+                    </div>
+                </div>
+                <a href="@Url.Action("Details", new { id = Model.UserID })" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye"></i>
+                    Xem hồ sơ khách hàng
+                </a>
+            </div>
+        </div>
+
+        <!-- Shipping Information -->
+        <div class="order-details-info-section">
+            <div class="order-details-section-header">
+                <h3>
+                    <i class="fas fa-truck"></i>
+                    Thông tin giao hàng
+                </h3>
+            </div>
+            <div class="order-details-section-content">
+                <div class="order-details-shipping-details">
+                    <div class="detail-row">
+                        <span class="order-details-detail-label">Người nhận:</span>
+                        <span class="order-details-detail-value">@Model.ShippingName</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="order-details-detail-label">Số điện thoại:</span>
+                        <span class="order-details-detail-value">@Model.ShippingPhone</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="order-details-detail-label">Địa chỉ:</span>
+                        <span class="order-details-detail-value">@Model.ShippingAddress</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Note))
+                    {
+                        <div class="detail-row">
+                            <span class="order-details-detail-label">Ghi chú:</span>
+                            <span class="order-details-detail-value">@Model.Note</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="order-details-items-section">
+        <div class="order-details-section-header">
+            <h3>
+                <i class="fas fa-box"></i>
+                Sản phẩm đã đặt (@Model.OrderItems.Count() sản phẩm)
+            </h3>
+        </div>
+        <div class="order-details-items-table-container">
+            <table class="order-details-items-table">
+                <thead>
+                    <tr>
+                        <th class="col-image">Hình ảnh</th>
+                        <th class="col-product">Tên sản phẩm</th>
+                        <th class="col-brand">Thương hiệu</th>
+                        <th class="col-variant">Phân loại</th>
+                        <th class="col-quantity">SL</th>
+                        <th class="col-price">Đơn giá</th>
+                        <th class="col-total">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderItems)
+                    {
+                        <tr class="item-row">
+                            <td class="col-image">
+                                <div class="order-details-product-image-container">
+                                    @if (!string.IsNullOrEmpty(item.Product.ImageURL))
+                                    {
+                                        <img src="~/upload/product/@item.Product.ImageURL" alt="@item.Product.Name" class="product-image">
+                                    }
+                                    else
+                                    {
+                                        <img src="~/image/product-placeholder.png" alt="No Image" class="product-image placeholder">
+                                    }
+                                </div>
+                            </td>
+                            <td class="col-product">
+                                <div class="order-details-product-details-cell">
+                                    <div class="product-name">@item.Product.Name</div>
+                                    @if (!string.IsNullOrEmpty(item.Product.Description))
+                                    {
+                                        <div class="product-description">@(item.Product.Description.Length > 60 ? item.Product.Description.Substring(0, 60) + "..." : item.Product.Description)</div>
+                                    }
+                                </div>
+                            </td>
+                            <td class="col-brand">
+                                <div class="order-details-brand-cell">
+                                    @if (item.Product.Brand != null)
+                                    {
+                                        <span class="brand-name">@item.Product.Brand.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="no-brand">--</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="col-variant">
+                                <div class="order-details-variant-cell">
+                                    @if (item.Attribute != null)
+                                    {
+                                        <div class="variant-info">
+                                            @if (!string.IsNullOrEmpty(item.Attribute.Size))
+                                            {
+                                                <span class="variant-badge">Size: @item.Attribute.Size</span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(item.Attribute.Color))
+                                            {
+                                                <span class="variant-badge">@item.Attribute.Color</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="variant-badge">Mặc định</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="col-quantity">
+                                <div class="order-details-quantity-cell">
+                                    <span class="quantity-badge">@item.Quantity</span>
+                                </div>
+                            </td>
+                            <td class="col-price">
+                                <div class="order-details-price-cell">
+                                    <span class="unit-price">@item.UnitPrice.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</span>
+                                </div>
+                            </td>
+                            <td class="col-total">
+                                <div class="order-details-price-cell">
+                                    <span class="total-price">@((item.Quantity * item.UnitPrice).ToString("C0", new System.Globalization.CultureInfo("vi-VN")))</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="6" class="total-label">Tổng cộng:</td>
+                        <td class="total-amount">@Model.TotalAmount.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Order Actions -->
+    <div class="order-details-actions-section">
+        <div class="action-buttons">
+            <button onclick="window.print()" class="btn btn-secondary">
+                <i class="fas fa-print"></i>
+                In đơn hàng
+            </button>
+            <a href="@Url.Action("Index")" class="btn btn-primary">
+                <i class="fas fa-list"></i>
+                Về danh sách khách hàng
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Print styles
+            const printStyles = `
+                <style media="print">
+                    .back-navigation, .order-actions-section { display: none !important; }
+                    .order-details-container { margin: 0; padding: 20px; }
+                    .order-header { border-bottom: 2px solid #000; padding-bottom: 20px; }
+                    .items-table { width: 100%; border-collapse: collapse; }
+                    .items-table th, .items-table td { border: 1px solid #000; padding: 8px; }
+                </style>
+            `;
+            
+            document.head.insertAdjacentHTML('beforeend', printStyles);
+        });
+    </script>
+}

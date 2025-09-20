@@ -32,7 +32,7 @@ namespace SportShop.Areas.Admin.Controllers
             {
                 // Revenue Statistics
                 var orders = await _context.Orders
-                    .Where(o => o.Status != "Cancelled")
+                    .Where(o => o.Status != "Đã hủy")
                     .ToListAsync();
 
                 viewModel.TodayRevenue = orders
@@ -53,8 +53,8 @@ namespace SportShop.Areas.Admin.Controllers
 
                 // Order Statistics
                 viewModel.TodayOrders = orders.Count(o => o.OrderDate.Date == today);
-                viewModel.ProcessingOrders = orders.Count(o => o.Status == "Processing" || o.Status == "Chờ xử lý");
-                viewModel.CompletedOrders = orders.Count(o => o.Status == "Completed" || o.Status == "Confirmed");
+                viewModel.ProcessingOrders = orders.Count(o => o.Status == "Đang xử lý" || o.Status == "Chờ xử lý");
+                viewModel.CompletedOrders = orders.Count(o => o.Status == "Hoàn thành" || o.Status == "Đã xác nhận");
                 viewModel.TotalOrders = orders.Count;
 
                 // Customer Statistics

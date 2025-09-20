@@ -1,11 +1,85 @@
 using SportShop.Models;
 using SportShop.Models.DTOs;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace SportShop.Models.ViewModels
 {
-    // ViewModel cho trang danh sách sản phẩm
+    // ViewModel cho trang danh sách sản phẩm (Admin)
+    public class ProductListViewModel
+    {
+        public List<Product> Products { get; set; } = new List<Product>();
+        public int CurrentPage { get; set; }
+        public int TotalPages { get; set; }
+        public int TotalItems { get; set; }
+        public int PageSize { get; set; }
+        public string? SearchString { get; set; }
+        public int? CategoryId { get; set; }
+        public int? BrandId { get; set; }
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+        public string? StockStatus { get; set; }
+    }
+
+    // ViewModel cho thêm sản phẩm mới (Admin)
+    public class ProductCreateViewModel
+    {
+        [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm")]
+        [StringLength(100, ErrorMessage = "Tên sản phẩm không được vượt quá 100 ký tự")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(1000, ErrorMessage = "Mô tả không được vượt quá 1000 ký tự")]
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập giá sản phẩm")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Giá sản phẩm phải lớn hơn 0")]
+        public decimal Price { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập số lượng tồn kho")]
+        [Range(0, int.MaxValue, ErrorMessage = "Số lượng tồn kho không được âm")]
+        public int Stock { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng chọn danh mục")]
+        public int CategoryID { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng chọn thương hiệu")]
+        public int BrandID { get; set; }
+
+        public IFormFile? ImageFile { get; set; }
+    }
+
+    // ViewModel cho chỉnh sửa sản phẩm (Admin)
+    public class ProductEditViewModel
+    {
+        public int ProductID { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm")]
+        [StringLength(100, ErrorMessage = "Tên sản phẩm không được vượt quá 100 ký tự")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(1000, ErrorMessage = "Mô tả không được vượt quá 1000 ký tự")]
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập giá sản phẩm")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Giá sản phẩm phải lớn hơn 0")]
+        public decimal Price { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập số lượng tồn kho")]
+        [Range(0, int.MaxValue, ErrorMessage = "Số lượng tồn kho không được âm")]
+        public int Stock { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng chọn danh mục")]
+        public int CategoryID { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng chọn thương hiệu")]
+        public int BrandID { get; set; }
+
+        public string? CurrentImageURL { get; set; }
+        public IFormFile? ImageFile { get; set; }
+    }
+
+    // ViewModel cho trang danh sách sản phẩm (Public)
     public class ProductIndexViewModel
     {
         public List<Product> Products { get; set; } = new List<Product>();
@@ -13,10 +87,10 @@ namespace SportShop.Models.ViewModels
         public List<Brand> Brands { get; set; } = new List<Brand>();
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
-        public string SortOrder { get; set; }
+        public string? SortOrder { get; set; }
         public int? CategoryId { get; set; }
         public int? BrandId { get; set; }
-        public string Keyword { get; set; }
+        public string? Keyword { get; set; }
         
         // Thêm dictionary lưu dữ liệu đánh giá
         public Dictionary<int, ProductRatingDTO> ProductRatings { get; set; } = new Dictionary<int, ProductRatingDTO>();

@@ -57,7 +57,7 @@
                                 <div class="order-date">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</div>
                             </div>
                             <div class="order-status">
-                                <span class="status-badge status-@order.Status.ToLower()">
+                                <span class="status-badge status-@order.Status.ToLower().Replace(" ", "-")">
                                     @order.Status
                                 </span>
                             </div>

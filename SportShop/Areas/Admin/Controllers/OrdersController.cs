@@ -169,16 +169,59 @@ namespace SportShop.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int orderId, string status)
         {
-            var order = await _context.Orders.FindAsync(orderId);
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(o => o.OrderID == orderId);
+
             if (order == null)
             {
                 return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
             }
 
+            var previousStatus = order.Status;
             order.Status = status;
             
             try
             {
+                // If order is being marked as completed, reduce product stock
+                if (status == "Hoàn thành" && previousStatus != "Hoàn thành")
+                {
+                    foreach (var orderItem in order.OrderItems)
+                    {
+                        var product = orderItem.Product;
+                        if (product != null)
+                        {
+                            // Check if there's enough stock
+                            if (product.Stock < orderItem.Quantity)
+                            {
+                                return Json(new { 
+                                    success = false, 
+                                    message = $"Không đủ hàng tồn kho cho sản phẩm '{product.Name}'. Còn lại: {product.Stock}, cần: {orderItem.Quantity}" 
+                                });
+                            }
+                            
+                            // Reduce stock
+                            product.Stock -= orderItem.Quantity;
+                            _context.Products.Update(product);
+                        }
+                    }
+                }
+                // If order was completed but now changed to another status, restore stock
+                else if (previousStatus == "Hoàn thành" && status != "Hoàn thành")
+                {
+                    foreach (var orderItem in order.OrderItems)
+                    {
+                        var product = orderItem.Product;
+                        if (product != null)
+                        {
+                            // Restore stock
+                            product.Stock += orderItem.Quantity;
+                            _context.Products.Update(product);
+                        }
+                    }
+                }
+
                 await _context.SaveChangesAsync();
                 return Json(new { success = true, message = "Cập nhật trạng thái thành công" });
             }

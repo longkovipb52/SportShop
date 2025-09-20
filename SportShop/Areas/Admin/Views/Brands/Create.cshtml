@@ -1,0 +1,153 @@
+@model SportShop.Models.Brand
+
+@{
+    ViewData["Title"] = "Thêm thương hiệu mới";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_brands.css" asp-append-version="true" />
+}
+
+<div class="brand-form-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h2 class="page-title">
+                    <i class="fas fa-plus-circle"></i>
+                    Thêm thương hiệu mới
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="@Url.Action("Index")">
+                                <i class="fas fa-award"></i> Thương hiệu
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">Thêm mới</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="form-section">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-info-circle"></i>
+                            Thông tin thương hiệu
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="Create" method="post" enctype="multipart/form-data">
+                            <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+                            
+                            <div class="mb-3">
+                                <label asp-for="Name" class="form-label required">Tên thương hiệu</label>
+                                <input asp-for="Name" class="form-control" placeholder="Nhập tên thương hiệu...">
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Description" class="form-label">Mô tả</label>
+                                <textarea asp-for="Description" class="form-control" rows="4" 
+                                         placeholder="Nhập mô tả cho thương hiệu..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                                <div class="form-text">Mô tả chi tiết về thương hiệu này</div>
+                            </div>
+
+                            <!-- Logo Upload Section -->
+                            <div class="mb-3">
+                                <label class="form-label">Logo thương hiệu</label>
+                                <div class="logo-upload-section">
+                                    <div class="logo-preview-container">
+                                        <div class="logo-preview" id="logoPreview">
+                                            <div class="preview-placeholder">
+                                                <i class="fas fa-image"></i>
+                                                <p>Chưa có logo</p>
+                                            </div>
+                                        </div>
+                                        <div class="logo-actions" id="logoActions" style="display: none;">
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeLogo()">
+                                                <i class="fas fa-trash"></i>
+                                                Xóa
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="logo-upload-controls">
+                                        <input type="file" id="logoFile" name="logoFile" accept="image/*" 
+                                               class="form-control" onchange="previewLogo(this)">
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle"></i>
+                                            Chọn logo (JPG, PNG, GIF) - Tối đa 5MB
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i>
+                                    Lưu thương hiệu
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i>
+                                    Hủy
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Card hướng dẫn -->
+                <div class="card help-card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-lightbulb"></i>
+                            Hướng dẫn
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="help-list">
+                            <li>
+                                <i class="fas fa-check text-success"></i>
+                                Tên thương hiệu nên chính xác và dễ nhận biết
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-success"></i>
+                                Mô tả giúp khách hàng hiểu về thương hiệu
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-success"></i>
+                                Logo nên rõ nét và có kích thước vuông để hiển thị tốt nhất
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-success"></i>
+                                Tất cả thông tin đều có thể chỉnh sửa sau
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_brands.js" asp-append-version="true"></script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

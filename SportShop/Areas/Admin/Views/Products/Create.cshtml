@@ -1,0 +1,282 @@
+@model SportShop.Models.ViewModels.ProductCreateViewModel
+@{
+    ViewData["Title"] = "Thêm sản phẩm mới";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/products-form.css" />
+
+<div class="product-form-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-plus-circle"></i> Thêm sản phẩm mới</h1>
+            <div class="header-actions">
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <form asp-action="Create" method="post" enctype="multipart/form-data" class="product-form">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            
+            <div class="form-grid">
+                <!-- Left Column - Basic Information -->
+                <div class="form-section">
+                    <h3><i class="fas fa-info-circle"></i> Thông tin cơ bản</h3>
+                    
+                    <div class="form-group">
+                        <label asp-for="Name" class="form-label required">Tên sản phẩm</label>
+                        <input asp-for="Name" class="form-control" placeholder="Nhập tên sản phẩm..." />
+                        <span asp-validation-for="Name" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Description" class="form-label">Mô tả sản phẩm</label>
+                        <textarea asp-for="Description" class="form-control textarea-large" rows="6" placeholder="Nhập mô tả chi tiết về sản phẩm..."></textarea>
+                        <span asp-validation-for="Description" class="validation-error"></span>
+                        <small class="form-help">Mô tả chi tiết sẽ giúp khách hàng hiểu rõ hơn về sản phẩm</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half-width">
+                            <label asp-for="CategoryID" class="form-label required">Danh mục</label>
+                            <select asp-for="CategoryID" class="form-control" asp-items="ViewBag.Categories">
+                                <option value="">-- Chọn danh mục --</option>
+                            </select>
+                            <span asp-validation-for="CategoryID" class="validation-error"></span>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label asp-for="BrandID" class="form-label required">Thương hiệu</label>
+                            <select asp-for="BrandID" class="form-control" asp-items="ViewBag.Brands">
+                                <option value="">-- Chọn thương hiệu --</option>
+                            </select>
+                            <span asp-validation-for="BrandID" class="validation-error"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Price & Stock -->
+                <div class="form-section">
+                    <h3><i class="fas fa-tags"></i> Giá & Tồn kho</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group half-width">
+                            <label asp-for="Price" class="form-label required">Giá bán (VNĐ)</label>
+                            <div class="input-group">
+                                <input asp-for="Price" type="number" class="form-control" step="0.01" min="0" placeholder="0.00" />
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                            <span asp-validation-for="Price" class="validation-error"></span>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label asp-for="Stock" class="form-label required">Số lượng tồn kho</label>
+                            <input asp-for="Stock" type="number" class="form-control" min="0" placeholder="0" />
+                            <span asp-validation-for="Stock" class="validation-error"></span>
+                            <small class="form-help">Số lượng sản phẩm hiện có trong kho</small>
+                        </div>
+                    </div>
+
+                    <div class="stock-status-info">
+                        <div class="status-item">
+                            <span class="status-dot in-stock"></span>
+                            <span>Còn hàng: > 10 sản phẩm</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot low-stock"></span>
+                            <span>Sắp hết: 1-10 sản phẩm</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot out-of-stock"></span>
+                            <span>Hết hàng: 0 sản phẩm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Upload Section -->
+            <div class="form-section full-width">
+                <h3><i class="fas fa-image"></i> Hình ảnh sản phẩm</h3>
+                
+                <div class="image-upload-container">
+                    <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h4>Tải lên hình ảnh sản phẩm</h4>
+                            <p>Kéo thả file hoặc click để chọn</p>
+                            <small>Hỗ trợ: JPG, PNG, GIF (tối đa 5MB)</small>
+                        </div>
+                        <input asp-for="ImageFile" type="file" id="imageInput" accept="image/*" class="file-input" />
+                    </div>
+                    
+                    <div class="image-preview" id="imagePreview" style="display: none;">
+                        <img id="previewImg" alt="Preview" />
+                        <button type="button" class="remove-image" onclick="removeImage()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <span asp-validation-for="ImageFile" class="validation-error"></span>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success btn-large">
+                    <i class="fas fa-save"></i> Lưu sản phẩm
+                </button>
+                <button type="reset" class="btn btn-warning btn-large">
+                    <i class="fas fa-undo"></i> Đặt lại
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-large">
+                    <i class="fas fa-times"></i> Hủy bỏ
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success auto-hide">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger auto-hide">
+        <i class="fas fa-exclamation-circle"></i>
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/admin_products.js"></script>
+    <script>
+        // Image upload preview functionality
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file
+                if (!file.type.startsWith('image/')) {
+                    showAlert('error', 'Vui lòng chọn file hình ảnh!');
+                    this.value = '';
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) { // 5MB
+                    showAlert('error', 'Kích thước file không được vượt quá 5MB!');
+                    this.value = '';
+                    return;
+                }
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                    document.querySelector('.upload-area').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Remove image preview
+        function removeImage() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.querySelector('.upload-area').style.display = 'flex';
+        }
+        
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.upload-area');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight(e) {
+            uploadArea.classList.add('dragover');
+        }
+        
+        function unhighlight(e) {
+            uploadArea.classList.remove('dragover');
+        }
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                document.getElementById('imageInput').files = files;
+                // Trigger change event
+                const event = new Event('change', { bubbles: true });
+                document.getElementById('imageInput').dispatchEvent(event);
+            }
+        }
+        
+        // Real-time price formatting
+        document.querySelector('input[name="Price"]').addEventListener('input', function() {
+            const value = this.value.replace(/[^\d.]/g, '');
+            if (value !== this.value) {
+                this.value = value;
+            }
+        });
+        
+        // Auto-save functionality (optional)
+        let autoSaveTimeout;
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', function() {
+                clearTimeout(autoSaveTimeout);
+                autoSaveTimeout = setTimeout(() => {
+                    // Auto-save draft to localStorage
+                    const formData = new FormData(document.querySelector('.product-form'));
+                    const data = Object.fromEntries(formData.entries());
+                    localStorage.setItem('productDraft', JSON.stringify(data));
+                }, 2000);
+            });
+        });
+        
+        // Load draft on page load
+        window.addEventListener('load', function() {
+            const draft = localStorage.getItem('productDraft');
+            if (draft && confirm('Bạn có muốn khôi phục bản nháp đã lưu?')) {
+                const data = JSON.parse(draft);
+                Object.keys(data).forEach(key => {
+                    const input = document.querySelector(`[name="${key}"]`);
+                    if (input && input.type !== 'file') {
+                        input.value = data[key];
+                    }
+                });
+            }
+        });
+        
+        // Clear draft on successful submission
+        document.querySelector('.product-form').addEventListener('submit', function() {
+            localStorage.removeItem('productDraft');
+        });
+    </script>
+}

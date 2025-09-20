@@ -34,6 +34,9 @@ namespace SportShop.Models
         [Required]
         public int Stock { get; set; }
         
+        // Tổng số lượt nhấn yêu thích (không giảm khi bỏ yêu thích)
+        public int TotalLikes { get; set; } = 0;
+        
         [StringLength(255)]
         public string ImageURL { get; set; }
         

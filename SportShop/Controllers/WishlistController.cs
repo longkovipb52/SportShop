@@ -76,6 +76,7 @@ namespace SportShop.Controllers
                 if (existingWishlistItem != null)
                 {
                     // Đã có trong wishlist, xóa khỏi wishlist
+                    // Lưu ý: Không giảm TotalLikes khi xóa khỏi wishlist
                     _context.Wishlists.Remove(existingWishlistItem);
                     await _context.SaveChangesAsync();
 
@@ -88,7 +89,7 @@ namespace SportShop.Controllers
                 }
                 else
                 {
-                    // Chưa có trong wishlist, thêm vào wishlist
+                    // Chưa có trong wishlist, thêm vào wishlist và tăng TotalLikes
                     var wishlistItem = new Wishlist
                     {
                         UserID = userId.Value,
@@ -97,6 +98,11 @@ namespace SportShop.Controllers
                     };
 
                     _context.Wishlists.Add(wishlistItem);
+                    
+                    // Tăng TotalLikes cho sản phẩm
+                    product.TotalLikes++;
+                    _context.Products.Update(product);
+                    
                     await _context.SaveChangesAsync();
 
                     return Json(new { 

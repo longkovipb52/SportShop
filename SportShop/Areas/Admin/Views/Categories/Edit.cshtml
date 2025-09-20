@@ -1,0 +1,251 @@
+@model SportShop.Models.Category
+
+@{
+    ViewData["Title"] = $"Chỉnh sửa danh mục - {Model.Name}";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_categories.css" asp-append-version="true" />
+}
+
+<div class="category-form-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h2 class="page-title">
+                    <i class="fas fa-edit"></i>
+                    Chỉnh sửa danh mục
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="@Url.Action("Index")">
+                                <i class="fas fa-tags"></i> Danh mục
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">@Model.Name</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="header-right">
+                <a href="@Url.Action("Details", new { id = Model.CategoryID })" class="btn btn-info">
+                    <i class="fas fa-eye"></i>
+                    Xem chi tiết
+                </a>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông báo -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Form -->
+    <div class="form-section">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-info-circle"></i>
+                            Thông tin danh mục
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                            <input type="hidden" asp-for="CategoryID" />
+                            <input type="hidden" asp-for="ImageURL" />
+                            
+                            <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+                            
+                            <div class="mb-3">
+                                <label asp-for="Name" class="form-label required">Tên danh mục</label>
+                                <input asp-for="Name" class="form-control" placeholder="Nhập tên danh mục...">
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Description" class="form-label">Mô tả</label>
+                                <textarea asp-for="Description" class="form-control" rows="4" 
+                                         placeholder="Nhập mô tả cho danh mục..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                                <div class="form-text">Mô tả chi tiết về danh mục sản phẩm này</div>
+                            </div>
+
+                            <!-- Image Upload Section -->
+                            <div class="mb-3">
+                                <label class="form-label">Hình ảnh danh mục</label>
+                                <div class="image-upload-section">
+                                    <div class="image-preview-container">
+                                        <div class="image-preview" id="imagePreview">
+                                            @if (!string.IsNullOrEmpty(Model.ImageURL))
+                                            {
+                                                <img src="~/upload/category/@Model.ImageURL" alt="@Model.Name" class="current-image">
+                                                <div class="image-overlay">
+                                                    <button type="button" class="btn btn-sm btn-outline-light" onclick="changeImage()">
+                                                        <i class="fas fa-camera"></i>
+                                                        Thay đổi
+                                                    </button>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="preview-placeholder">
+                                                    <i class="fas fa-image"></i>
+                                                    <p>Chưa có hình ảnh</p>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="image-actions" id="imageActions" style="display: none;">
+                                            <button type="button" class="btn btn-sm btn-success" onclick="confirmImage()">
+                                                <i class="fas fa-check"></i>
+                                                Xác nhận
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="cancelImage()">
+                                                <i class="fas fa-times"></i>
+                                                Hủy
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="image-upload-controls">
+                                        <input type="file" id="imageFile" name="imageFile" accept="image/*" 
+                                               class="form-control" onchange="previewImage(this)" style="display: none;">
+                                        <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('imageFile').click()">
+                                            <i class="fas fa-upload"></i>
+                                            @(string.IsNullOrEmpty(Model.ImageURL) ? "Tải lên hình ảnh" : "Thay đổi hình ảnh")
+                                        </button>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle"></i>
+                                            Chọn hình ảnh (JPG, PNG, GIF) - Tối đa 5MB
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i>
+                                    Cập nhật danh mục
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i>
+                                    Hủy
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Card thống kê -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-chart-bar"></i>
+                            Thống kê danh mục
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid" id="categoryStats">
+                            <div class="stat-item">
+                                <div class="stat-icon">
+                                    <i class="fas fa-box text-primary"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" id="totalProducts">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                    <div class="stat-label">Tổng sản phẩm</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">
+                                    <i class="fas fa-warehouse text-success"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" id="totalStock">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                    <div class="stat-label">Tổng tồn kho</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">
+                                    <i class="fas fa-check-circle text-info"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" id="inStock">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                    <div class="stat-label">Còn hàng</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">
+                                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-number" id="outOfStock">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                    <div class="stat-label">Hết hàng</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card hướng dẫn -->
+                <div class="card help-card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-lightbulb"></i>
+                            Lưu ý khi chỉnh sửa
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="help-list">
+                            <li>
+                                <i class="fas fa-info text-info"></i>
+                                Thay đổi tên danh mục có thể ảnh hưởng đến hiển thị trên website
+                            </li>
+                            <li>
+                                <i class="fas fa-warning text-warning"></i>
+                                Không thể xóa danh mục nếu còn sản phẩm
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-success"></i>
+                                Hình ảnh mới sẽ thay thế hình ảnh cũ
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_categories.js" asp-append-version="true"></script>
+    <script>
+        // Load thống kê danh mục
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCategoryStats(@Model.CategoryID);
+        });
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

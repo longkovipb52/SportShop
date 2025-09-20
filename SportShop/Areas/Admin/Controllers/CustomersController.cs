@@ -56,7 +56,7 @@ namespace SportShop.Areas.Admin.Controllers
                     Address = u.Address,
                     CreatedAt = u.CreatedAt,
                     TotalOrders = u.Orders.Count(),
-                    TotalSpent = u.Orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount)
+                    TotalSpent = u.Orders.Where(o => o.Status == "Hoàn thành").Sum(o => o.TotalAmount)
                 })
                 .ToListAsync();
 
@@ -100,7 +100,7 @@ namespace SportShop.Areas.Admin.Controllers
                 Address = customer.Address,
                 CreatedAt = customer.CreatedAt,
                 TotalOrders = customer.Orders.Count(),
-                TotalSpent = customer.Orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount),
+                TotalSpent = customer.Orders.Where(o => o.Status == "Hoàn thành").Sum(o => o.TotalAmount),
                 RecentOrders = customer.Orders
                     .OrderByDescending(o => o.OrderDate)
                     .Take(5)

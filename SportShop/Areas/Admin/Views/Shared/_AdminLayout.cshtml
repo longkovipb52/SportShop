@@ -54,20 +54,20 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/Admin/Products">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Products" ? "active" : "")" href="/Admin/Products">
                         <i class="fas fa-box"></i>
                         <span>Sản phẩm</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/Admin/Categories">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Categories" ? "active" : "")" href="/Admin/Categories">
                         <i class="fas fa-tags"></i>
                         <span>Danh mục</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/Admin/Brands">
-                        <i class="fas fa-star"></i>
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Brands" ? "active" : "")" href="/Admin/Brands">
+                        <i class="fas fa-award"></i>
                         <span>Thương hiệu</span>
                     </a>
                 </li>

@@ -1,0 +1,490 @@
+@model SportShop.Models.ViewModels.ProductEditViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa sản phẩm";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/products-form.css" />
+
+<div class="product-form-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-edit"></i> Chỉnh sửa sản phẩm</h1>
+            <div class="header-actions">
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                </a>
+                <a href="@Url.Action("Details", new { id = Model.ProductID })" class="btn btn-info">
+                    <i class="fas fa-eye"></i> Xem chi tiết
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" class="product-form">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            
+            <input asp-for="ProductID" type="hidden" />
+            
+            <div class="form-grid">
+                <!-- Left Column - Basic Information -->
+                <div class="form-section">
+                    <h3><i class="fas fa-info-circle"></i> Thông tin cơ bản</h3>
+                    
+                    <div class="form-group">
+                        <label asp-for="Name" class="form-label required">Tên sản phẩm</label>
+                        <input asp-for="Name" class="form-control" placeholder="Nhập tên sản phẩm..." />
+                        <span asp-validation-for="Name" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Description" class="form-label">Mô tả sản phẩm</label>
+                        <textarea asp-for="Description" class="form-control textarea-large" rows="6" placeholder="Nhập mô tả chi tiết về sản phẩm..."></textarea>
+                        <span asp-validation-for="Description" class="validation-error"></span>
+                        <small class="form-help">Mô tả chi tiết sẽ giúp khách hàng hiểu rõ hơn về sản phẩm</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half-width">
+                            <label asp-for="CategoryID" class="form-label required">Danh mục</label>
+                            <select asp-for="CategoryID" class="form-control" asp-items="ViewBag.Categories">
+                                <option value="">-- Chọn danh mục --</option>
+                            </select>
+                            <span asp-validation-for="CategoryID" class="validation-error"></span>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label asp-for="BrandID" class="form-label required">Thương hiệu</label>
+                            <select asp-for="BrandID" class="form-control" asp-items="ViewBag.Brands">
+                                <option value="">-- Chọn thương hiệu --</option>
+                            </select>
+                            <span asp-validation-for="BrandID" class="validation-error"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Price & Stock -->
+                <div class="form-section">
+                    <h3><i class="fas fa-tags"></i> Giá & Tồn kho</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group half-width">
+                            <label asp-for="Price" class="form-label required">Giá bán (VNĐ)</label>
+                            <div class="input-group">
+                                <input asp-for="Price" type="number" class="form-control" step="0.01" min="0" placeholder="0.00" />
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                            <span asp-validation-for="Price" class="validation-error"></span>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label asp-for="Stock" class="form-label required">Số lượng tồn kho</label>
+                            <div class="stock-input-container">
+                                <input asp-for="Stock" type="number" class="form-control" min="0" placeholder="0" />
+                                <div class="stock-buttons">
+                                    <button type="button" class="stock-btn" onclick="adjustStock(-10)">-10</button>
+                                    <button type="button" class="stock-btn" onclick="adjustStock(-1)">-1</button>
+                                    <button type="button" class="stock-btn" onclick="adjustStock(1)">+1</button>
+                                    <button type="button" class="stock-btn" onclick="adjustStock(10)">+10</button>
+                                </div>
+                            </div>
+                            <span asp-validation-for="Stock" class="validation-error"></span>
+                            <small class="form-help">Số lượng sản phẩm hiện có trong kho</small>
+                        </div>
+                    </div>
+
+                    <div class="current-stock-info">
+                        <div class="stock-display">
+                            <span class="stock-label">Tồn kho hiện tại:</span>
+                            <span class="stock-value" id="currentStock">@Model.Stock</span>
+                            <span class="stock-status" id="stockStatus">
+                                @if (Model.Stock > 10)
+                                {
+                                    <span class="status-badge in-stock">Còn hàng</span>
+                                }
+                                else if (Model.Stock > 0)
+                                {
+                                    <span class="status-badge low-stock">Sắp hết</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge out-of-stock">Hết hàng</span>
+                                }
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="stock-status-info">
+                        <div class="status-item">
+                            <span class="status-dot in-stock"></span>
+                            <span>Còn hàng: > 10 sản phẩm</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot low-stock"></span>
+                            <span>Sắp hết: 1-10 sản phẩm</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot out-of-stock"></span>
+                            <span>Hết hàng: 0 sản phẩm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Upload Section -->
+            <div class="form-section full-width">
+                <h3><i class="fas fa-image"></i> Hình ảnh sản phẩm</h3>
+                
+                <div class="image-upload-container">
+                    @if (!string.IsNullOrEmpty(Model.CurrentImageURL))
+                    {
+                        <div class="current-image-section">
+                            <h4>Hình ảnh hiện tại:</h4>
+                            <div class="current-image-preview">
+                                <img src="~/upload/product/@Model.CurrentImageURL" alt="Current Image" onerror="this.src='/upload/product/no-image.svg'" />
+                                <div class="image-actions">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeCurrentImage()">
+                                        <i class="fas fa-trash"></i> Xóa ảnh hiện tại
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    
+                    <div class="new-image-section">
+                        <h4>Cập nhật hình ảnh mới:</h4>
+                        <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <h4>Tải lên hình ảnh mới</h4>
+                                <p>Kéo thả file hoặc click để chọn</p>
+                                <small>Hỗ trợ: JPG, PNG, GIF (tối đa 5MB)</small>
+                            </div>
+                            <input asp-for="ImageFile" type="file" id="imageInput" accept="image/*" class="file-input" />
+                        </div>
+                        
+                        <div class="image-preview" id="imagePreview" style="display: none;">
+                            <img id="previewImg" alt="Preview" />
+                            <button type="button" class="remove-image" onclick="removeNewImage()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <span asp-validation-for="ImageFile" class="validation-error"></span>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success btn-large">
+                    <i class="fas fa-save"></i> Cập nhật sản phẩm
+                </button>
+                <button type="button" class="btn btn-warning btn-large" onclick="resetForm()">
+                    <i class="fas fa-undo"></i> Hoàn tác
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-large">
+                    <i class="fas fa-times"></i> Hủy bỏ
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success auto-hide">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger auto-hide">
+        <i class="fas fa-exclamation-circle"></i>
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/admin_products.js"></script>
+    <script>
+        // Store original form values for reset functionality
+        const originalValues = {
+            name: '@Html.Raw(Model.Name?.Replace("'", "\\'"))',
+            description: '@Html.Raw(Model.Description?.Replace("'", "\\'").Replace("\r\n", "\\n").Replace("\n", "\\n"))',
+            price: @(Model.Price.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)),
+            stock: @Model.Stock,
+            categoryId: @Model.CategoryID,
+            brandId: @Model.BrandID
+        };
+        
+        // Store original image URL for restoration
+        const originalImageUrl = '@Model.CurrentImageURL';
+        
+        // Remove current image (add hidden field to indicate removal)
+        function removeCurrentImage() {
+            if (confirm('Bạn có chắc chắn muốn xóa hình ảnh hiện tại?')) {
+                document.querySelector('.current-image-section').style.display = 'none';
+                // Add hidden field to indicate image removal
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'RemoveCurrentImage';
+                hiddenInput.value = 'true';
+                document.querySelector('.product-form').appendChild(hiddenInput);
+            }
+        }
+        
+        // Restore original image
+        function restoreOriginalImage() {
+            const currentImageImg = document.querySelector('.current-image-preview img');
+            const actionButton = document.querySelector('.current-image-section .btn-danger');
+            
+            if (currentImageImg && originalImageUrl) {
+                // Restore original image
+                currentImageImg.src = '/upload/product/' + originalImageUrl;
+                currentImageImg.setAttribute('onerror', "this.src='/upload/product/no-image.svg'");
+                
+                // Reset button
+                if (actionButton) {
+                    actionButton.innerHTML = '<i class="fas fa-trash"></i> Xóa ảnh hiện tại';
+                    actionButton.setAttribute('onclick', 'removeCurrentImage()');
+                }
+            }
+            
+            // Clear new image input
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.querySelector('.upload-area').style.display = 'flex';
+        }
+        
+        // Image upload preview functionality
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file
+                if (!file.type.startsWith('image/')) {
+                    showAlert('error', 'Vui lòng chọn file hình ảnh!');
+                    this.value = '';
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) { // 5MB
+                    showAlert('error', 'Kích thước file không được vượt quá 5MB!');
+                    this.value = '';
+                    return;
+                }
+                
+                // Show preview and update current image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageUrl = e.target.result;
+                    
+                    // Update preview section
+                    document.getElementById('previewImg').src = imageUrl;
+                    document.getElementById('imagePreview').style.display = 'block';
+                    document.querySelector('.upload-area').style.display = 'none';
+                    
+                    // Update current image section if it exists
+                    const currentImageSection = document.querySelector('.current-image-section');
+                    const currentImageImg = document.querySelector('.current-image-preview img');
+                    
+                    if (currentImageImg) {
+                        // Update the current image with new image
+                        currentImageImg.src = imageUrl;
+                        
+                        // Update the action button text
+                        const actionButton = document.querySelector('.current-image-section .btn-danger');
+                        if (actionButton) {
+                            actionButton.innerHTML = '<i class="fas fa-undo"></i> Hoàn tác ảnh mới';
+                            actionButton.setAttribute('onclick', 'restoreOriginalImage()');
+                        }
+                        
+                        // Show current image section if it was hidden
+                        if (currentImageSection) {
+                            currentImageSection.style.display = 'block';
+                        }
+                    } else if (currentImageSection) {
+                        // If no current image exists, create one
+                        const imagePreviewDiv = document.querySelector('.current-image-preview');
+                        if (imagePreviewDiv) {
+                            const newImg = document.createElement('img');
+                            newImg.src = imageUrl;
+                            newImg.alt = 'Current Image';
+                            imagePreviewDiv.insertBefore(newImg, imagePreviewDiv.firstChild);
+                            
+                            // Update button
+                            const actionButton = imagePreviewDiv.querySelector('.btn-danger');
+                            if (actionButton) {
+                                actionButton.innerHTML = '<i class="fas fa-undo"></i> Hoàn tác ảnh mới';
+                                actionButton.setAttribute('onclick', 'restoreOriginalImage()');
+                            }
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Remove new image preview
+        function removeNewImage() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.querySelector('.upload-area').style.display = 'flex';
+            
+            // Restore original image if it was changed
+            restoreOriginalImage();
+        }
+        
+        // Stock adjustment functions
+        function adjustStock(amount) {
+            const stockInput = document.querySelector('input[name="Stock"]');
+            const currentValue = parseInt(stockInput.value) || 0;
+            const newValue = Math.max(0, currentValue + amount);
+            
+            stockInput.value = newValue;
+            updateStockDisplay(newValue);
+            
+            // Trigger input event for validation
+            stockInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        // Update stock display and status
+        function updateStockDisplay(stockValue) {
+            document.getElementById('currentStock').textContent = stockValue;
+            
+            const statusElement = document.getElementById('stockStatus');
+            let statusClass, statusText;
+            
+            if (stockValue > 10) {
+                statusClass = 'in-stock';
+                statusText = 'Còn hàng';
+            } else if (stockValue > 0) {
+                statusClass = 'low-stock';
+                statusText = 'Sắp hết';
+            } else {
+                statusClass = 'out-of-stock';
+                statusText = 'Hết hàng';
+            }
+            
+            statusElement.innerHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
+        }
+        
+        // Listen for stock input changes
+        document.querySelector('input[name="Stock"]').addEventListener('input', function() {
+            const value = parseInt(this.value) || 0;
+            updateStockDisplay(value);
+        });
+        
+        // Reset form to original values
+        function resetForm() {
+            if (confirm('Bạn có chắc chắn muốn hoàn tác tất cả thay đổi?')) {
+                document.querySelector('input[name="Name"]').value = originalValues.name;
+                document.querySelector('textarea[name="Description"]').value = originalValues.description;
+                document.querySelector('input[name="Price"]').value = originalValues.price;
+                document.querySelector('input[name="Stock"]').value = originalValues.stock;
+                document.querySelector('select[name="CategoryID"]').value = originalValues.categoryId;
+                document.querySelector('select[name="BrandID"]').value = originalValues.brandId;
+                
+                // Reset image upload and restore original
+                restoreOriginalImage();
+                
+                // Update stock display
+                updateStockDisplay(originalValues.stock);
+                
+                // Show current image if it was hidden
+                const currentImageSection = document.querySelector('.current-image-section');
+                if (currentImageSection) {
+                    currentImageSection.style.display = 'block';
+                }
+                
+                // Remove hidden removal field
+                const removalField = document.querySelector('input[name="RemoveCurrentImage"]');
+                if (removalField) {
+                    removalField.remove();
+                }
+            }
+        }
+        
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.upload-area');
+        
+        if (uploadArea) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight(e) {
+                uploadArea.classList.add('dragover');
+            }
+            
+            function unhighlight(e) {
+                uploadArea.classList.remove('dragover');
+            }
+            
+            uploadArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    document.getElementById('imageInput').files = files;
+                    // Trigger change event
+                    const event = new Event('change', { bubbles: true });
+                    document.getElementById('imageInput').dispatchEvent(event);
+                }
+            }
+        }
+        
+        // Real-time price formatting
+        document.querySelector('input[name="Price"]').addEventListener('input', function() {
+            const value = this.value.replace(/[^\d.]/g, '');
+            if (value !== this.value) {
+                this.value = value;
+            }
+        });
+        
+        // Track changes for unsaved changes warning
+        let hasUnsavedChanges = false;
+        
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', function() {
+                hasUnsavedChanges = true;
+            });
+        });
+        
+        // Warn about unsaved changes
+        window.addEventListener('beforeunload', function(e) {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'Bạn có thay đổi chưa được lưu. Bạn có chắc chắn muốn rời khỏi trang?';
+            }
+        });
+        
+        // Clear unsaved changes flag on form submission
+        document.querySelector('.product-form').addEventListener('submit', function() {
+            hasUnsavedChanges = false;
+        });
+        
+        // Initialize stock display
+        updateStockDisplay(@Model.Stock);
+    </script>
+}

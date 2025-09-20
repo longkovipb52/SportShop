@@ -1,4 +1,3 @@
-// Admin Orders Management JavaScript
 
 $(document).ready(function() {
     // Initialize page
@@ -111,6 +110,11 @@ function updateOrderStatus(orderId, status) {
                 
                 // Reload statistics
                 loadOrderStatistics();
+                
+                // If order was completed or status changed from completed, refresh product statistics
+                if (status === 'Hoàn thành' || originalValue === 'Hoàn thành') {
+                    refreshProductStatistics();
+                }
                 
                 // Add visual feedback
                 const row = $(`.order-row[data-order-id="${orderId}"]`);
@@ -644,4 +648,47 @@ function bulkUpdateStatus(status) {
             showNotification('Có lỗi xảy ra khi cập nhật', 'error');
         }
     });
+}
+
+// Refresh product statistics after order completion affects inventory
+function refreshProductStatistics() {
+    console.log('Refreshing product statistics after order completion...');
+    
+    // Check if we're on a page that has product statistics
+    if (typeof window.loadStatistics === 'function') {
+        // If product statistics function exists, call it
+        window.loadStatistics();
+    } else {
+        // Try to call the product statistics endpoint directly
+        $.ajax({
+            url: '/Admin/Products/Statistics',
+            method: 'GET',
+            success: function(data) {
+                console.log('Product statistics refreshed successfully');
+                // If product statistics cards exist on this page, update them
+                if ($('#totalProducts').length > 0) {
+                    updateProductStatisticsCards(data);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Product statistics refresh failed (this is normal if not on products page):', error);
+            }
+        });
+    }
+}
+
+// Update product statistics cards (in case they exist on current page)
+function updateProductStatisticsCards(data) {
+    if ($('#totalProducts').length) {
+        $('#totalProducts').text(data.totalProducts || 0);
+    }
+    if ($('#inStockProducts').length) {
+        $('#inStockProducts').text(data.inStockProducts || 0);
+    }
+    if ($('#lowStockProducts').length) {
+        $('#lowStockProducts').text(data.lowStockProducts || 0);
+    }
+    if ($('#outOfStockProducts').length) {
+        $('#outOfStockProducts').text(data.outOfStockProducts || 0);
+    }
 }

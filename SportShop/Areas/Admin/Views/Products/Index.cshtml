@@ -1,0 +1,273 @@
+@model SportShop.Models.ViewModels.ProductListViewModel
+@{
+    ViewData["Title"] = "Quản lý sản phẩm";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/products-index.css" />
+
+<div class="products-management">
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-box"></i> Quản lý sản phẩm</h1>
+            <div class="header-actions">
+                <a href="@Url.Action("Create")" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Thêm sản phẩm mới
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="statistics-row">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalProducts">0</h3>
+                <p>Tổng sản phẩm</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon in-stock">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="inStockProducts">0</h3>
+                <p>Còn hàng</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon low-stock">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="lowStockProducts">0</h3>
+                <p>Sắp hết hàng</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon out-of-stock">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="outOfStockProducts">0</h3>
+                <p>Hết hàng</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <form method="get" class="filters-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Tìm kiếm:</label>
+                    <input type="text" name="searchString" value="@ViewBag.CurrentSearch" placeholder="Tên sản phẩm, mô tả..." class="filter-input" />
+                </div>
+                <div class="filter-group">
+                    <label>Danh mục:</label>
+                    <select name="categoryId" class="filter-select">
+                        <option value="">Tất cả danh mục</option>
+                        @foreach (var item in ViewBag.Categories as SelectList)
+                        {
+                            <option value="@item.Value" selected="@(item.Value == ViewBag.CurrentCategory?.ToString())">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Thương hiệu:</label>
+                    <select name="brandId" class="filter-select">
+                        <option value="">Tất cả thương hiệu</option>
+                        @foreach (var item in ViewBag.Brands as SelectList)
+                        {
+                            <option value="@item.Value" selected="@(item.Value == ViewBag.CurrentBrand?.ToString())">@item.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Giá từ:</label>
+                    <input type="number" name="minPrice" value="@ViewBag.CurrentMinPrice" placeholder="0" step="0.01" class="filter-input" />
+                </div>
+                <div class="filter-group">
+                    <label>Giá đến:</label>
+                    <input type="number" name="maxPrice" value="@ViewBag.CurrentMaxPrice" placeholder="Không giới hạn" step="0.01" class="filter-input" />
+                </div>
+                <div class="filter-group">
+                    <label>Tình trạng kho:</label>
+                    <select name="stockStatus" class="filter-select">
+                        <option value="">Tất cả</option>
+                        <option value="in-stock" selected="@(ViewBag.CurrentStockStatus == "in-stock")">Còn hàng</option>
+                        <option value="low-stock" selected="@(ViewBag.CurrentStockStatus == "low-stock")">Sắp hết hàng</option>
+                        <option value="out-of-stock" selected="@(ViewBag.CurrentStockStatus == "out-of-stock")">Hết hàng</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Tìm kiếm
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Xóa bộ lọc
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Products Table -->
+    <div class="products-table-section">
+        <div class="table-header">
+            <div class="table-info">
+                <span>Hiển thị @((Model.CurrentPage - 1) * Model.PageSize + 1) - @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalItems)) của @Model.TotalItems sản phẩm</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>Hình ảnh</th>
+                        <th>Thông tin sản phẩm</th>
+                        <th>Danh mục</th>
+                        <th>Thương hiệu</th>
+                        <th>Giá</th>
+                        <th>Tồn kho</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Products.Any())
+                    {
+                        @foreach (var product in Model.Products)
+                        {
+                            <tr>
+                                <td class="product-image">
+                                    @if (!string.IsNullOrEmpty(product.ImageURL))
+                                    {
+                                        <img src="~/upload/product/@product.ImageURL" alt="@product.Name" onerror="this.src='/upload/product/no-image.svg'" />
+                                    }
+                                    else
+                                    {
+                                        <img src="~/upload/product/no-image.svg" alt="No Image" />
+                                    }
+                                </td>
+                                <td class="product-info">
+                                    <div class="product-name">@product.Name</div>
+                                    <div class="product-description">@(product.Description?.Length > 100 ? product.Description.Substring(0, 100) + "..." : product.Description)</div>
+                                    <small class="product-id">ID: @product.ProductID</small>
+                                </td>
+                                <td>@product.Category?.Name</td>
+                                <td>@product.Brand?.Name</td>
+                                <td class="product-price">@product.Price.ToString("N0") VNĐ</td>
+                                <td class="product-stock">
+                                    <span class="stock-number">@product.Stock</span>
+                                    @if (product.Stock <= 0)
+                                    {
+                                        <span class="stock-status out-of-stock">Hết hàng</span>
+                                    }
+                                    else if (product.Stock <= 10)
+                                    {
+                                        <span class="stock-status low-stock">Sắp hết</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="stock-status in-stock">Còn hàng</span>
+                                    }
+                                </td>
+                                <td class="product-status">
+                                    @if (product.Stock > 0)
+                                    {
+                                        <span class="status-badge active">Đang bán</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge inactive">Hết hàng</span>
+                                    }
+                                </td>
+                                <td class="product-date">@product.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td class="product-actions">
+                                    <div class="action-buttons">
+                                        <a href="@Url.Action("Details", new { id = product.ProductID })" class="btn-action btn-view" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Edit", new { id = product.ProductID })" class="btn-action btn-edit" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn-action btn-toggle" onclick="toggleOutOfStock(@product.ProductID)" title="@(product.Stock > 0 ? "Đánh dấu hết hàng" : "Đánh dấu có hàng")">
+                                            <i class="fas @(product.Stock > 0 ? "fa-eye-slash" : "fa-eye")"></i>
+                                        </button>
+                                        <button type="button" class="btn-action btn-delete" onclick="deleteProduct(@product.ProductID)" title="Xóa sản phẩm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="no-data">
+                                <div class="no-data-message">
+                                    <i class="fas fa-box-open"></i>
+                                    <p>Không tìm thấy sản phẩm nào</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="pagination-container">
+                <nav class="pagination-nav">
+                    <ul class="pagination">
+                        @if (Model.CurrentPage > 1)
+                        {
+                            <li><a href="@Url.Action("Index", new { page = Model.CurrentPage - 1, searchString = Model.SearchString, categoryId = Model.CategoryId, brandId = Model.BrandId, minPrice = Model.MinPrice, maxPrice = Model.MaxPrice, stockStatus = Model.StockStatus })">&laquo; Trước</a></li>
+                        }
+
+                        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                        {
+                            <li class="@(i == Model.CurrentPage ? "active" : "")">
+                                <a href="@Url.Action("Index", new { page = i, searchString = Model.SearchString, categoryId = Model.CategoryId, brandId = Model.BrandId, minPrice = Model.MinPrice, maxPrice = Model.MaxPrice, stockStatus = Model.StockStatus })">@i</a>
+                            </li>
+                        }
+
+                        @if (Model.CurrentPage < Model.TotalPages)
+                        {
+                            <li><a href="@Url.Action("Index", new { page = Model.CurrentPage + 1, searchString = Model.SearchString, categoryId = Model.CategoryId, brandId = Model.BrandId, minPrice = Model.MinPrice, maxPrice = Model.MaxPrice, stockStatus = Model.StockStatus })">Sau &raquo;</a></li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success auto-hide">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger auto-hide">
+        <i class="fas fa-exclamation-circle"></i>
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<script src="~/js/admin_products.js"></script>

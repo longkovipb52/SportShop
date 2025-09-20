@@ -152,7 +152,7 @@
                     <div class="order-card">
                         <div class="order-header">
                             <div class="order-id">#@order.OrderID</div>
-                            <div class="order-status status-@order.Status.ToLower()">
+                            <div class="order-status status-@order.Status.ToLower().Replace(" ", "-")">
                                 @order.Status
                             </div>
                         </div>

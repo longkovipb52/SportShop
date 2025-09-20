@@ -1,0 +1,381 @@
+@model SportShop.Models.Product
+@{
+    ViewData["Title"] = "Chi tiết sản phẩm";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/products-details.css" />
+
+<div class="product-details-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-info-circle"></i> Chi tiết sản phẩm</h1>
+            <div class="header-actions">
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                </a>
+                <a href="@Url.Action("Edit", new { id = Model.ProductID })" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Chỉnh sửa
+                </a>
+                <button type="button" class="btn btn-warning" onclick="toggleOutOfStock(@Model.ProductID)">
+                    <i class="fas @(Model.Stock > 0 ? "fa-eye-slash" : "fa-eye")"></i>
+                    @(Model.Stock > 0 ? "Đánh dấu hết hàng" : "Đánh dấu có hàng")
+                </button>
+                <button type="button" class="btn btn-danger" onclick="deleteProduct(@Model.ProductID)">
+                    <i class="fas fa-trash"></i> Xóa sản phẩm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-content">
+        <!-- Main Product Information -->
+        <div class="product-main-info">
+            <div class="product-image-section">
+                <div class="main-image">
+                    @if (!string.IsNullOrEmpty(Model.ImageURL))
+                    {
+                        <img src="~/upload/product/@Model.ImageURL" alt="@Model.Name" onerror="this.src='/upload/product/no-image.svg'" />
+                    }
+                    else
+                    {
+                        <img src="~/upload/product/no-image.svg" alt="No Image" />
+                    }
+                </div>
+                <div class="image-info">
+                    <small>Hình ảnh chính của sản phẩm</small>
+                </div>
+            </div>
+
+            <div class="product-info-section">
+                <div class="info-group">
+                    <h2 class="product-title">@Model.Name</h2>
+                    <div class="product-meta">
+                        <span class="product-id">ID: @Model.ProductID</span>
+                        <span class="created-date">Tạo: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                </div>
+
+                <div class="info-group">
+                    <label>Mô tả:</label>
+                    <div class="description-content">
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <p>@Model.Description</p>
+                        }
+                        else
+                        {
+                            <p class="no-data">Chưa có mô tả</p>
+                        }
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-group">
+                        <label>Danh mục:</label>
+                        <div class="category-badge">
+                            <i class="fas fa-folder"></i>
+                            @Model.Category?.Name
+                        </div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Thương hiệu:</label>
+                        <div class="brand-badge">
+                            <i class="fas fa-tag"></i>
+                            @Model.Brand?.Name
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-group">
+                        <label>Giá bán:</label>
+                        <div class="price-display">
+                            @Model.Price.ToString("N0") VNĐ
+                        </div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Tồn kho:</label>
+                        <div class="stock-display">
+                            <span class="stock-number">@Model.Stock</span>
+                            @if (Model.Stock <= 0)
+                            {
+                                <span class="stock-status out-of-stock">Hết hàng</span>
+                            }
+                            else if (Model.Stock <= 10)
+                            {
+                                <span class="stock-status low-stock">Sắp hết</span>
+                            }
+                            else
+                            {
+                                <span class="stock-status in-stock">Còn hàng</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-group">
+                    <label>Trạng thái:</label>
+                    <div class="product-status">
+                        @if (Model.Stock > 0)
+                        {
+                            <span class="status-badge active">
+                                <i class="fas fa-check-circle"></i>
+                                Đang bán
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="status-badge inactive">
+                                <i class="fas fa-times-circle"></i>
+                                Hết hàng
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information Tabs -->
+        <div class="additional-info">
+            <div class="tab-navigation">
+                <button class="tab-btn active" onclick="showTab('attributes')">
+                    <i class="fas fa-cogs"></i> Thuộc tính
+                </button>
+                <button class="tab-btn" onclick="showTab('reviews')">
+                    <i class="fas fa-star"></i> Đánh giá (@(Model.Reviews?.Count ?? 0))
+                </button>
+                <button class="tab-btn" onclick="showTab('analytics')">
+                    <i class="fas fa-chart-bar"></i> Thống kê
+                </button>
+            </div>
+
+            <!-- Attributes Tab -->
+            <div id="attributes-tab" class="tab-content active">
+                <div class="tab-header">
+                    <h3>Thuộc tính sản phẩm</h3>
+                    <a href="#" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Thêm thuộc tính
+                    </a>
+                </div>
+
+                @if (Model.Attributes?.Any() == true)
+                {
+                    <div class="attributes-grid">
+                        @foreach (var attribute in Model.Attributes)
+                        {
+                            <div class="attribute-card">
+                                <div class="attribute-image">
+                                    @if (!string.IsNullOrEmpty(attribute.ImageURL))
+                                    {
+                                        <img src="~/upload/product/@(attribute.ImageURL)" alt="Product Attribute" />
+                                    }
+                                    else
+                                    {
+                                        <div class="no-image">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="attribute-info">
+                                    <div class="attribute-variant">
+                                        @if (!string.IsNullOrEmpty(attribute.Size))
+                                        {
+                                            <span class="size-tag">@(attribute.Size)</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(attribute.Color))
+                                        {
+                                            <span class="color-tag">@(attribute.Color)</span>
+                                        }
+                                    </div>
+                                    <div class="attribute-details">
+                                        <div class="attribute-stock">
+                                            <strong>Tồn kho: @(attribute.Stock)</strong>
+                                        </div>
+                                        @if (attribute.Price.HasValue)
+                                        {
+                                            <div class="attribute-price">
+                                                Giá: @(attribute.Price?.ToString("N0")) VNĐ
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="attribute-actions">
+                                    <button class="btn-action btn-edit" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-action btn-delete" title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="no-data-section">
+                        <i class="fas fa-cogs"></i>
+                        <h4>Chưa có thuộc tính nào</h4>
+                        <p>Thêm các thuộc tính như kích thước, màu sắc để tạo biến thể cho sản phẩm</p>
+                        <a href="#" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Thêm thuộc tính đầu tiên
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <!-- Reviews Tab -->
+            <div id="reviews-tab" class="tab-content">
+                <div class="tab-header">
+                    <h3>Đánh giá khách hàng</h3>
+                    @if (Model.Reviews?.Any() == true)
+                    {
+                        <div class="review-summary">
+                            @{
+                                var avgRating = Model.Reviews.Where(r => r.Rating.HasValue).Average(r => r.Rating.Value);
+                                var totalReviews = Model.Reviews.Count();
+                            }
+                            <div class="avg-rating">
+                                <span class="rating-score">@avgRating.ToString("0.0")</span>
+                                <div class="rating-stars">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fas fa-star @(i <= avgRating ? "filled" : "empty")"></i>
+                                    }
+                                </div>
+                                <span class="review-count">(@totalReviews đánh giá)</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (Model.Reviews?.Any() == true)
+                {
+                    <div class="reviews-list">
+                        @foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
+                        {
+                            <div class="review-item">
+                                <div class="review-header">
+                                    <div class="reviewer-info">
+                                        <strong>@review.User?.FullName</strong>
+                                        <span class="review-date">@review.CreatedAt?.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    @if (review.Rating.HasValue)
+                                    {
+                                        <div class="review-rating">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="fas fa-star @(i <= review.Rating ? "filled" : "empty")"></i>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                <div class="review-content">
+                                    @review.Comment
+                                </div>
+                                <div class="review-status">
+                                    <span class="status-@review.Status?.ToLower()">@review.Status</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="no-data-section">
+                        <i class="fas fa-star"></i>
+                        <h4>Chưa có đánh giá nào</h4>
+                        <p>Sản phẩm này chưa nhận được đánh giá nào từ khách hàng</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <div class="tab-header">
+                    <h3>Thống kê sản phẩm</h3>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="analytics-content">
+                            <h4>Đã bán</h4>
+                            <div class="analytics-number" id="totalSold">@(Model.OrderItems?.Where(oi => oi.Order.Status == "Hoàn thành").Sum(oi => oi.Quantity) ?? 0)</div>
+                            <small>Tổng số lượng đã bán</small>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="analytics-content">
+                            <h4>Doanh thu</h4>
+                            <div class="analytics-number">@((Model.OrderItems?.Where(oi => oi.Order.Status == "Hoàn thành").Sum(oi => oi.UnitPrice * oi.Quantity) ?? 0).ToString("N0")) VNĐ</div>
+                            <small>Tổng doanh thu từ sản phẩm</small>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="analytics-content">
+                            <h4>Yêu thích</h4>
+                            <div class="analytics-number">@Model.TotalLikes</div>
+                            <small>Tổng số lượt nhấn yêu thích</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success auto-hide">
+        <i class="fas fa-check-circle"></i>
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger auto-hide">
+        <i class="fas fa-exclamation-circle"></i>
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<script src="~/js/admin_products.js"></script>
+<script>
+    // Tab functionality
+    function showTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById(tabName + '-tab').classList.add('active');
+        
+        // Add active class to clicked button
+        event.target.classList.add('active');
+    }
+    
+    // Auto-hide alerts
+    autoHideAlerts();
+</script>

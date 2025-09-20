@@ -1,0 +1,247 @@
+@model IEnumerable<SportShop.Models.Brand>
+
+@{
+    ViewData["Title"] = "Quản lý thương hiệu";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_brands.css" asp-append-version="true" />
+}
+
+<div class="brands-container">
+    <!-- Header với nút thêm mới -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h2 class="page-title">
+                    <i class="fas fa-award"></i>
+                    Quản lý thương hiệu
+                </h2>
+                <p class="page-subtitle">Quản lý tất cả thương hiệu sản phẩm trong hệ thống</p>
+            </div>
+            <div class="header-right">
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Thêm thương hiệu mới
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thanh tìm kiếm và bộ lọc -->
+    <div class="search-filter-section">
+        <div class="brands-search-box">
+            <form method="get" asp-action="Index" class="search-form">
+                <div class="input-group">
+                    <input type="text" name="search" value="@ViewData["CurrentSearch"]" 
+                           class="form-control" placeholder="Tìm kiếm theo tên hoặc mô tả...">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    @if (!string.IsNullOrEmpty(ViewData["CurrentSearch"]?.ToString()))
+                    {
+                        <a href="@Url.Action("Index")" class="btn btn-outline-danger">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Thông báo -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Bảng danh sách thương hiệu -->
+    <div class="brands-table-section">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table brands-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Logo</th>
+                            <th>Tên thương hiệu</th>
+                            <th>Mô tả</th>
+                            <th>Ngày tạo</th>
+                            <th>Số sản phẩm</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var brand in Model)
+                        {
+                            <tr>
+                                <td class="brand-id">
+                                    <span class="id-badge">#@brand.BrandID</span>
+                                </td>
+                                <td class="brand-logo">
+                                    @if (!string.IsNullOrEmpty(brand.Logo))
+                                    {
+                                        <img src="~/upload/branch/@brand.Logo" alt="@brand.Name" class="brand-img">
+                                    }
+                                    else
+                                    {
+                                        <div class="no-logo">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    }
+                                </td>
+                                <td class="brand-name">
+                                    <strong>@brand.Name</strong>
+                                </td>
+                                <td class="brand-description">
+                                    @if (!string.IsNullOrEmpty(brand.Description))
+                                    {
+                                        <span class="description-text">@(brand.Description.Length > 100 ? brand.Description.Substring(0, 100) + "..." : brand.Description)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chưa có mô tả</span>
+                                    }
+                                </td>
+                                <td class="brand-created">
+                                    @if (brand.CreatedAt.HasValue)
+                                    {
+                                        <span class="created-date">@brand.CreatedAt.Value.ToString("dd/MM/yyyy")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td class="brand-products">
+                                    <span class="product-count" data-brand-id="@brand.BrandID">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </span>
+                                </td>
+                                <td class="brand-actions">
+                                    <div class="action-buttons">
+                                        <a href="@Url.Action("Details", new { id = brand.BrandID })" 
+                                           class="btn btn-sm btn-info" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Edit", new { id = brand.BrandID })" 
+                                           class="btn btn-sm btn-warning" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger delete-brand-btn" 
+                                                data-brand-id="@brand.BrandID" 
+                                                data-brand-name="@brand.Name" 
+                                                title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Phân trang -->
+            @if ((int)ViewData["TotalPages"] > 1)
+            {
+                <nav aria-label="Brands pagination" class="pagination-nav">
+                    <ul class="pagination justify-content-center">
+                        @{
+                            var currentPage = (int)ViewData["CurrentPage"];
+                            var totalPages = (int)ViewData["TotalPages"];
+                            var search = ViewData["CurrentSearch"]?.ToString();
+                        }
+
+                        <!-- Previous button -->
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { page = currentPage - 1, search = search })">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+
+                        <!-- Page numbers -->
+                        @for (var i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { page = i, search = search })">@i</a>
+                            </li>
+                        }
+
+                        <!-- Next button -->
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { page = currentPage + 1, search = search })">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="pagination-info">
+                    <small class="text-muted">
+                        Hiển thị @((currentPage - 1) * (int)ViewData["PageSize"] + 1) - 
+                        @(Math.Min(currentPage * (int)ViewData["PageSize"], (int)ViewData["TotalRecords"])) 
+                        trong tổng số @ViewData["TotalRecords"] thương hiệu
+                    </small>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-award"></i>
+                </div>
+                <h3>Chưa có thương hiệu nào</h3>
+                <p>Bắt đầu bằng cách thêm thương hiệu đầu tiên cho cửa hàng của bạn</p>
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Thêm thương hiệu đầu tiên
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="deleteBrandModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa thương hiệu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa thương hiệu <strong id="brandNameToDelete"></strong>?</p>
+                <p class="text-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Hành động này không thể hoàn tác!
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    <script src="~/js/admin_brands.js" asp-append-version="true"></script>
+}

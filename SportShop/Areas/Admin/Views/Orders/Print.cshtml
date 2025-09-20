@@ -1,0 +1,469 @@
+@model SportShop.Models.Order
+@{
+    ViewData["Title"] = $"In đơn hàng #{Model.OrderID}";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .print-header {
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .company-logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .company-info {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .order-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+            margin: 30px 0 20px 0;
+            text-align: center;
+        }
+        
+        .order-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .info-section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .info-value {
+            color: #333;
+            text-align: right;
+        }
+        
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        
+        .status-completed,
+        .status-hoàn-thành { background: #d4edda; color: #155724; }
+        .status-pending,
+        .status-chờ-xử-lý { background: #fff3cd; color: #856404; }
+        .status-confirmed,
+        .status-đã-xác-nhận { background: #cce5ff; color: #004085; }
+        .status-processing,
+        .status-đang-xử-lý { background: #e7d6ff; color: #6f42c1; }
+        .status-shipping,
+        .status-đang-giao-hàng { background: #ffe4cc; color: #d1510b; }
+        .status-cancelled,
+        .status-đã-hủy { background: #f8d7da; color: #721c24; }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            border: 1px solid #ddd;
+        }
+        
+        .items-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        
+        .items-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .product-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+            object-fit: cover;
+            border: 1px solid #ddd;
+        }
+        
+        .product-details h6 {
+            margin: 0;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .product-brand {
+            font-size: 0.8rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        .variant-info {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .price {
+            font-weight: 600;
+            color: #27ae60;
+        }
+        
+        .total-section {
+            margin-top: 30px;
+            border-top: 2px solid #667eea;
+            padding-top: 20px;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 1.1rem;
+        }
+        
+        .total-row.final {
+            font-weight: bold;
+            font-size: 1.3rem;
+            color: #27ae60;
+            border-top: 1px solid #ddd;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+        
+        .print-footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        
+        .print-actions {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        
+        @@media print {
+            .print-actions {
+                display: none !important;
+            }
+            
+            body {
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .info-section {
+                background: #f9f9f9 !important;
+            }
+            
+            .items-table th {
+                background: #667eea !important;
+                color: white !important;
+            }
+        }
+        
+        @@media (max-width: 768px) {
+            .order-info-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .info-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .info-value {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <!-- Print Actions -->
+        <div class="print-actions">
+            <button type="button" class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> In đơn hàng
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="window.close()">
+                <i class="fas fa-times"></i> Đóng
+            </button>
+        </div>
+        
+        <!-- Print Header -->
+        <div class="print-header">
+            <div class="company-logo">SportShop</div>
+            <div class="company-info">
+                <div>Cửa hàng thể thao hàng đầu Việt Nam</div>
+                <div>Địa chỉ: 123 Đường ABC, Quận 1, TP.HCM</div>
+                <div>Điện thoại: (028) 1234-5678 | Email: info@sportshop.vn</div>
+            </div>
+        </div>
+        
+        <!-- Order Title -->
+        <h1 class="order-title">HÓA ĐƠN BÁN HÀNG #@Model.OrderID</h1>
+        
+        <!-- Order Information Grid -->
+        <div class="order-info-grid">
+            <!-- Customer Information -->
+            <div class="info-section">
+                <div class="section-title">Thông tin khách hàng</div>
+                <div class="info-row">
+                    <span class="info-label">Họ tên:</span>
+                    <span class="info-value">@Model.ShippingName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Số điện thoại:</span>
+                    <span class="info-value">@Model.ShippingPhone</span>
+                </div>
+                @if (Model.User != null)
+                {
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">@Model.User.Email</span>
+                    </div>
+                }
+                <div class="info-row">
+                    <span class="info-label">Địa chỉ giao hàng:</span>
+                    <span class="info-value">@Model.ShippingAddress</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Note))
+                {
+                    <div class="info-row">
+                        <span class="info-label">Ghi chú:</span>
+                        <span class="info-value">@Model.Note</span>
+                    </div>
+                }
+            </div>
+            
+            <!-- Order Information -->
+            <div class="info-section">
+                <div class="section-title">Thông tin đơn hàng</div>
+                <div class="info-row">
+                    <span class="info-label">Mã đơn hàng:</span>
+                    <span class="info-value">#@Model.OrderID</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ngày đặt hàng:</span>
+                    <span class="info-value">@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Trạng thái:</span>
+                    <span class="info-value">
+                        <span class="status-badge status-@Model.Status?.ToLower().Replace(" ", "-")">
+                            @Model.Status
+                        </span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Số lượng sản phẩm:</span>
+                    <span class="info-value">@Model.OrderItems.Sum(x => x.Quantity) sản phẩm</span>
+                </div>
+                @if (Model.Payments.Any())
+                {
+                    var payment = Model.Payments.First();
+                    <div class="info-row">
+                        <span class="info-label">Phương thức thanh toán:</span>
+                        <span class="info-value">@payment.Method</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Trạng thái thanh toán:</span>
+                        <span class="info-value">@payment.Status</span>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Order Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 40%">Sản phẩm</th>
+                    <th style="width: 20%">Phân loại</th>
+                    <th style="width: 15%">Đơn giá</th>
+                    <th style="width: 10%">Số lượng</th>
+                    <th style="width: 15%">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.OrderItems)
+                {
+                    <tr>
+                        <td>
+                            <div class="product-info">
+                                <img src="~/upload/product/@item.Product.ImageURL" 
+                                     alt="@item.Product.Name" 
+                                     class="product-image"
+                                     onerror="this.src='~/upload/product/no-image.svg'">
+                                <div class="product-details">
+                                    <h6>@item.Product.Name</h6>
+                                    @if (item.Product.Brand != null)
+                                    {
+                                        <p class="product-brand">@item.Product.Brand.Name</p>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @if (item.Attribute != null)
+                            {
+                                <div class="variant-info">
+                                    @if (!string.IsNullOrEmpty(item.Attribute.Size))
+                                    {
+                                        <div>Size: @item.Attribute.Size</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(item.Attribute.Color))
+                                    {
+                                        <div>Màu: @item.Attribute.Color</div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="variant-info">Mặc định</span>
+                            }
+                        </td>
+                        <td class="price">@item.UnitPrice.ToString("N0") ₫</td>
+                        <td style="text-align: center;">@item.Quantity</td>
+                        <td class="price">@((item.Quantity * item.UnitPrice).ToString("N0")) ₫</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        
+        <!-- Total Section -->
+        <div class="total-section">
+            <div class="total-row">
+                <span>Tạm tính:</span>
+                <span class="price">@Model.OrderItems.Sum(x => x.Quantity * x.UnitPrice).ToString("N0") ₫</span>
+            </div>
+            <div class="total-row">
+                <span>Phí vận chuyển:</span>
+                <span>Miễn phí</span>
+            </div>
+            <div class="total-row">
+                <span>Giảm giá:</span>
+                <span>0 ₫</span>
+            </div>
+            <div class="total-row final">
+                <span>Tổng cộng:</span>
+                <span>@Model.TotalAmount.ToString("N0") ₫</span>
+            </div>
+        </div>
+        
+        <!-- Print Footer -->
+        <div class="print-footer">
+            <p><strong>Cảm ơn bạn đã mua sắm tại SportShop!</strong></p>
+            <p>Đơn hàng được in lúc: @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")</p>
+            <p>Mọi thắc mắc xin liên hệ: (028) 1234-5678 hoặc info@sportshop.vn</p>
+        </div>
+    </div>
+    
+    <script>
+        // Auto print when page loads
+        window.onload = function() {
+            // Add slight delay to ensure everything is loaded
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        };
+        
+        // Close window after printing
+        window.onafterprint = function() {
+            setTimeout(function() {
+                window.close();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

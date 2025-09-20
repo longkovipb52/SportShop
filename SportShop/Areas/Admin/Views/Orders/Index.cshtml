@@ -1,0 +1,379 @@
+@model SportShop.Models.ViewModels.OrderIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/orders-index.css" asp-append-version="true" />
+}
+
+<div class="orders-management">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h2 class="page-title">
+                    <i class="fas fa-shopping-cart"></i>
+                    Quản lý đơn hàng
+                </h2>
+                <p class="page-subtitle">Theo dõi và quản lý tất cả đơn hàng</p>
+            </div>
+            <div class="header-actions">
+                <button type="button" class="btn btn-primary" onclick="refreshOrders()">
+                    <i class="fas fa-sync-alt"></i>
+                    Làm mới
+                </button>
+                <button type="button" class="btn btn-success" onclick="exportOrders()">
+                    <i class="fas fa-download"></i>
+                    Xuất báo cáo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card stat-total">
+            <div class="stat-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-number" id="totalOrders">@Model.TotalItems</h3>
+                <p class="stat-label">Tổng đơn hàng</p>
+            </div>
+        </div>
+        <div class="stat-card stat-pending">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-number" id="pendingOrders">-</h3>
+                <p class="stat-label">Chờ xử lý</p>
+            </div>
+        </div>
+        <div class="stat-card stat-completed">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-number" id="completedOrders">-</h3>
+                <p class="stat-label">Hoàn thành</p>
+            </div>
+        </div>
+        <div class="stat-card stat-revenue">
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-number" id="totalRevenue">-</h3>
+                <p class="stat-label">Doanh thu</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="filters-section">
+        <form method="get" class="search-filters-form">
+            <div class="search-group">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="searchString" value="@Model.SearchString" 
+                           placeholder="Tìm kiếm theo mã đơn, tên khách hàng, số điện thoại..." 
+                           class="search-input">
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <select name="statusFilter" class="filter-select">
+                    @foreach (dynamic option in ViewBag.StatusOptions)
+                    {
+                        <option value="@option.Value" selected="@(Model.StatusFilter == option.Value ? "selected" : null)">
+                            @option.Text
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <select name="pageSize" class="page-size-select">
+                    <option value="10" selected="@(Model.PageSize == 10 ? "selected" : null)">10 / trang</option>
+                    <option value="25" selected="@(Model.PageSize == 25 ? "selected" : null)">25 / trang</option>
+                    <option value="50" selected="@(Model.PageSize == 50 ? "selected" : null)">50 / trang</option>
+                    <option value="100" selected="@(Model.PageSize == 100 ? "selected" : null)">100 / trang</option>
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i>
+                    Lọc
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i>
+                    Xóa bộ lọc
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="table-section">
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <a asp-action="Index" 
+                               asp-route-sortOrder="@ViewData["OrderDateSortParm"]"
+                               asp-route-searchString="@Model.SearchString"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               asp-route-pageSize="@Model.PageSize">
+                                Mã đơn hàng
+                                @if (ViewData["CurrentSort"]?.ToString() == "")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "date_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th>Khách hàng</th>
+                        <th>Ngày đặt</th>
+                        <th>
+                            <a asp-action="Index" 
+                               asp-route-sortOrder="@ViewData["AmountSortParm"]"
+                               asp-route-searchString="@Model.SearchString"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               asp-route-pageSize="@Model.PageSize">
+                                Tổng tiền
+                                @if (ViewData["CurrentSort"]?.ToString() == "amount")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "amount_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="Index" 
+                               asp-route-sortOrder="@ViewData["StatusSortParm"]"
+                               asp-route-searchString="@Model.SearchString"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               asp-route-pageSize="@Model.PageSize">
+                                Trạng thái
+                                @if (ViewData["CurrentSort"]?.ToString() == "status")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "status_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th>Thanh toán</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Orders.Any())
+                    {
+                        @foreach (var order in Model.Orders)
+                        {
+                            <tr class="order-row" data-order-id="@order.OrderID">
+                                <td>
+                                    <div class="order-id">
+                                        <strong>#@order.OrderID</strong>
+                                        <small>@order.OrderItems.Count() sản phẩm</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="customer-info">
+                                        <div class="customer-name">@order.ShippingName</div>
+                                        <div class="customer-contact">
+                                            <i class="fas fa-phone"></i> @order.ShippingPhone
+                                        </div>
+                                        @if (order.User != null)
+                                        {
+                                            <div class="customer-email">
+                                                <i class="fas fa-envelope"></i> @order.User.Email
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="order-date">
+                                        <div class="date">@order.OrderDate.ToString("dd/MM/yyyy")</div>
+                                        <div class="time">@order.OrderDate.ToString("HH:mm")</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="order-amount">
+                                        @order.TotalAmount.ToString("N0") ₫
+                                    </div>
+                                </td>
+                                <td>
+                                    <select class="status-select" data-order-id="@order.OrderID" 
+                                            onchange="updateOrderStatus(@order.OrderID, this.value)">
+                                        @foreach (string status in ViewBag.StatusSelectOptions)
+                                        {
+                                            <option value="@status" selected="@(order.Status == status ? "selected" : null)">
+                                                @status
+                                            </option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="payment-info">
+                                        @if (order.Payments.Any())
+                                        {
+                                            var payment = order.Payments.First();
+                                            <div class="payment-method">@payment.Method</div>
+                                            <div class="payment-status status-@payment.Status?.ToLower().Replace(" ", "-")">
+                                                @payment.Status
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="payment-status status-pending">Chưa thanh toán</div>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a asp-action="Details" asp-route-id="@order.OrderID" 
+                                           class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a asp-action="Print" asp-route-id="@order.OrderID" 
+                                           class="btn btn-sm btn-outline-success" title="In đơn hàng" target="_blank">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteOrder(@order.OrderID)" title="Xóa đơn hàng">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="no-data">
+                                <div class="no-data-content">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <h4>Không có đơn hàng nào</h4>
+                                    <p>Chưa có đơn hàng nào trong hệ thống hoặc không khớp với điều kiện tìm kiếm.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="pagination-section">
+                <div class="pagination-info">
+                    Hiển thị @((Model.CurrentPage - 1) * Model.PageSize + 1) - 
+                    @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalItems) 
+                    trong tổng số @Model.TotalItems đơn hàng
+                </div>
+                
+                <nav class="pagination-nav">
+                    <ul class="pagination">
+                        @if (Model.CurrentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-page="@(Model.CurrentPage - 1)"
+                                   asp-route-searchString="@Model.SearchString"
+                                   asp-route-statusFilter="@Model.StatusFilter"
+                                   asp-route-sortOrder="@Model.SortOrder"
+                                   asp-route-pageSize="@Model.PageSize">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        }
+
+                        @for (int i = Math.Max(1, Model.CurrentPage - 2); 
+                              i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-page="@i"
+                                   asp-route-searchString="@Model.SearchString"
+                                   asp-route-statusFilter="@Model.StatusFilter"
+                                   asp-route-sortOrder="@Model.SortOrder"
+                                   asp-route-pageSize="@Model.PageSize">
+                                    @i
+                                </a>
+                            </li>
+                        }
+
+                        @if (Model.CurrentPage < Model.TotalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-page="@(Model.CurrentPage + 1)"
+                                   asp-route-searchString="@Model.SearchString"
+                                   asp-route-statusFilter="@Model.StatusFilter"
+                                   asp-route-sortOrder="@Model.SortOrder"
+                                   asp-route-pageSize="@Model.PageSize">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa đơn hàng này không?</p>
+                <p class="text-danger"><strong>Lưu ý:</strong> Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_orders.js" asp-append-version="true"></script>
+}

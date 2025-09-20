@@ -1,0 +1,326 @@
+@model SportShop.Models.ViewModels.OrderDetailsViewModel
+@{
+    ViewData["Title"] = $"Chi tiết đơn hàng #{Model.Order.OrderID}";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/orders-details.css" asp-append-version="true" />
+}
+
+<div class="order-details">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h2 class="page-title">
+                    <i class="fas fa-file-invoice"></i>
+                    Chi tiết đơn hàng #@Model.Order.OrderID
+                </h2>
+                <div class="order-meta">
+                    <span class="order-date">
+                        <i class="fas fa-calendar"></i>
+                        @Model.Order.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                    </span>
+                    <span class="order-status status-@Model.Order.Status?.ToLower().Replace(" ", "-")">
+                        @Model.Order.Status
+                    </span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại
+                </a>
+                <a asp-action="Print" asp-route-id="@Model.Order.OrderID" 
+                   class="btn btn-outline-primary" target="_blank">
+                    <i class="fas fa-print"></i>
+                    In đơn hàng
+                </a>
+                <button type="button" class="btn btn-danger" onclick="deleteOrder(@Model.Order.OrderID)">
+                    <i class="fas fa-trash"></i>
+                    Xóa đơn hàng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="details-grid">
+        <!-- Order Status Card -->
+        <div class="details-card status-card">
+            <div class="card-header">
+                <h3><i class="fas fa-tasks"></i> Trạng thái đơn hàng</h3>
+            </div>
+            <div class="card-body">
+                <div class="status-timeline">
+                    <div class="timeline-item @(new[] {"Chờ xử lý", "Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn thành"}.Contains(Model.Order.Status) ? "completed" : "")">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>Chờ xử lý</h4>
+                            <p>Đơn hàng đã được tạo</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item @(new[] {"Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn thành"}.Contains(Model.Order.Status) ? "completed" : "")">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>Đã xác nhận</h4>
+                            <p>Đơn hàng đã được xác nhận</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item @(new[] {"Đang xử lý", "Đang giao hàng", "Hoàn thành"}.Contains(Model.Order.Status) ? "completed" : "")">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>Đang xử lý</h4>
+                            <p>Đang chuẩn bị hàng hóa</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item @(new[] {"Đang giao hàng", "Hoàn thành"}.Contains(Model.Order.Status) ? "completed" : "")">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>Đang giao hàng</h4>
+                            <p>Hàng hóa đang được vận chuyển</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item @(Model.Order.Status == "Hoàn thành" ? "completed" : "")">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>Hoàn thành</h4>
+                            <p>Đơn hàng đã được giao thành công</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-update">
+                    <label for="statusSelect">Cập nhật trạng thái:</label>
+                    <select id="statusSelect" class="form-control" onchange="updateOrderStatus(@Model.Order.OrderID, this.value)">
+                        @foreach (string status in ViewBag.StatusOptions)
+                        {
+                            <option value="@status" selected="@(Model.Order.Status == status ? "selected" : null)">
+                                @status
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="details-card customer-card">
+            <div class="card-header">
+                <h3><i class="fas fa-user"></i> Thông tin khách hàng</h3>
+            </div>
+            <div class="card-body">
+                <div class="customer-info">
+                    <div class="info-row">
+                        <label>Họ tên:</label>
+                        <span>@Model.Order.ShippingName</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Số điện thoại:</label>
+                        <span>@Model.Order.ShippingPhone</span>
+                    </div>
+                    @if (Model.Order.User != null)
+                    {
+                        <div class="info-row">
+                            <label>Email:</label>
+                            <span>@Model.Order.User.Email</span>
+                        </div>
+                        <div class="info-row">
+                            <label>Tài khoản:</label>
+                            <span>@Model.Order.User.FullName</span>
+                        </div>
+                    }
+                    <div class="info-row">
+                        <label>Địa chỉ giao hàng:</label>
+                        <span>@Model.Order.ShippingAddress</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Order.Note))
+                    {
+                        <div class="info-row">
+                            <label>Ghi chú:</label>
+                            <span>@Model.Order.Note</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div class="details-card payment-card">
+            <div class="card-header">
+                <h3><i class="fas fa-credit-card"></i> Thông tin thanh toán</h3>
+            </div>
+            <div class="card-body">
+                @if (Model.Payment != null)
+                {
+                    <div class="payment-info">
+                        <div class="info-row">
+                            <label>Phương thức:</label>
+                            <span class="payment-method">@Model.Payment.Method</span>
+                        </div>
+                        <div class="info-row">
+                            <label>Trạng thái:</label>
+                            <span class="payment-status status-@Model.Payment.Status?.ToLower().Replace(" ", "-")">
+                                @Model.Payment.Status
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <label>Số tiền:</label>
+                            <span class="payment-amount">@Model.Payment.Amount.ToString("N0") ₫</span>
+                        </div>
+                        @if (Model.Payment.PaymentDate.HasValue)
+                        {
+                            <div class="info-row">
+                                <label>Ngày thanh toán:</label>
+                                <span>@Model.Payment.PaymentDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="no-payment">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Chưa có thông tin thanh toán</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="details-card summary-card">
+            <div class="card-header">
+                <h3><i class="fas fa-receipt"></i> Tóm tắt đơn hàng</h3>
+            </div>
+            <div class="card-body">
+                <div class="summary-info">
+                    <div class="summary-row">
+                        <label>Tổng sản phẩm:</label>
+                        <span>@Model.OrderItems.Sum(x => x.Quantity) sản phẩm</span>
+                    </div>
+                    <div class="summary-row">
+                        <label>Tạm tính:</label>
+                        <span>@Model.OrderItems.Sum(x => x.Quantity * x.UnitPrice).ToString("N0") ₫</span>
+                    </div>
+                    <div class="summary-row">
+                        <label>Phí vận chuyển:</label>
+                        <span>Miễn phí</span>
+                    </div>
+                    <div class="summary-row total-row">
+                        <label>Tổng cộng:</label>
+                        <span class="total-amount">@Model.Order.TotalAmount.ToString("N0") ₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="details-card items-card">
+        <div class="card-header">
+            <h3><i class="fas fa-shopping-bag"></i> Sản phẩm đã đặt (@Model.OrderItems.Count sản phẩm)</h3>
+        </div>
+        <div class="card-body">
+            <div class="items-table-container">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Phân loại</th>
+                            <th>Đơn giá</th>
+                            <th>Số lượng</th>
+                            <th>Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderItems)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="product-info">
+                                        <div class="product-image">
+                                            <img src="~/upload/product/@item.Product.ImageURL" 
+                                                 alt="@item.Product.Name" 
+                                                 onerror="this.src='~/upload/product/no-image.svg'">
+                                        </div>
+                                        <div class="product-details">
+                                            <h4 class="product-name">@item.Product.Name</h4>
+                                            <p class="product-brand">@item.Product.Brand?.Name</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.Attribute != null)
+                                    {
+                                        <div class="product-variant">
+                                            @if (!string.IsNullOrEmpty(item.Attribute.Size))
+                                            {
+                                                <span class="variant-size">Size: @item.Attribute.Size</span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(item.Attribute.Color))
+                                            {
+                                                <span class="variant-color">Màu: @item.Attribute.Color</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="no-variant">Mặc định</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="unit-price">@item.UnitPrice.ToString("N0") ₫</span>
+                                </td>
+                                <td>
+                                    <span class="quantity">@item.Quantity</span>
+                                </td>
+                                <td>
+                                    <span class="total-price">@((item.Quantity * item.UnitPrice).ToString("N0")) ₫</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Cảnh báo!</strong> Bạn có chắc chắn muốn xóa đơn hàng #@Model.Order.OrderID không?
+                </div>
+                <p>Hành động này sẽ:</p>
+                <ul>
+                    <li>Xóa vĩnh viễn đơn hàng và tất cả thông tin liên quan</li>
+                    <li>Xóa thông tin thanh toán</li>
+                    <li>Không thể hoàn tác</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form asp-action="Delete" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Order.OrderID" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i>
+                        Xóa đơn hàng
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_orders.js" asp-append-version="true"></script>
+}

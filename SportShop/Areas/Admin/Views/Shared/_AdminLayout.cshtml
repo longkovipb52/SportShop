@@ -48,7 +48,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/Admin/Orders">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Orders" ? "active" : "")" href="/Admin/Orders">
                         <i class="fas fa-shopping-cart"></i>
                         <span>Đơn hàng</span>
                     </a>

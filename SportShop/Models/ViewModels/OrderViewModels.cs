@@ -41,6 +41,26 @@ namespace SportShop.Models.ViewModels
         public string? Color { get; set; }
     }
 
+    // Admin ViewModels
+    public class OrderIndexViewModel
+    {
+        public List<Order> Orders { get; set; } = new List<Order>();
+        public string? SearchString { get; set; }
+        public string? StatusFilter { get; set; }
+        public string? SortOrder { get; set; }
+        public int CurrentPage { get; set; } = 1;
+        public int TotalPages { get; set; }
+        public int PageSize { get; set; } = 10;
+        public int TotalItems { get; set; }
+    }
+
+    public class OrderDetailsViewModel
+    {
+        public Order Order { get; set; } = null!;
+        public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public Payment? Payment { get; set; }
+    }
+
     public class OrderDetailViewModel
     {
         public int OrderID { get; set; }

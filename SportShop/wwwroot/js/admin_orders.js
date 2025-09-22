@@ -44,6 +44,9 @@ function initOrdersPage() {
     // Setup row click handlers
     setupRowClickHandlers();
     
+    // Setup action button handlers
+    setupActionButtonHandlers();
+    
     // Setup keyboard shortcuts
     setupKeyboardShortcuts();
 }
@@ -51,8 +54,9 @@ function initOrdersPage() {
 // Setup row click handlers
 function setupRowClickHandlers() {
     $('.order-row').on('click', function(e) {
-        // Don't trigger if clicking on buttons, selects, or links
-        if ($(e.target).is('button, select, a, .btn, .status-select')) {
+        // Don't trigger if clicking on buttons, selects, links, or their children
+        if ($(e.target).is('button, select, a, .btn, .status-select') || 
+            $(e.target).closest('button, select, a, .btn, .status-select, .table-actions').length > 0) {
             return;
         }
         
@@ -67,6 +71,14 @@ function setupRowClickHandlers() {
         $(this).addClass('table-row-hover');
     }).on('mouseleave', function() {
         $(this).removeClass('table-row-hover');
+    });
+}
+
+// Setup action button handlers
+function setupActionButtonHandlers() {
+    // Prevent row click when clicking on action buttons
+    $('.table-actions button, .table-actions a').on('click', function(e) {
+        e.stopPropagation();
     });
 }
 
@@ -226,7 +238,13 @@ function updateStatusTimeline(currentStatus) {
 }
 
 // Delete order
-function deleteOrder(orderId) {
+function deleteOrder(orderId, event) {
+    // Stop event propagation to prevent row click
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
     if (!orderId) {
         showNotification('Không tìm thấy thông tin đơn hàng', 'error');
         return;

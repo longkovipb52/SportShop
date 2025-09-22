@@ -367,13 +367,13 @@
 .comment-col { max-width: 250px; }
 
 /* User Info */
-.user-info {
+.review-user-info {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
-.user-avatar {
+.review-user-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -386,23 +386,23 @@
     flex-shrink: 0;
 }
 
-.user-avatar.large {
+.review-user-avatar.large {
     width: 60px;
     height: 60px;
     font-size: 1.8rem;
 }
 
-.user-details {
+.review-user-details {
     min-width: 0;
 }
 
-.user-name {
+.review-user-name {
     font-weight: 600;
     color: #2c3e50;
     display: block;
 }
 
-.user-email {
+.review-user-email {
     font-size: 0.85rem;
     color: #6c757d;
     display: block;
@@ -411,8 +411,8 @@
     white-space: nowrap;
 }
 
-.user-phone,
-.user-joined {
+.review-user-phone,
+.review-user-joined {
     font-size: 0.85rem;
     color: #6c757d;
     margin: 0.25rem 0;
@@ -681,18 +681,18 @@
 }
 
 /* User Info Card */
-.user-info-card {
+.review-user-info-card {
     display: flex;
     align-items: center;
     gap: 1rem;
 }
 
-.user-info-card .user-details h4 {
+.review-user-info-card .review-user-details h4 {
     margin: 0 0 0.5rem 0;
     color: #2c3e50;
 }
 
-.user-info-card .user-details p {
+.review-user-info-card .review-user-details p {
     margin: 0.25rem 0;
     font-size: 0.9rem;
     color: #6c757d;
@@ -927,7 +927,7 @@
         padding: 0.75rem 0.5rem;
     }
 
-    .user-info {
+    .review-user-info {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
@@ -948,7 +948,7 @@
         gap: 0.5rem;
     }
 
-    .user-info-card {
+    .review-user-info-card {
         flex-direction: column;
         text-align: center;
     }

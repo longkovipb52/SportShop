@@ -12,10 +12,6 @@
     <div class="page-header">
         <div class="header-content">
             <div class="header-left">
-                <h2 class="page-title">
-                    <i class="fas fa-file-invoice"></i>
-                    Chi tiết đơn hàng #@Model.Order.OrderID
-                </h2>
                 <div class="order-meta">
                     <span class="order-date">
                         <i class="fas fa-calendar"></i>
@@ -36,7 +32,7 @@
                     <i class="fas fa-print"></i>
                     In đơn hàng
                 </a>
-                <button type="button" class="btn btn-danger" onclick="deleteOrder(@Model.Order.OrderID)">
+                <button type="button" class="btn btn-danger" onclick="deleteOrder(@Model.Order.OrderID, event)">
                     <i class="fas fa-trash"></i>
                     Xóa đơn hàng
                 </button>

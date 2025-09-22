@@ -11,13 +11,6 @@
     <!-- Header Section -->
     <div class="page-header">
         <div class="header-content">
-            <div class="header-left">
-                <h2 class="page-title">
-                    <i class="fas fa-shopping-cart"></i>
-                    Quản lý đơn hàng
-                </h2>
-                <p class="page-subtitle">Theo dõi và quản lý tất cả đơn hàng</p>
-            </div>
             <div class="header-actions">
                 <button type="button" class="btn btn-primary" onclick="refreshOrders()">
                     <i class="fas fa-sync-alt"></i>
@@ -266,7 +259,7 @@
                                             <i class="fas fa-print"></i>
                                         </a>
                                         <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteOrder(@order.OrderID)" title="Xóa đơn hàng">
+                                                onclick="deleteOrder(@order.OrderID, event)" title="Xóa đơn hàng">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>

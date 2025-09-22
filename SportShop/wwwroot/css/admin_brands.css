@@ -1,19 +1,41 @@
 
+/* Admin Brands CSS */
+:root {
+    --brands-primary: #667eea;
+    --brands-primary-dark: #764ba2;
+    --brands-success: #2dce89;
+    --brands-warning: #fb6340;
+    --brands-danger: #f5365c;
+    --brands-info: #11cdef;
+    --brands-gray-100: #f8f9fe;
+    --brands-gray-200: #e9ecef;
+    --brands-gray-300: #dee2e6;
+    --brands-gray-400: #adb5bd;
+    --brands-gray-500: #8898aa;
+    --brands-gray-600: #525f7f;
+    --brands-gray-700: #32325d;
+    --brands-gray-800: #212529;
+    --brands-white: #ffffff;
+    --brands-border-radius: 12px;
+    --brands-transition: all 0.3s ease;
+    --brands-box-shadow: 0 0 2rem 0 rgba(136, 152, 170, 0.15);
+}
+
 .brands-container,
 .brand-form-container,
 .brand-details-container {
     padding: 0;
-    background-color: var(--bg-light);
+    background-color: var(--brands-gray-100);
     min-height: calc(100vh - 140px);
 }
 
 /* Page Header */
 .page-header {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 2rem;
     margin-bottom: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(240, 147, 251, 0.1);
+    border-radius: var(--brands-border-radius);
+    box-shadow: var(--brands-box-shadow);
 }
 
 .header-content {
@@ -25,7 +47,7 @@
 }
 
 .header-left .page-title {
-    color: white;
+    color: var(--brands-white);
     font-size: 2rem;
     font-weight: 700;
     margin: 0 0 0.5rem 0;
@@ -53,24 +75,24 @@
 .header-left .breadcrumb-item a {
     color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
-    transition: color 0.3s ease;
+    transition: var(--brands-transition);
 }
 
 .header-left .breadcrumb-item a:hover {
-    color: white;
+    color: var(--brands-white);
 }
 
 .header-left .breadcrumb-item.active {
-    color: white;
+    color: var(--brands-white);
 }
 
 /* Search and Filter Section */
 .search-filter-section {
-    background: white;
+    background: var(--brands-white);
     padding: 1.5rem;
-    border-radius: 12px;
+    border-radius: var(--brands-border-radius);
     margin-bottom: 2rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--brands-box-shadow);
 }
 
 /* Brands specific search styling */
@@ -83,32 +105,32 @@
 }
 
 .brands-container .search-form .form-control {
-    border: 2px solid #e9ecef !important;
+    border: 2px solid var(--brands-gray-200) !important;
     border-radius: 8px 0 0 8px !important;
     padding: 0.75rem 1rem !important;
     font-size: 0.95rem !important;
-    transition: all 0.3s ease !important;
-    background-color: #fff !important;
+    transition: var(--brands-transition) !important;
+    background-color: var(--brands-white) !important;
 }
 
 .brands-container .search-form .form-control:focus {
-    border-color: #f093fb !important;
-    box-shadow: 0 0 0 0.2rem rgba(240, 147, 251, 0.25) !important;
+    border-color: var(--brands-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
 }
 
 .brands-container .search-form .btn {
-    border: 2px solid #e9ecef !important;
+    border: 2px solid var(--brands-gray-200) !important;
     border-left: none !important;
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
-    transition: all 0.3s ease !important;
+    background-color: var(--brands-gray-100) !important;
+    color: var(--brands-gray-600) !important;
+    transition: var(--brands-transition) !important;
     padding: 0.75rem 1rem !important;
 }
 
 .brands-container .search-form .btn:hover {
-    background-color: #f093fb !important;
-    border-color: #f093fb !important;
-    color: white !important;
+    background-color: var(--brands-primary) !important;
+    border-color: var(--brands-primary) !important;
+    color: var(--brands-white) !important;
 }
 
 .brands-container .search-form .btn-outline-danger {
@@ -150,11 +172,11 @@
 }
 
 .brands-table thead {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .brands-table thead th {
-    color: white;
+    color: var(--brands-white);
     font-weight: 600;
     padding: 1.25rem 1rem;
     border: none;
@@ -182,8 +204,8 @@
 
 /* Brand specific table cells */
 .brand-id .id-badge {
-    background: linear-gradient(45deg, #f093fb, #f5576c);
-    color: white;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: var(--brands-white);
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -207,7 +229,7 @@
 }
 
 .brand-img:hover {
-    border-color: #f093fb;
+    border-color: var(--brands-primary);
     transform: scale(1.05);
 }
 
@@ -326,11 +348,11 @@
 }
 
 .card-header {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--brands-white);
     border: none;
     padding: 1.25rem 1.5rem;
-    border-radius: 12px 12px 0 0 !important;
+    border-radius: var(--brands-border-radius) var(--brands-border-radius) 0 0 !important;
 }
 
 .card-header .card-title {
@@ -368,8 +390,8 @@
 }
 
 .form-control:focus {
-    border-color: #f093fb;
-    box-shadow: 0 0 0 0.2rem rgba(240, 147, 251, 0.25);
+    border-color: var(--brands-primary);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
 }
 
 .form-text {
@@ -389,8 +411,8 @@
 }
 
 .logo-upload-section:hover {
-    border-color: #f093fb;
-    background: #fdf2fd;
+    border-color: var(--brands-primary);
+    background: rgba(102, 126, 234, 0.05);
 }
 
 .logo-preview-container {
@@ -463,7 +485,7 @@
 
 /* Help Card */
 .help-card .card-header {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .help-list {
@@ -608,7 +630,7 @@
 .product-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    border-color: #f093fb;
+    border-color: var(--brands-primary);
 }
 
 .product-image {
@@ -645,7 +667,7 @@
 }
 
 .product-price {
-    color: #f093fb;
+    color: var(--brands-primary);
     font-weight: 700;
     font-size: 1rem;
     margin-bottom: 0.5rem;
@@ -752,9 +774,9 @@
 }
 
 .action-btn:hover {
-    background: #f093fb;
-    border-color: #f093fb;
-    color: white;
+    background: var(--brands-primary);
+    border-color: var(--brands-primary);
+    color: var(--brands-white);
     transform: translateX(4px);
 }
 

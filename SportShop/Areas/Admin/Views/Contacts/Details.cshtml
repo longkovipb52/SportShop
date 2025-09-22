@@ -17,10 +17,6 @@
                     <i class="fas fa-arrow-left"></i>
                     Quay lại
                 </a>
-                <h1 class="page-title">
-                    <i class="fas fa-envelope"></i>
-                    Chi tiết Liên hệ #@Model.ContactID
-                </h1>
             </div>
             <div class="header-actions">
                 @if (Model.Status == "New")
@@ -207,13 +203,13 @@
             <div class="contact-sidebar">
                 <!-- Contact Info -->
                 <div class="sidebar-card">
-                    <div class="sidebar-header">
+                    <div class="contact-sidebar-header">
                         <h5>
                             <i class="fas fa-user"></i>
                             Thông tin liên hệ
                         </h5>
                     </div>
-                    <div class="sidebar-content">
+                    <div class="contact-sidebar-content">
                         <div class="info-item">
                             <label>Họ tên:</label>
                             <span>@Model.Name</span>
@@ -233,32 +229,18 @@
                                 </span>
                             </div>
                         }
-                        @if (Model.UserID.HasValue)
-                        {
-                            <div class="info-item">
-                                <label>ID Người dùng:</label>
-                                <span>#@Model.UserID.Value</span>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="info-item">
-                                <label>Loại:</label>
-                                <span class="badge bg-secondary">Khách vãng lai</span>
-                            </div>
-                        }
                     </div>
                 </div>
 
                 <!-- Quick Actions -->
                 <div class="sidebar-card">
-                    <div class="sidebar-header">
+                    <div class="contact-sidebar-header">
                         <h5>
                             <i class="fas fa-bolt"></i>
                             Thao tác nhanh
                         </h5>
                     </div>
-                    <div class="sidebar-content">
+                    <div class="contact-sidebar-content">
                         <div class="quick-actions">
                             @if (Model.Status == "New")
                             {
@@ -304,13 +286,13 @@
                 @if (Model.RepliedAt.HasValue)
                 {
                     <div class="sidebar-card">
-                        <div class="sidebar-header">
+                        <div class="contact-sidebar-header">
                             <h5>
                                 <i class="fas fa-history"></i>
                                 Lịch sử
                             </h5>
                         </div>
-                        <div class="sidebar-content">
+                        <div class="contact-sidebar-content">
                             <div class="timeline">
                                 <div class="timeline-item">
                                     <div class="timeline-marker created"></div>

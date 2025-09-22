@@ -17,10 +17,6 @@
     <div class="reviews-header">
         <div class="header-content">
             <div class="header-left">
-                <h1 class="page-title">
-                    <i class="fas fa-star-half-alt"></i>
-                    Quản lý đánh giá
-                </h1>
                 <p class="page-subtitle">Quản lý và kiểm duyệt các đánh giá của khách hàng</p>
             </div>
         </div>
@@ -290,13 +286,13 @@
                                 <input type="checkbox" name="selectedIds" value="@review.ReviewID" class="form-check-input review-checkbox">
                             </td>
                             <td class="user-col">
-                                <div class="user-info">
-                                    <div class="user-avatar">
+                                <div class="review-user-info">
+                                    <div class="review-user-avatar">
                                         <i class="fas fa-user-circle"></i>
                                     </div>
-                                    <div class="user-details">
-                                        <span class="user-name">@review.User?.Username</span>
-                                        <span class="user-email">@review.User?.Email</span>
+                                    <div class="review-user-details">
+                                        <span class="review-user-name">@review.User?.Username</span>
+                                        <span class="review-user-email">@review.User?.Email</span>
                                     </div>
                                 </div>
                             </td>

@@ -137,7 +137,7 @@
                     </div>
                     <div class="user-info">
                         <span class="user-name">
-                            @if (User.Identity.IsAuthenticated)
+                            @if (User?.Identity?.IsAuthenticated == true)
                             {
                                 @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Admin")
                             }
@@ -151,9 +151,13 @@
                     <div class="user-dropdown">
                         <i class="fas fa-chevron-down"></i>
                         <div class="dropdown-menu">
-                            <a href="#" class="dropdown-item">
+                            <a href="@Url.Action("Index", "Profile")" class="dropdown-item">
                                 <i class="fas fa-user"></i>
                                 Thông tin cá nhân
+                            </a>
+                            <a href="@Url.Action("ChangePassword", "Profile")" class="dropdown-item">
+                                <i class="fas fa-key"></i>
+                                Đổi mật khẩu
                             </a>
                             <a href="#" class="dropdown-item">
                                 <i class="fas fa-cog"></i>

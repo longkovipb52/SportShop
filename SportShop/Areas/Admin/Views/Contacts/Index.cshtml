@@ -9,17 +9,6 @@
 }
 
 <div class="contacts-container">
-    <!-- Header Section -->
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">
-                <i class="fas fa-envelope"></i>
-                Quản lý Liên hệ
-            </h1>
-            <p class="page-description">Quản lý và trả lời các liên hệ từ khách hàng</p>
-        </div>
-    </div>
-
     <!-- Stats Cards -->
     <div class="stats-section">
         <div class="row">
@@ -77,7 +66,7 @@
                 </div>
                 <div class="col-md-3">
                     <label for="statusFilter" class="form-label">Trạng thái</label>
-                    <select name="statusFilter" id="statusFilter" class="form-select">
+                    <select name="statusFilter" id="statusFilter" class="form-select contacts-form-select">
                         @if (string.IsNullOrEmpty(ViewBag.StatusFilter))
                         {
                             <option value="" selected>Tất cả</option>
@@ -135,7 +124,7 @@
                     <span class="selected-count">0 đã chọn</span>
                 </div>
                 <div class="bulk-actions-buttons">
-                    <select name="action" class="form-select bulk-action-select">
+                    <select name="action" class="form-select contacts-form-select bulk-action-select">
                         <option value="">Chọn hành động</option>
                         <option value="mark-new">Đánh dấu chưa trả lời</option>
                         <option value="mark-replied">Đánh dấu đã trả lời</option>

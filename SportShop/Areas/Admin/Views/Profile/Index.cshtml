@@ -1,0 +1,214 @@
+@model SportShop.Models.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_profile.css" asp-append-version="true" />
+}
+
+<div class="profile-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="page-title">
+                    <i class="fas fa-user-circle"></i>
+                    Thông tin cá nhân
+                </h1>
+                <p class="page-subtitle">Quản lý thông tin tài khoản quản trị viên</p>
+            </div>
+            <div class="header-actions">
+                <a href="@Url.Action("ChangePassword", "Profile")" class="btn btn-secondary">
+                    <i class="fas fa-key"></i>
+                    Đổi mật khẩu
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Profile Form -->
+    <div class="profile-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-edit"></i>
+                Chỉnh sửa thông tin
+            </h3>
+        </div>
+        
+        <form asp-action="Index" method="post" class="profile-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="UserID" />
+            <input type="hidden" asp-for="RoleName" />
+            <input type="hidden" asp-for="CreatedAt" />
+            
+            <div class="form-body">
+                <div class="row">
+                    <!-- User Avatar Section -->
+                    <div class="col-md-4">
+                        <div class="profile-avatar-section">
+                            <div class="avatar-container">
+                                <div class="user-avatar large">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="avatar-info">
+                                    <h4 class="username">@(!string.IsNullOrEmpty(Model.FullName) ? Model.FullName : Model.Username)</h4>
+                                    <p class="user-role">@Model.RoleName</p>
+                                    <p class="join-date">
+                                        <i class="fas fa-calendar-plus"></i>
+                                        Tham gia: @Model.CreatedAt.ToString("dd/MM/yyyy")
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Fields -->
+                    <div class="col-md-8">
+                        <div class="form-fields">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Username" class="form-label">
+                                            <i class="fas fa-user"></i>
+                                            @Html.DisplayNameFor(m => m.Username)
+                                        </label>
+                                        <input asp-for="Username" class="form-control" placeholder="Nhập tên đăng nhập" />
+                                        <span asp-validation-for="Username" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="FullName" class="form-label">
+                                            <i class="fas fa-id-card"></i>
+                                            @Html.DisplayNameFor(m => m.FullName)
+                                        </label>
+                                        <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên" />
+                                        <span asp-validation-for="FullName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Email" class="form-label">
+                                            <i class="fas fa-envelope"></i>
+                                            @Html.DisplayNameFor(m => m.Email)
+                                        </label>
+                                        <input asp-for="Email" class="form-control" placeholder="Nhập địa chỉ email" />
+                                        <span asp-validation-for="Email" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Phone" class="form-label">
+                                            <i class="fas fa-phone"></i>
+                                            @Html.DisplayNameFor(m => m.Phone)
+                                        </label>
+                                        <input asp-for="Phone" class="form-control" placeholder="Nhập số điện thoại" />
+                                        <span asp-validation-for="Phone" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label asp-for="Address" class="form-label">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            @Html.DisplayNameFor(m => m.Address)
+                                        </label>
+                                        <input asp-for="Address" class="form-control" placeholder="Nhập địa chỉ" />
+                                        <span asp-validation-for="Address" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-footer">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Lưu thay đổi
+                    </button>
+                    <a href="@Url.Action("Index", "Dashboard")" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Hủy bỏ
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Profile Stats -->
+    <div class="profile-stats">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Vai trò</h4>
+                        <p>@Model.RoleName</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Trạng thái</h4>
+                        <p><span class="badge badge-success">Hoạt động</span></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Lần đăng nhập cuối</h4>
+                        <p>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/admin_profile.js" asp-append-version="true"></script>
+}

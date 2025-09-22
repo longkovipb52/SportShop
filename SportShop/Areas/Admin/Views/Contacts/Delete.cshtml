@@ -1,0 +1,182 @@
+@model SportShop.Models.Contact
+
+@{
+    ViewData["Title"] = "Xóa Liên hệ";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_contacts.css" asp-append-version="true" />
+}
+
+<div class="delete-contact-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Quay lại danh sách
+            </a>
+            <h1 class="page-title text-danger">
+                <i class="fas fa-trash"></i>
+                Xóa Liên hệ
+            </h1>
+        </div>
+    </div>
+
+    <!-- Confirmation Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="delete-confirmation-card">
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Cảnh báo!</strong> Bạn có chắc chắn muốn xóa liên hệ này? Hành động này không thể hoàn tác.
+                </div>
+
+                <div class="contact-preview">
+                    <h5>Thông tin liên hệ sẽ bị xóa:</h5>
+                    
+                    <div class="contact-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-group">
+                                    <label>ID Liên hệ:</label>
+                                    <span class="info-value">#@Model.ContactID</span>
+                                </div>
+                                
+                                <div class="info-group">
+                                    <label>Họ tên:</label>
+                                    <span class="info-value">@Model.Name</span>
+                                </div>
+                                
+                                <div class="info-group">
+                                    <label>Email:</label>
+                                    <span class="info-value">@Model.Email</span>
+                                </div>
+                                
+                                @if (!string.IsNullOrEmpty(Model.Phone))
+                                {
+                                    <div class="info-group">
+                                        <label>Điện thoại:</label>
+                                        <span class="info-value">@Model.Phone</span>
+                                    </div>
+                                }
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="info-group">
+                                    <label>Trạng thái:</label>
+                                    <span class="info-value">
+                                        @if (Model.Status == "New")
+                                        {
+                                            <span class="badge status-badge status-new">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                Chưa trả lời
+                                            </span>
+                                        }
+                                        else if (Model.Status == "Replied")
+                                        {
+                                            <span class="badge status-badge status-replied">
+                                                <i class="fas fa-check-circle"></i>
+                                                Đã trả lời
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge status-badge status-unknown">
+                                                @(Model.Status ?? "Không rõ")
+                                            </span>
+                                        }
+                                    </span>
+                                </div>
+                                
+                                <div class="info-group">
+                                    <label>Ngày gửi:</label>
+                                    <span class="info-value">@(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</span>
+                                </div>
+                                
+                                @if (Model.RepliedAt.HasValue)
+                                {
+                                    <div class="info-group">
+                                        <label>Ngày trả lời:</label>
+                                        <span class="info-value">@Model.RepliedAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(Model.Title))
+                        {
+                            <div class="info-group">
+                                <label>Tiêu đề:</label>
+                                <span class="info-value">@Model.Title</span>
+                            </div>
+                        }
+                        
+                        <div class="info-group">
+                            <label>Nội dung:</label>
+                            <div class="message-preview">
+                                @if (Model.Message.Length > 200)
+                                {
+                                    @(Model.Message.Substring(0, 200) + "...")
+                                }
+                                else
+                                {
+                                    @Model.Message
+                                }
+                            </div>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(Model.Reply))
+                        {
+                            <div class="info-group">
+                                <label>Nội dung trả lời:</label>
+                                <div class="reply-preview">
+                                    @if (Model.Reply.Length > 200)
+                                    {
+                                        @(Model.Reply.Substring(0, 200) + "...")
+                                    }
+                                    else
+                                    {
+                                        @Model.Reply
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="delete-actions">
+                    <form method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i>
+                            Xác nhận xóa
+                        </button>
+                    </form>
+                    
+                    <a href="@Url.Action("Details", new { id = Model.ContactID })" class="btn btn-secondary">
+                        <i class="fas fa-eye"></i>
+                        Xem chi tiết
+                    </a>
+                    
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                        Hủy bỏ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto focus on cancel button for safety
+        document.addEventListener('DOMContentLoaded', function() {
+            const cancelBtn = document.querySelector('.btn-outline-secondary');
+            if (cancelBtn) {
+                cancelBtn.focus();
+            }
+        });
+    </script>
+}

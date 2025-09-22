@@ -1,0 +1,403 @@
+@model IEnumerable<SportShop.Models.Contact>
+
+@{
+    ViewData["Title"] = "Quản lý Liên hệ";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_contacts.css" asp-append-version="true" />
+}
+
+<div class="contacts-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-envelope"></i>
+                Quản lý Liên hệ
+            </h1>
+            <p class="page-description">Quản lý và trả lời các liên hệ từ khách hàng</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-section">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-icon bg-primary">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">@ViewBag.TotalContacts</h3>
+                        <p class="stats-label">Tổng liên hệ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-icon bg-warning">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">@ViewBag.NewContacts</h3>
+                        <p class="stats-label">Chưa trả lời</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-icon bg-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">@ViewBag.RepliedContacts</h3>
+                        <p class="stats-label">Đã trả lời</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="filters-section">
+        <form method="get" class="filters-form">
+            <div class="row align-items-end">
+                <div class="col-md-4">
+                    <label for="searchString" class="form-label">Tìm kiếm</label>
+                    <div class="search-input-group">
+                        <i class="fas fa-search"></i>
+                        <input type="text" 
+                               id="searchString" 
+                               name="searchString" 
+                               class="form-control contacts-search-input" 
+                               placeholder="Tìm theo tên, email, tiêu đề..."
+                               value="@ViewBag.CurrentFilter">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Trạng thái</label>
+                    <select name="statusFilter" id="statusFilter" class="form-select">
+                        @if (string.IsNullOrEmpty(ViewBag.StatusFilter))
+                        {
+                            <option value="" selected>Tất cả</option>
+                        }
+                        else
+                        {
+                            <option value="">Tất cả</option>
+                        }
+                        
+                        @if (ViewBag.StatusFilter == "New")
+                        {
+                            <option value="New" selected>Chưa trả lời</option>
+                        }
+                        else
+                        {
+                            <option value="New">Chưa trả lời</option>
+                        }
+                        
+                        @if (ViewBag.StatusFilter == "Replied")
+                        {
+                            <option value="Replied" selected>Đã trả lời</option>
+                        }
+                        else
+                        {
+                            <option value="Replied">Đã trả lời</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="hidden" name="sortOrder" value="@ViewBag.CurrentSort" />
+                    <input type="hidden" name="page" value="1" />
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i>
+                        Lọc
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                        Xóa lọc
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions-section">
+        <form id="bulkActionForm" method="post" action="@Url.Action("BulkAction")">
+            @Html.AntiForgeryToken()
+            <div class="bulk-actions-bar">
+                <div class="selection-info">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="selectAll">
+                        <span class="checkmark"></span>
+                    </label>
+                    <span class="selected-count">0 đã chọn</span>
+                </div>
+                <div class="bulk-actions-buttons">
+                    <select name="action" class="form-select bulk-action-select">
+                        <option value="">Chọn hành động</option>
+                        <option value="mark-new">Đánh dấu chưa trả lời</option>
+                        <option value="mark-replied">Đánh dấu đã trả lời</option>
+                        <option value="delete">Xóa đã chọn</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary bulk-action-btn" disabled>
+                        <i class="fas fa-play"></i>
+                        Thực hiện
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Contacts Table -->
+    <div class="table-section">
+        <div class="table-container">
+            <table class="table contacts-table">
+                <thead>
+                    <tr>
+                        <th width="40">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="headerSelectAll">
+                                <span class="checkmark"></span>
+                            </label>
+                        </th>
+                        <th width="150">
+                            <a href="@Url.Action("Index", new { 
+                                sortOrder = ViewBag.NameSortParam, 
+                                searchString = ViewBag.CurrentFilter,
+                                statusFilter = ViewBag.StatusFilter,
+                                page = ViewBag.CurrentPage 
+                            })">
+                                Tên liên hệ
+                                @if (ViewBag.CurrentSort == "name_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else if (string.IsNullOrEmpty(ViewBag.CurrentSort))
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th width="150">Email</th>
+                        <th>Tiêu đề</th>
+                        <th width="120">
+                            <a href="@Url.Action("Index", new { 
+                                sortOrder = ViewBag.StatusSortParam, 
+                                searchString = ViewBag.CurrentFilter,
+                                statusFilter = ViewBag.StatusFilter,
+                                page = ViewBag.CurrentPage 
+                            })">
+                                Trạng thái
+                                @if (ViewBag.CurrentSort == "status")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewBag.CurrentSort == "status_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th width="120">
+                            <a href="@Url.Action("Index", new { 
+                                sortOrder = ViewBag.DateSortParam, 
+                                searchString = ViewBag.CurrentFilter,
+                                statusFilter = ViewBag.StatusFilter,
+                                page = ViewBag.CurrentPage 
+                            })">
+                                Ngày gửi
+                                @if (ViewBag.CurrentSort == "date")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewBag.CurrentSort == "date_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th width="120">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model?.Any() == true)
+                    {
+                        @foreach (var contact in Model)
+                        {
+                            <tr class="contact-row">
+                                <td>
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" name="selectedContacts" value="@contact.ContactID" class="contact-checkbox">
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <div class="contact-name">
+                                        <strong>@contact.Name</strong>
+                                        @if (!string.IsNullOrEmpty(contact.Phone))
+                                        {
+                                            <small class="text-muted d-block">@contact.Phone</small>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="mailto:@contact.Email" class="email-link">@contact.Email</a>
+                                </td>
+                                <td>
+                                    <div class="contact-title">
+                                        @if (!string.IsNullOrEmpty(contact.Title))
+                                        {
+                                            <span class="title-text">@contact.Title</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Không có tiêu đề</span>
+                                        }
+                                        <small class="message-preview d-block text-muted">
+                                            @(contact.Message.Length > 50 ? contact.Message.Substring(0, 50) + "..." : contact.Message)
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (contact.Status == "New")
+                                    {
+                                        <span class="badge status-badge status-new">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                            Chưa trả lời
+                                        </span>
+                                    }
+                                    else if (contact.Status == "Replied")
+                                    {
+                                        <span class="badge status-badge status-replied">
+                                            <i class="fas fa-check-circle"></i>
+                                            Đã trả lời
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge status-badge status-unknown">
+                                            <i class="fas fa-question-circle"></i>
+                                            @(contact.Status ?? "Không rõ")
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="date-text">
+                                        @(contact.CreatedAt?.ToString("dd/MM/yyyy") ?? "N/A")
+                                    </span>
+                                    <small class="d-block text-muted">
+                                        @(contact.CreatedAt?.ToString("HH:mm") ?? "")
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="@Url.Action("Details", new { id = contact.ContactID })" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Delete", new { id = contact.ContactID })" 
+                                           class="btn btn-sm btn-outline-danger" 
+                                           title="Xóa"
+                                           onclick="return confirm('Bạn có chắc chắn muốn xóa liên hệ này?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center empty-state">
+                                <div class="empty-state-content">
+                                    <i class="fas fa-inbox"></i>
+                                    <h5>Không có liên hệ nào</h5>
+                                    <p class="text-muted">Chưa có liên hệ nào phù hợp với điều kiện tìm kiếm.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="pagination-section">
+            <div class="pagination-info">
+                <span>
+                    Hiển thị @((ViewBag.CurrentPage - 1) * ViewBag.PageSize + 1) - 
+                    @(Math.Min(ViewBag.CurrentPage * ViewBag.PageSize, ViewBag.TotalItems)) 
+                    trong tổng số @ViewBag.TotalItems liên hệ
+                </span>
+            </div>
+            <nav aria-label="Phân trang">
+                <ul class="pagination justify-content-center">
+                    @if (ViewBag.CurrentPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { 
+                                page = ViewBag.CurrentPage - 1, 
+                                searchString = ViewBag.CurrentFilter,
+                                statusFilter = ViewBag.StatusFilter,
+                                sortOrder = ViewBag.CurrentSort 
+                            })">
+                                <i class="fas fa-chevron-left"></i>
+                                Trước
+                            </a>
+                        </li>
+                    }
+
+                    @for (int i = Math.Max(1, ViewBag.CurrentPage - 2); i <= Math.Min(ViewBag.TotalPages, ViewBag.CurrentPage + 2); i++)
+                    {
+                        <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { 
+                                page = i, 
+                                searchString = ViewBag.CurrentFilter,
+                                statusFilter = ViewBag.StatusFilter,
+                                sortOrder = ViewBag.CurrentSort 
+                            })">@i</a>
+                        </li>
+                    }
+
+                    @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { 
+                                page = ViewBag.CurrentPage + 1, 
+                                searchString = ViewBag.CurrentFilter,
+                                statusFilter = ViewBag.StatusFilter,
+                                sortOrder = ViewBag.CurrentSort 
+                            })">
+                                Sau
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_contacts.js" asp-append-version="true"></script>
+}

@@ -84,7 +84,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/Admin/Contacts">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Contacts" ? "active" : "")" href="/Admin/Contacts">
                         <i class="fas fa-envelope"></i>
                         <span>Liên hệ</span>
                     </a>

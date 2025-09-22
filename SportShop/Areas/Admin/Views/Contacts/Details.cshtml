@@ -1,0 +1,355 @@
+@model SportShop.Models.Contact
+
+@{
+    ViewData["Title"] = "Chi tiết Liên hệ";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_contacts.css" asp-append-version="true" />
+}
+
+<div class="contact-details-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại
+                </a>
+                <h1 class="page-title">
+                    <i class="fas fa-envelope"></i>
+                    Chi tiết Liên hệ #@Model.ContactID
+                </h1>
+            </div>
+            <div class="header-actions">
+                @if (Model.Status == "New")
+                {
+                    <form method="post" action="@Url.Action("UpdateStatus")" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="contactId" value="@Model.ContactID" />
+                        <input type="hidden" name="status" value="Replied" />
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i>
+                            Đánh dấu đã trả lời
+                        </button>
+                    </form>
+                }
+                <a href="@Url.Action("Delete", new { id = Model.ContactID })" 
+                   class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i>
+                    Xóa
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contact Information -->
+        <div class="col-lg-8">
+            <div class="contact-card">
+                <div class="contact-header">
+                    <div class="contact-status">
+                        @if (Model.Status == "New")
+                        {
+                            <span class="badge status-badge status-new">
+                                <i class="fas fa-exclamation-circle"></i>
+                                Chưa trả lời
+                            </span>
+                        }
+                        else if (Model.Status == "Replied")
+                        {
+                            <span class="badge status-badge status-replied">
+                                <i class="fas fa-check-circle"></i>
+                                Đã trả lời
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge status-badge status-unknown">
+                                <i class="fas fa-question-circle"></i>
+                                @(Model.Status ?? "Không rõ")
+                            </span>
+                        }
+                    </div>
+                    <div class="contact-date">
+                        <i class="fas fa-calendar"></i>
+                        @(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")
+                    </div>
+                </div>
+
+                <div class="contact-content">
+                    <h3 class="contact-title">
+                        @if (!string.IsNullOrEmpty(Model.Title))
+                        {
+                            @Model.Title
+                        }
+                        else
+                        {
+                            <span class="text-muted">Không có tiêu đề</span>
+                        }
+                    </h3>
+                    
+                    <div class="contact-message">
+                        <h5>Nội dung liên hệ:</h5>
+                        <div class="message-content">
+                            @Html.Raw(Model.Message.Replace("\n", "<br>"))
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reply Section -->
+            @if (Model.Status == "New" || string.IsNullOrEmpty(Model.Reply))
+            {
+                <div class="reply-section">
+                    <div class="reply-header">
+                        <h4>
+                            <i class="fas fa-reply"></i>
+                            Trả lời liên hệ
+                        </h4>
+                    </div>
+                    <form method="post" action="@Url.Action("Reply")" class="reply-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="contactId" value="@Model.ContactID" />
+                        <div class="form-group">
+                            <label for="replyMessage" class="form-label">Nội dung trả lời:</label>
+                            <textarea name="replyMessage" 
+                                      id="replyMessage" 
+                                      class="form-control reply-textarea" 
+                                      rows="6" 
+                                      placeholder="Nhập nội dung trả lời cho khách hàng..."
+                                      required></textarea>
+                        </div>
+                        <div class="reply-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                                Gửi trả lời
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo"></i>
+                                Đặt lại
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            }
+
+            <!-- Existing Reply -->
+            @if (!string.IsNullOrEmpty(Model.Reply))
+            {
+                <div class="existing-reply">
+                    <div class="reply-header">
+                        <h4>
+                            <i class="fas fa-reply-all"></i>
+                            Nội dung đã trả lời
+                        </h4>
+                        <div class="reply-meta">
+                            @if (Model.RepliedAt.HasValue)
+                            {
+                                <span class="reply-date">
+                                    <i class="fas fa-clock"></i>
+                                    @Model.RepliedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                </span>
+                            }
+                            @if (!string.IsNullOrEmpty(ViewBag.ReplierName))
+                            {
+                                <span class="reply-author">
+                                    <i class="fas fa-user"></i>
+                                    @ViewBag.ReplierName
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="reply-content">
+                        @Html.Raw(Model.Reply.Replace("\n", "<br>"))
+                    </div>
+                    
+                    <!-- Option to add another reply -->
+                    <div class="add-reply-section">
+                        <button class="btn btn-outline-primary btn-sm" onclick="toggleAdditionalReply()">
+                            <i class="fas fa-plus"></i>
+                            Thêm trả lời
+                        </button>
+                        
+                        <div id="additionalReplyForm" class="additional-reply-form" style="display: none;">
+                            <form method="post" action="@Url.Action("Reply")" class="mt-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="contactId" value="@Model.ContactID" />
+                                <div class="form-group">
+                                    <label for="additionalReply" class="form-label">Trả lời bổ sung:</label>
+                                    <textarea name="replyMessage" 
+                                              id="additionalReply" 
+                                              class="form-control" 
+                                              rows="4" 
+                                              placeholder="Nhập nội dung trả lời bổ sung..."
+                                              required></textarea>
+                                </div>
+                                <div class="reply-actions">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-paper-plane"></i>
+                                        Gửi
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAdditionalReply()">
+                                        <i class="fas fa-times"></i>
+                                        Hủy
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="contact-sidebar">
+                <!-- Contact Info -->
+                <div class="sidebar-card">
+                    <div class="sidebar-header">
+                        <h5>
+                            <i class="fas fa-user"></i>
+                            Thông tin liên hệ
+                        </h5>
+                    </div>
+                    <div class="sidebar-content">
+                        <div class="info-item">
+                            <label>Họ tên:</label>
+                            <span>@Model.Name</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Email:</label>
+                            <span>
+                                <a href="mailto:@Model.Email" class="email-link">@Model.Email</a>
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Phone))
+                        {
+                            <div class="info-item">
+                                <label>Điện thoại:</label>
+                                <span>
+                                    <a href="tel:@Model.Phone" class="phone-link">@Model.Phone</a>
+                                </span>
+                            </div>
+                        }
+                        @if (Model.UserID.HasValue)
+                        {
+                            <div class="info-item">
+                                <label>ID Người dùng:</label>
+                                <span>#@Model.UserID.Value</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="info-item">
+                                <label>Loại:</label>
+                                <span class="badge bg-secondary">Khách vãng lai</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="sidebar-card">
+                    <div class="sidebar-header">
+                        <h5>
+                            <i class="fas fa-bolt"></i>
+                            Thao tác nhanh
+                        </h5>
+                    </div>
+                    <div class="sidebar-content">
+                        <div class="quick-actions">
+                            @if (Model.Status == "New")
+                            {
+                                <form method="post" action="@Url.Action("UpdateStatus")" class="quick-action-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="contactId" value="@Model.ContactID" />
+                                    <input type="hidden" name="status" value="Replied" />
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        <i class="fas fa-check"></i>
+                                        Đánh dấu đã trả lời
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" action="@Url.Action("UpdateStatus")" class="quick-action-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="contactId" value="@Model.ContactID" />
+                                    <input type="hidden" name="status" value="New" />
+                                    <button type="submit" class="btn btn-warning btn-sm w-100">
+                                        <i class="fas fa-undo"></i>
+                                        Đánh dấu chưa trả lời
+                                    </button>
+                                </form>
+                            }
+                            
+                            <a href="mailto:@Model.Email?subject=Trả lời: @(Model.Title ?? "Liên hệ")&body=Xin chào @Model.Name,%0D%0A%0D%0A" 
+                               class="btn btn-outline-primary btn-sm w-100">
+                                <i class="fas fa-external-link-alt"></i>
+                                Mở email client
+                            </a>
+                            
+                            <a href="@Url.Action("Delete", new { id = Model.ContactID })" 
+                               class="btn btn-outline-danger btn-sm w-100">
+                                <i class="fas fa-trash"></i>
+                                Xóa liên hệ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                @if (Model.RepliedAt.HasValue)
+                {
+                    <div class="sidebar-card">
+                        <div class="sidebar-header">
+                            <h5>
+                                <i class="fas fa-history"></i>
+                                Lịch sử
+                            </h5>
+                        </div>
+                        <div class="sidebar-content">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-marker created"></div>
+                                    <div class="timeline-content">
+                                        <h6>Liên hệ được tạo</h6>
+                                        <p class="text-muted">@(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-marker replied"></div>
+                                    <div class="timeline-content">
+                                        <h6>Đã trả lời</h6>
+                                        <p class="text-muted">@Model.RepliedAt.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                                        @if (!string.IsNullOrEmpty(ViewBag.ReplierName))
+                                        {
+                                            <small class="text-muted">bởi @ViewBag.ReplierName</small>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_contacts.js" asp-append-version="true"></script>
+    <script>
+        function toggleAdditionalReply() {
+            const form = document.getElementById('additionalReplyForm');
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+                document.getElementById('additionalReply').focus();
+            } else {
+                form.style.display = 'none';
+            }
+        }
+    </script>
+}

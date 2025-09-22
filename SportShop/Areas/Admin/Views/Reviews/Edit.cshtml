@@ -1,0 +1,270 @@
+@model SportShop.Models.Review
+
+@{
+    ViewData["Title"] = "Chỉnh sửa đánh giá";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_reviews.css" asp-append-version="true" />
+}
+
+<div class="review-edit-container">
+    <!-- Header -->
+    <div class="edit-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="page-title">
+                    <i class="fas fa-edit"></i>
+                    Chỉnh sửa đánh giá
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="@Url.Action("Index")">
+                                <i class="fas fa-star-half-alt"></i>
+                                Đánh giá
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="@Url.Action("Details", new { id = Model.ReviewID })">
+                                Chi tiết #@Model.ReviewID
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">Chỉnh sửa</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="header-actions">
+                <a href="@Url.Action("Details", new { id = Model.ReviewID })" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="edit-content">
+        <div class="row">
+            <!-- Edit Form -->
+            <div class="col-lg-8">
+                <div class="edit-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-edit"></i>
+                            Thông tin đánh giá
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="Edit" method="post" class="review-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="ReviewID" />
+                            <input type="hidden" asp-for="ProductID" />
+                            <input type="hidden" asp-for="UserID" />
+                            <input type="hidden" asp-for="Rating" />
+                            <input type="hidden" asp-for="CreatedAt" />
+
+                            <!-- Status -->
+                            <div class="form-group">
+                                <label asp-for="Status" class="form-label required">
+                                    <i class="fas fa-check-circle"></i>
+                                    Trạng thái đánh giá
+                                </label>
+                                <select asp-for="Status" class="form-select" required>
+                                    <option value="">-- Chọn trạng thái --</option>
+                                    <option value="Pending">Chờ duyệt</option>
+                                    <option value="Approved">Đã duyệt</option>
+                                    <option value="Rejected">Từ chối</option>
+                                </select>
+                                <span asp-validation-for="Status" class="text-danger"></span>
+                                <div class="form-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    Chọn trạng thái phù hợp cho đánh giá này
+                                </div>
+                            </div>
+
+                            <!-- Comment -->
+                            <div class="form-group">
+                                <label asp-for="Comment" class="form-label">
+                                    <i class="fas fa-comment-alt"></i>
+                                    Nội dung đánh giá
+                                </label>
+                                <textarea asp-for="Comment" 
+                                          class="form-control" 
+                                          rows="6" 
+                                          placeholder="Nhập nội dung đánh giá..."></textarea>
+                                <span asp-validation-for="Comment" class="text-danger"></span>
+                                <div class="form-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    Bạn có thể chỉnh sửa nội dung đánh giá của khách hàng nếu cần thiết
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Lưu thay đổi
+                                </button>
+                                <a href="@Url.Action("Details", new { id = Model.ReviewID })" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i>
+                                    Hủy
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Info -->
+            <div class="col-lg-4">
+                <!-- Current Info -->
+                <div class="edit-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-info-circle"></i>
+                            Thông tin hiện tại
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Rating -->
+                        <div class="info-group">
+                            <label class="info-label">Đánh giá:</label>
+                            <div class="rating-display">
+                                @if (Model.Rating.HasValue)
+                                {
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fas fa-star @(i <= Model.Rating ? "star-filled" : "star-empty")"></i>
+                                    }
+                                    <span class="rating-number">@Model.Rating.Value / 5</span>
+                                }
+                                else
+                                {
+                                    <span class="no-rating">Chưa có đánh giá</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Created Date -->
+                        <div class="info-group">
+                            <label class="info-label">Ngày tạo:</label>
+                            <div class="date-display">
+                                <i class="fas fa-calendar-alt"></i>
+                                @Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                        </div>
+
+                        <!-- Review ID -->
+                        <div class="info-group">
+                            <label class="info-label">ID đánh giá:</label>
+                            <div class="id-display">
+                                <span class="review-id">#@Model.ReviewID</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Info -->
+                <div class="edit-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-user"></i>
+                            Người đánh giá
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="user-info-card">
+                            <div class="user-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="user-details">
+                                <h4 class="user-name">@Model.User?.Username</h4>
+                                <p class="user-email">
+                                    <i class="fas fa-envelope"></i>
+                                    @Model.User?.Email
+                                </p>
+                                @if (!string.IsNullOrEmpty(Model.User?.Phone))
+                                {
+                                    <p class="user-phone">
+                                        <i class="fas fa-phone"></i>
+                                        @Model.User.Phone
+                                    </p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Info -->
+                <div class="edit-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-box"></i>
+                            Sản phẩm được đánh giá
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="product-info-card">
+                            @if (!string.IsNullOrEmpty(Model.Product?.ImageURL))
+                            {
+                                <div class="product-image">
+                                    <img src="~/upload/products/@Model.Product.ImageURL" alt="@Model.Product.Name" class="product-img">
+                                </div>
+                            }
+                            <div class="product-details">
+                                <h4 class="product-name">@Model.Product?.Name</h4>
+                                <p class="product-price">
+                                    <i class="fas fa-tag"></i>
+                                    @string.Format("{0:N0}", Model.Product?.Price) ₫
+                                </p>
+                                @if (Model.Product?.Brand != null)
+                                {
+                                    <p class="product-brand">
+                                        <i class="fas fa-award"></i>
+                                        @Model.Product.Brand.Name
+                                    </p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Guidelines -->
+                <div class="edit-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-lightbulb"></i>
+                            Hướng dẫn chỉnh sửa
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="guidelines">
+                            <div class="guideline-item">
+                                <i class="fas fa-check text-success"></i>
+                                <span>Chỉ chỉnh sửa nội dung và trạng thái đánh giá</span>
+                            </div>
+                            <div class="guideline-item">
+                                <i class="fas fa-check text-success"></i>
+                                <span>Đánh giá và thông tin người dùng không thể thay đổi</span>
+                            </div>
+                            <div class="guideline-item">
+                                <i class="fas fa-check text-success"></i>
+                                <span>Duyệt đánh giá phù hợp với chính sách</span>
+                            </div>
+                            <div class="guideline-item">
+                                <i class="fas fa-times text-warning"></i>
+                                <span>Từ chối đánh giá không phù hợp hoặc spam</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/admin_reviews.js" asp-append-version="true"></script>
+}

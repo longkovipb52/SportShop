@@ -1,0 +1,331 @@
+@model SportShop.Models.Review
+
+@{
+    ViewData["Title"] = "Chi tiết đánh giá";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_reviews.css" asp-append-version="true" />
+}
+
+<div class="review-details-container">
+    <!-- Header -->
+    <div class="details-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="page-title">
+                    <i class="fas fa-eye"></i>
+                    Chi tiết đánh giá
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="@Url.Action("Index")">
+                                <i class="fas fa-star-half-alt"></i>
+                                Đánh giá
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">Chi tiết #@Model.ReviewID</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="header-actions">
+                <a href="@Url.Action("Edit", new { id = Model.ReviewID })" class="btn btn-warning">
+                    <i class="fas fa-edit"></i>
+                    Chỉnh sửa
+                </a>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="details-content">
+        <div class="row">
+            <!-- Main Info -->
+            <div class="col-lg-8">
+                <div class="details-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-comment-alt"></i>
+                            Thông tin đánh giá
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Rating -->
+                        <div class="detail-group">
+                            <label class="detail-label">Đánh giá:</label>
+                            <div class="rating-display large">
+                                @if (Model.Rating.HasValue)
+                                {
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fas fa-star @(i <= Model.Rating ? "star-filled" : "star-empty")"></i>
+                                    }
+                                    <span class="rating-number">@Model.Rating.Value / 5</span>
+                                }
+                                else
+                                {
+                                    <span class="no-rating">Chưa có đánh giá</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Comment -->
+                        <div class="detail-group">
+                            <label class="detail-label">Nội dung đánh giá:</label>
+                            <div class="comment-content">
+                                @if (!string.IsNullOrEmpty(Model.Comment))
+                                {
+                                    <div class="comment-text">
+                                        @Model.Comment
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="no-comment">
+                                        <i class="fas fa-comment-slash"></i>
+                                        Không có nội dung đánh giá
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="detail-group">
+                            <label class="detail-label">Trạng thái:</label>
+                            <div class="status-display">
+                                <span class="status-badge status-@(Model.Status?.ToLower() ?? "pending") large">
+                                    @switch (Model.Status)
+                                    {
+                                        case "Approved":
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Đã duyệt</span>
+                                            break;
+                                        case "Rejected":
+                                            <i class="fas fa-times-circle"></i>
+                                            <span>Từ chối</span>
+                                            break;
+                                        case "Pending":
+                                        default:
+                                            <i class="fas fa-clock"></i>
+                                            <span>Chờ duyệt</span>
+                                            break;
+                                    }
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Created Date -->
+                        <div class="detail-group">
+                            <label class="detail-label">Ngày tạo:</label>
+                            <div class="date-display">
+                                <i class="fas fa-calendar-alt"></i>
+                                @Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm:ss")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Info -->
+            <div class="col-lg-4">
+                <!-- User Info -->
+                <div class="details-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-user"></i>
+                            Thông tin người dùng
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="user-info-card">
+                            <div class="user-avatar large">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="user-details">
+                                <h4 class="user-name">@Model.User?.Username</h4>
+                                <p class="user-email">
+                                    <i class="fas fa-envelope"></i>
+                                    @Model.User?.Email
+                                </p>
+                                @if (!string.IsNullOrEmpty(Model.User?.Phone))
+                                {
+                                    <p class="user-phone">
+                                        <i class="fas fa-phone"></i>
+                                        @Model.User.Phone
+                                    </p>
+                                }
+                                <p class="user-joined">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    Tham gia: @Model.User?.CreatedAt.ToString("dd/MM/yyyy")
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Info -->
+                <div class="details-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-box"></i>
+                            Thông tin sản phẩm
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="product-info-card">
+                            @if (!string.IsNullOrEmpty(Model.Product?.ImageURL))
+                            {
+                                <div class="product-image">
+                                    <img src="~/upload/product/@Model.Product.ImageURL" alt="@Model.Product.Name" class="product-img">
+                                </div>
+                            }
+                            <div class="product-details">
+                                <h4 class="product-name">@Model.Product?.Name</h4>
+                                <p class="product-price">
+                                    <i class="fas fa-tag"></i>
+                                    @string.Format("{0:N0}", Model.Product?.Price) ₫
+                                </p>
+                                @if (Model.Product?.Brand != null)
+                                {
+                                    <p class="product-brand">
+                                        <i class="fas fa-award"></i>
+                                        @Model.Product.Brand.Name
+                                    </p>
+                                }
+                                @if (Model.Product?.Category != null)
+                                {
+                                    <p class="product-category">
+                                        <i class="fas fa-tags"></i>
+                                        @Model.Product.Category.Name
+                                    </p>
+                                }
+                                <div class="product-actions">
+                                    <a href="@Url.Action("Details", "Products", new { id = Model.ProductID })" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-external-link-alt"></i>
+                                        Xem sản phẩm
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="details-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-lightning-bolt"></i>
+                            Thao tác nhanh
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="quick-actions">
+                            @if (Model.Status == "Pending")
+                            {
+                                <button type="button" class="btn btn-success btn-block quick-approve" data-review-id="@Model.ReviewID">
+                                    <i class="fas fa-check"></i>
+                                    Duyệt đánh giá
+                                </button>
+                                <button type="button" class="btn btn-warning btn-block quick-reject" data-review-id="@Model.ReviewID">
+                                    <i class="fas fa-times"></i>
+                                    Từ chối đánh giá
+                                </button>
+                            }
+                            else if (Model.Status == "Approved")
+                            {
+                                <button type="button" class="btn btn-warning btn-block quick-reject" data-review-id="@Model.ReviewID">
+                                    <i class="fas fa-times"></i>
+                                    Từ chối đánh giá
+                                </button>
+                            }
+                            else if (Model.Status == "Rejected")
+                            {
+                                <button type="button" class="btn btn-success btn-block quick-approve" data-review-id="@Model.ReviewID">
+                                    <i class="fas fa-check"></i>
+                                    Duyệt đánh giá
+                                </button>
+                            }
+                            
+                            <button type="button" class="btn btn-danger btn-block delete-review" 
+                                    data-review-id="@Model.ReviewID"
+                                    data-review-user="@Model.User?.Username">
+                                <i class="fas fa-trash"></i>
+                                Xóa đánh giá
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Confirmation Modal -->
+<div class="modal fade" id="quickActionModal" tabindex="-1" aria-labelledby="quickActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickActionModalLabel">
+                    <i class="fas fa-question-circle text-primary"></i>
+                    Xác nhận hành động
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="quickActionMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmQuickAction">
+                    <i class="fas fa-check"></i>
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    Xác nhận xóa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa đánh giá của <strong id="reviewUser"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    Hành động này không thể hoàn tác!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="fas fa-trash"></i>
+                    Xóa đánh giá
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_reviews.js" asp-append-version="true"></script>
+}

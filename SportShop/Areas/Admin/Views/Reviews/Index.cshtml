@@ -1,0 +1,514 @@
+@model List<SportShop.Models.Review>
+
+@{
+    ViewData["Title"] = "Quản lý đánh giá";
+    var currentPage = (int)(ViewData["CurrentPage"] ?? 1);
+    var totalPages = (int)(ViewData["TotalPages"] ?? 1);
+    var totalItems = (int)(ViewData["TotalItems"] ?? 0);
+    var pageSize = (int)(ViewData["PageSize"] ?? 10);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_reviews.css" asp-append-version="true" />
+}
+
+<div class="reviews-container">
+    <!-- Header & Stats -->
+    <div class="reviews-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="page-title">
+                    <i class="fas fa-star-half-alt"></i>
+                    Quản lý đánh giá
+                </h1>
+                <p class="page-subtitle">Quản lý và kiểm duyệt các đánh giá của khách hàng</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+            <div class="stat-card total">
+                <div class="stat-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@ViewData["TotalReviews"]</h3>
+                    <p>Tổng đánh giá</p>
+                </div>
+            </div>
+            <div class="stat-card pending">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@ViewData["PendingReviews"]</h3>
+                    <p>Chờ duyệt</p>
+                </div>
+            </div>
+            <div class="stat-card approved">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@ViewData["ApprovedReviews"]</h3>
+                    <p>Đã duyệt</p>
+                </div>
+            </div>
+            <div class="stat-card rejected">
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@ViewData["RejectedReviews"]</h3>
+                    <p>Từ chối</p>
+                </div>
+            </div>
+            <div class="stat-card rating">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@string.Format("{0:F1}", ViewData["AverageRating"])</h3>
+                    <p>Điểm TB</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="reviews-filters">
+        <form method="get" class="filter-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="searchString">Tìm kiếm:</label>
+                    <div class="reviews-search-input">
+                        <i class="fas fa-search"></i>
+                        <input type="text" 
+                               id="searchString" 
+                               name="searchString" 
+                               value="@ViewData["SearchString"]" 
+                               class="form-control"
+                               placeholder="Tìm theo nội dung, sản phẩm, người dùng...">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label for="statusFilter">Trạng thái:</label>
+                    <select id="statusFilter" name="statusFilter" class="form-select">
+                        @{
+                            var statusFilter = ViewData["StatusFilter"]?.ToString();
+                        }
+                        <option value="">Tất cả</option>
+                        @if (statusFilter == "Pending")
+                        {
+                            <option value="Pending" selected="selected">Chờ duyệt</option>
+                        }
+                        else
+                        {
+                            <option value="Pending">Chờ duyệt</option>
+                        }
+                        @if (statusFilter == "Approved")
+                        {
+                            <option value="Approved" selected="selected">Đã duyệt</option>
+                        }
+                        else
+                        {
+                            <option value="Approved">Đã duyệt</option>
+                        }
+                        @if (statusFilter == "Rejected")
+                        {
+                            <option value="Rejected" selected="selected">Từ chối</option>
+                        }
+                        else
+                        {
+                            <option value="Rejected">Từ chối</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="ratingFilter">Đánh giá:</label>
+                    <select id="ratingFilter" name="ratingFilter" class="form-select">
+                        @{
+                            var ratingFilter = ViewData["RatingFilter"]?.ToString();
+                        }
+                        <option value="">Tất cả</option>
+                        @for (int i = 5; i >= 1; i--)
+                        {
+                            @if (ratingFilter == i.ToString())
+                            {
+                                <option value="@i" selected="selected">@i sao</option>
+                            }
+                            else
+                            {
+                                <option value="@i">@i sao</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                        Lọc
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                        Xóa bộ lọc
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Reviews Table -->
+    <div class="reviews-content">
+        <div class="table-header">
+            <div class="table-controls">
+                <div class="bulk-actions">
+                    <select id="bulkAction" class="form-select">
+                        <option value="">Chọn hành động</option>
+                        <option value="approve">Duyệt đánh giá</option>
+                        <option value="reject">Từ chối đánh giá</option>
+                        <option value="delete">Xóa đánh giá</option>
+                    </select>
+                    <button type="button" id="applyBulkAction" class="btn btn-outline-primary">
+                        <i class="fas fa-play"></i>
+                        Áp dụng
+                    </button>
+                </div>
+                <div class="table-info">
+                    <span>Hiển thị @(((currentPage - 1) * pageSize) + 1) - @(Math.Min(currentPage * pageSize, totalItems)) trong tổng số @totalItems đánh giá</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="reviews-table">
+                <thead>
+                    <tr>
+                        <th class="select-col">
+                            <input type="checkbox" id="selectAll" class="form-check-input">
+                        </th>
+                        <th class="sortable">
+                            <a href="@Url.Action("Index", new { 
+                                sortOrder = ViewData["UserSortParm"], 
+                                searchString = ViewData["SearchString"], 
+                                statusFilter = ViewData["StatusFilter"], 
+                                ratingFilter = ViewData["RatingFilter"] 
+                            })">
+                                Người dùng
+                                @if (ViewData["CurrentSort"]?.ToString() == "User")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "user_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th class="sortable">
+                            Sản phẩm
+                        </th>
+                        <th class="rating-col sortable">
+                            <a href="@Url.Action("Index", new { 
+                                sortOrder = ViewData["RatingSortParm"], 
+                                searchString = ViewData["SearchString"], 
+                                statusFilter = ViewData["StatusFilter"], 
+                                ratingFilter = ViewData["RatingFilter"] 
+                            })">
+                                Đánh giá
+                                @if (ViewData["CurrentSort"]?.ToString() == "Rating")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "rating_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th class="comment-col">Nội dung</th>
+                        <th class="status-col sortable">
+                            <a href="@Url.Action("Index", new { 
+                                sortOrder = ViewData["StatusSortParm"], 
+                                searchString = ViewData["SearchString"], 
+                                statusFilter = ViewData["StatusFilter"], 
+                                ratingFilter = ViewData["RatingFilter"] 
+                            })">
+                                Trạng thái
+                                @if (ViewData["CurrentSort"]?.ToString() == "Status")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "status_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th class="date-col sortable">
+                            <a href="@Url.Action("Index", new { 
+                                sortOrder = ViewData["DateSortParm"], 
+                                searchString = ViewData["SearchString"], 
+                                statusFilter = ViewData["StatusFilter"], 
+                                ratingFilter = ViewData["RatingFilter"] 
+                            })">
+                                Ngày tạo
+                                @if (ViewData["CurrentSort"]?.ToString() == "Date")
+                                {
+                                    <i class="fas fa-sort-up"></i>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "date_desc")
+                                {
+                                    <i class="fas fa-sort-down"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-sort"></i>
+                                }
+                            </a>
+                        </th>
+                        <th class="actions-col">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var review in Model)
+                    {
+                        <tr data-review-id="@review.ReviewID">
+                            <td class="select-col">
+                                <input type="checkbox" name="selectedIds" value="@review.ReviewID" class="form-check-input review-checkbox">
+                            </td>
+                            <td class="user-col">
+                                <div class="user-info">
+                                    <div class="user-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="user-details">
+                                        <span class="user-name">@review.User?.Username</span>
+                                        <span class="user-email">@review.User?.Email</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="product-col">
+                                <div class="product-info">
+                                    <span class="product-name">@review.Product?.Name</span>
+                                </div>
+                            </td>
+                            <td class="rating-col">
+                                <div class="rating-display">
+                                    @if (review.Rating.HasValue)
+                                    {
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <i class="fas fa-star @(i <= review.Rating ? "star-filled" : "star-empty")"></i>
+                                        }
+                                        <span class="rating-number">@review.Rating.Value</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="no-rating">Chưa đánh giá</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="comment-col">
+                                <div class="comment-content">
+                                    @if (!string.IsNullOrEmpty(review.Comment))
+                                    {
+                                        <p>@(review.Comment.Length > 100 ? review.Comment.Substring(0, 100) + "..." : review.Comment)</p>
+                                    }
+                                    else
+                                    {
+                                        <span class="no-comment">Không có nội dung</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="status-col">
+                                <span class="status-badge status-@(review.Status?.ToLower() ?? "pending")">
+                                    @switch (review.Status)
+                                    {
+                                        case "Approved":
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Đã duyệt</span>
+                                            break;
+                                        case "Rejected":
+                                            <i class="fas fa-times-circle"></i>
+                                            <span>Từ chối</span>
+                                            break;
+                                        case "Pending":
+                                        default:
+                                            <i class="fas fa-clock"></i>
+                                            <span>Chờ duyệt</span>
+                                            break;
+                                    }
+                                </span>
+                            </td>
+                            <td class="date-col">
+                                <span class="date-display">@review.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                            </td>
+                            <td class="actions-col">
+                                <div class="action-buttons">
+                                    <a href="@Url.Action("Details", new { id = review.ReviewID })" 
+                                       class="btn btn-outline-info btn-sm" 
+                                       title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="@Url.Action("Edit", new { id = review.ReviewID })" 
+                                       class="btn btn-outline-warning btn-sm" 
+                                       title="Chỉnh sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm delete-review" 
+                                            data-review-id="@review.ReviewID"
+                                            data-review-user="@review.User?.Username"
+                                            title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3>Không có đánh giá nào</h3>
+                <p>Chưa có đánh giá nào được tìm thấy với bộ lọc hiện tại.</p>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <div class="pagination-container">
+            <div class="pagination-wrapper">
+                <ul class="pagination justify-content-center">
+                    @if (currentPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { 
+                                page = currentPage - 1, 
+                                searchString = ViewData["SearchString"], 
+                                statusFilter = ViewData["StatusFilter"],
+                                ratingFilter = ViewData["RatingFilter"],
+                                sortOrder = ViewData["CurrentSort"]
+                            })">Trước</a>
+                        </li>
+                    }
+                    
+                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { 
+                                page = i, 
+                                searchString = ViewData["SearchString"], 
+                                statusFilter = ViewData["StatusFilter"],
+                                ratingFilter = ViewData["RatingFilter"],
+                                sortOrder = ViewData["CurrentSort"]
+                            })">@i</a>
+                        </li>
+                    }
+                    
+                    @if (currentPage < totalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { 
+                                page = currentPage + 1, 
+                                searchString = ViewData["SearchString"], 
+                                statusFilter = ViewData["StatusFilter"],
+                                ratingFilter = ViewData["RatingFilter"],
+                                sortOrder = ViewData["CurrentSort"]
+                            })">Sau</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    Xác nhận xóa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa đánh giá của <strong id="reviewUser"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    Hành động này không thể hoàn tác!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="fas fa-trash"></i>
+                    Xóa đánh giá
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Action Confirmation Modal -->
+<div class="modal fade" id="bulkActionModal" tabindex="-1" aria-labelledby="bulkActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkActionModalLabel">
+                    <i class="fas fa-question-circle text-primary"></i>
+                    Xác nhận hành động
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="bulkActionMessage"></p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Vui lòng xác nhận để tiếp tục.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmBulkAction">
+                    <i class="fas fa-check"></i>
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_reviews.js" asp-append-version="true"></script>
+}

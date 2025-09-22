@@ -78,7 +78,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/Admin/Reviews">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reviews" ? "active" : "")" href="/Admin/Reviews">
                         <i class="fas fa-star-half-alt"></i>
                         <span>Đánh giá</span>
                     </a>

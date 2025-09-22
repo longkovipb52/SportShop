@@ -1,0 +1,496 @@
+@model SportShop.Models.DTOs.ReportsIndexViewModel
+@{
+    ViewData["Title"] = "Báo cáo & Thống kê";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_reports.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+}
+
+<div class="reports-container">
+    <!-- Header Section -->
+    <div class="reports-header">
+        <div class="page-title-section">
+            <h1 class="page-title">
+                <i class="fas fa-chart-bar"></i>
+                Báo cáo & Thống kê
+            </h1>
+            <p class="page-subtitle">Phân tích doanh thu, sản phẩm bán chạy và hiệu quả kinh doanh</p>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="reports-filters">
+            <form id="reportsFilterForm" class="filter-form">
+                <div class="filter-group">
+                    <label for="dateRange">Khoảng thời gian:</label>
+                    <div class="date-range-wrapper">
+                        <input type="text" id="dateRange" name="dateRange" 
+                               value="@Model.Filter.StartDate?.ToString("dd/MM/yyyy") - @Model.Filter.EndDate?.ToString("dd/MM/yyyy")"
+                               class="form-control date-range-picker" readonly>
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="period">Chu kỳ:</label>
+                    <select id="period" name="period" class="form-select">
+                        <option value="day" selected="@(Model.Filter.Period == "day")">Theo ngày</option>
+                        <option value="week" selected="@(Model.Filter.Period == "week")">Theo tuần</option>
+                        <option value="month" selected="@(Model.Filter.Period == "month")">Theo tháng</option>
+                        <option value="quarter" selected="@(Model.Filter.Period == "quarter")">Theo quý</option>
+                        <option value="year" selected="@(Model.Filter.Period == "year")">Theo năm</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="categoryFilter">Danh mục:</label>
+                    <select id="categoryFilter" name="categoryID" class="form-select">
+                        <option value="">Tất cả danh mục</option>
+                        @foreach (var category in Model.Categories)
+                        {
+                            <option value="@category.CategoryID" selected="@(Model.Filter.CategoryID == category.CategoryID)">
+                                @category.Name
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="brandFilter">Thương hiệu:</label>
+                    <select id="brandFilter" name="brandID" class="form-select">
+                        <option value="">Tất cả thương hiệu</option>
+                        @foreach (var brand in Model.Brands)
+                        {
+                            <option value="@brand.BrandID" selected="@(Model.Filter.BrandID == brand.BrandID)">
+                                @brand.Name
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="button" id="applyFilter" class="btn btn-primary">
+                        <i class="fas fa-filter"></i>
+                        Áp dụng
+                    </button>
+                    <button type="button" id="exportReport" class="btn btn-success">
+                        <i class="fas fa-download"></i>
+                        Xuất báo cáo
+                    </button>
+                    <button type="button" id="refreshData" class="btn btn-outline-secondary">
+                        <i class="fas fa-sync-alt"></i>
+                        Làm mới
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="overview-cards">
+        <div class="overview-card revenue-card">
+            <div class="card-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="card-value" id="monthRevenue">@Model.Overview.MonthRevenue.ToString("#,##0") VNĐ</h3>
+                <p class="card-label">Doanh thu tháng này</p>
+                <span class="card-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    +12.5%
+                </span>
+            </div>
+        </div>
+
+        <div class="overview-card orders-card">
+            <div class="card-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="card-value" id="monthOrders">@Model.Overview.MonthOrders</h3>
+                <p class="card-label">Đơn hàng tháng này</p>
+                <span class="card-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    +8.3%
+                </span>
+            </div>
+        </div>
+
+        <div class="overview-card customers-card">
+            <div class="card-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="card-value" id="totalCustomers">@Model.Overview.TotalCustomers</h3>
+                <p class="card-label">Tổng khách hàng</p>
+                <span class="card-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    +@Model.Overview.NewCustomersThisMonth KH mới
+                </span>
+            </div>
+        </div>
+
+        <div class="overview-card conversion-card">
+            <div class="card-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="card-value" id="conversionRate">@Model.Overview.ConversionRate.ToString("0.0")%</h3>
+                <p class="card-label">Tỷ lệ chuyển đổi</p>
+                <span class="card-change neutral">
+                    <i class="fas fa-minus"></i>
+                    Không đổi
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+        <!-- Revenue Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-line-chart"></i>
+                    Biểu đồ doanh thu
+                </h3>
+                <div class="chart-controls">
+                    <button type="button" class="btn btn-sm btn-outline-primary active" data-chart="revenue" data-type="line">
+                        <i class="fas fa-chart-line"></i>
+                        Đường
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-chart="revenue" data-type="bar">
+                        <i class="fas fa-chart-bar"></i>
+                        Cột
+                    </button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+                <div class="chart-loading" id="revenueLoading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Đang tải dữ liệu...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Sales Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-box"></i>
+                    Sản phẩm bán chạy
+                </h3>
+                <div class="chart-controls">
+                    <select class="form-select form-select-sm" id="productChartLimit">
+                        <option value="5">Top 5</option>
+                        <option value="10" selected>Top 10</option>
+                        <option value="15">Top 15</option>
+                        <option value="20">Top 20</option>
+                    </select>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="productChart" width="400" height="200"></canvas>
+                <div class="chart-loading" id="productLoading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Đang tải dữ liệu...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Tables Section -->
+    <div class="tables-section">
+        <!-- Top Products Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3 class="table-title">
+                    <i class="fas fa-star"></i>
+                    Sản phẩm bán chạy nhất
+                </h3>
+                <div class="table-actions">
+                    <button type="button" class="btn btn-sm btn-outline-success" id="exportProducts">
+                        <i class="fas fa-file-excel"></i>
+                        Xuất Excel
+                    </button>
+                </div>
+            </div>
+            <div class="table-body">
+                <table class="table table-hover" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Sản phẩm</th>
+                            <th>Danh mục</th>
+                            <th>Thương hiệu</th>
+                            <th>Số lượng bán</th>
+                            <th>Doanh thu</th>
+                            <th>Đánh giá</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.TopProducts.Any())
+                        {
+                            @for (int i = 0; i < Model.TopProducts.Count; i++)
+                            {
+                                var product = Model.TopProducts[i];
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>
+                                        <div class="product-info">
+                                            <img src="@(string.IsNullOrEmpty(product.ImageURL) ? "/image/product-placeholder.png" : "/upload/product/" + product.ImageURL)" 
+                                                 alt="@product.ProductName" class="product-image">
+                                            <div class="product-details">
+                                                <strong>@product.ProductName</strong>
+                                                <small class="text-muted">@product.Price.ToString("#,##0") VNĐ</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@product.CategoryName</td>
+                                    <td>@product.BrandName</td>
+                                    <td>
+                                        <span class="badge bg-primary">@product.QuantitySold</span>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">@product.Revenue.ToString("#,##0") VNĐ</strong>
+                                    </td>
+                                    <td>
+                                        <div class="rating-info">
+                                            @if (product.ReviewCount > 0)
+                                            {
+                                                <span class="rating-stars">
+                                                    @for (int star = 1; star <= 5; star++)
+                                                    {
+                                                        if (star <= product.AverageRating)
+                                                        {
+                                                            <i class="fas fa-star text-warning"></i>
+                                                        }
+                                                        else if (star - 0.5 <= (double)product.AverageRating)
+                                                        {
+                                                            <i class="fas fa-star-half-alt text-warning"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="far fa-star text-muted"></i>
+                                                        }
+                                                    }
+                                                </span>
+                                                <small class="text-muted">(@product.ReviewCount)</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">Chưa có đánh giá</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="@Url.Action("Details", "Products", new { area = "Admin", id = product.ProductID })" 
+                                           class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    <i class="fas fa-box-open fa-2x mb-3"></i>
+                                    <p>Không có dữ liệu sản phẩm trong khoảng thời gian này</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Customers Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3 class="table-title">
+                    <i class="fas fa-users"></i>
+                    Khách hàng tiềm năng
+                </h3>
+                <div class="table-actions">
+                    <button type="button" class="btn btn-sm btn-outline-success" id="exportCustomers">
+                        <i class="fas fa-file-excel"></i>
+                        Xuất Excel
+                    </button>
+                </div>
+            </div>
+            <div class="table-body">
+                <table class="table table-hover" id="customersTable">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Khách hàng</th>
+                            <th>Loại KH</th>
+                            <th>Tổng đơn hàng</th>
+                            <th>Tổng chi tiêu</th>
+                            <th>Giá trị TB</th>
+                            <th>Đơn hàng cuối</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.TopCustomers.Any())
+                        {
+                            @for (int i = 0; i < Model.TopCustomers.Count; i++)
+                            {
+                                var customer = Model.TopCustomers[i];
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>
+                                        <div class="customer-info">
+                                            <strong>@customer.UserName</strong>
+                                            <small class="text-muted d-block">@customer.Email</small>
+                                            @if (!string.IsNullOrEmpty(customer.Phone))
+                                            {
+                                                <small class="text-muted d-block">@customer.Phone</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(customer.CustomerType == "VIP" ? "bg-danger" : customer.CustomerType == "Regular" ? "bg-warning" : "bg-info")">
+                                            @customer.CustomerType
+                                        </span>
+                                    </td>
+                                    <td>@customer.TotalOrders</td>
+                                    <td>
+                                        <strong class="text-success">@customer.TotalSpent.ToString("#,##0") VNĐ</strong>
+                                    </td>
+                                    <td>@customer.AverageOrderValue.ToString("#,##0") VNĐ</td>
+                                    <td>
+                                        @customer.LastOrderDate.ToString("dd/MM/yyyy")
+                                        <small class="text-muted d-block">@customer.DaysSinceLastOrder ngày trước</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(customer.Status == "Active" ? "bg-success" : customer.Status == "Potential" ? "bg-warning" : "bg-secondary")">
+                                            @customer.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    <i class="fas fa-users fa-2x mb-3"></i>
+                                    <p>Không có dữ liệu khách hàng trong khoảng thời gian này</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Payment Methods Analysis -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3 class="table-title">
+                    <i class="fas fa-credit-card"></i>
+                    Phân tích phương thức thanh toán
+                </h3>
+                <div class="chart-container-small">
+                    <canvas id="paymentChart" width="200" height="200"></canvas>
+                </div>
+            </div>
+            <div class="table-body">
+                <table class="table table-hover" id="paymentTable">
+                    <thead>
+                        <tr>
+                            <th>Phương thức</th>
+                            <th>Tổng giao dịch</th>
+                            <th>Thành công</th>
+                            <th>Thất bại</th>
+                            <th>Tỷ lệ thành công</th>
+                            <th>Tổng tiền</th>
+                            <th>Giá trị TB</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.PaymentMethods.Any())
+                        {
+                            @foreach (var payment in Model.PaymentMethods)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="payment-method">
+                                            <i class="@(payment.PaymentMethod == "MoMo" ? "fas fa-mobile-alt text-pink" : 
+                                                       payment.PaymentMethod == "VNPay" ? "fas fa-credit-card text-blue" : 
+                                                       "fas fa-money-bill-wave text-green")"></i>
+                                            <strong>@payment.PaymentMethod</strong>
+                                        </div>
+                                    </td>
+                                    <td>@payment.TotalTransactions</td>
+                                    <td>
+                                        <span class="badge bg-success">@payment.SuccessfulTransactions</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger">@payment.FailedTransactions</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress-wrapper">
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar @(payment.SuccessRate >= 90 ? "bg-success" : payment.SuccessRate >= 70 ? "bg-warning" : "bg-danger")" 
+                                                     role="progressbar" 
+                                                     style="width: @payment.SuccessRate%"
+                                                     aria-valuenow="@payment.SuccessRate" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                    @payment.SuccessRate.ToString("0.0")%
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">@payment.TotalAmount.ToString("#,##0") VNĐ</strong>
+                                    </td>
+                                    <td>@payment.AverageAmount.ToString("#,##0") VNĐ</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    <i class="fas fa-credit-card fa-2x mb-3"></i>
+                                    <p>Không có dữ liệu thanh toán trong khoảng thời gian này</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script src="~/js/admin_reports.js" asp-append-version="true"></script>
+    
+    <script>
+        // Initialize with server data
+        console.log('Server data check:');
+        console.log('RevenueChartData:', @Html.Raw(Json.Serialize(Model.RevenueChartData)));
+        console.log('ProductChartData:', @Html.Raw(Json.Serialize(Model.ProductChartData)));
+        console.log('PaymentChartData:', @Html.Raw(Json.Serialize(Model.PaymentChartData)));
+        
+        window.reportsData = {
+            revenueData: @Html.Raw(Json.Serialize(Model.RevenueChartData ?? new SportShop.Models.DTOs.ChartDataDTO())),
+            productData: @Html.Raw(Json.Serialize(Model.ProductChartData ?? new SportShop.Models.DTOs.ChartDataDTO())),
+            paymentData: @Html.Raw(Json.Serialize(Model.PaymentChartData ?? new SportShop.Models.DTOs.ChartDataDTO()))
+        };
+        
+        console.log('Final reportsData:', window.reportsData);
+    </script>
+}

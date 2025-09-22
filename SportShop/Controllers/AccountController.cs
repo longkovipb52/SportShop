@@ -242,7 +242,7 @@ namespace SportShop.Controllers
                 Phone = user.Phone ?? "",
                 Address = user.Address ?? "",
                 RoleName = user.Role.RoleName,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt ?? DateTime.Now
             };
 
             return View(viewModel);

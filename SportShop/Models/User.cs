@@ -39,7 +39,7 @@ namespace SportShop.Models
         [ForeignKey("RoleID")]
         public virtual Role Role { get; set; }
         
-        public DateTime CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
         
         // Navigation Properties
         public virtual ICollection<Review> Reviews { get; set; }

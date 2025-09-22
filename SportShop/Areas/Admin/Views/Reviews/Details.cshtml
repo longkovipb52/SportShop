@@ -161,7 +161,7 @@
                                 }
                                 <p class="user-joined">
                                     <i class="fas fa-calendar-plus"></i>
-                                    Tham gia: @Model.User?.CreatedAt.ToString("dd/MM/yyyy")
+                                    Tham gia: @(Model.User?.CreatedAt?.ToString("dd/MM/yyyy") ?? "Không xác định")
                                 </p>
                             </div>
                         </div>

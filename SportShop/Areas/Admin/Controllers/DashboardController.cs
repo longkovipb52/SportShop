@@ -60,9 +60,9 @@ namespace SportShop.Areas.Admin.Controllers
                 // Customer Statistics
                 var users = await _context.Users.ToListAsync();
                 
-                viewModel.NewCustomersToday = users.Count(u => u.CreatedAt.Date == today);
-                viewModel.NewCustomersThisWeek = users.Count(u => u.CreatedAt >= startOfWeek);
-                viewModel.NewCustomersThisMonth = users.Count(u => u.CreatedAt >= startOfMonth);
+                viewModel.NewCustomersToday = users.Count(u => u.CreatedAt.HasValue && u.CreatedAt.Value.Date == today);
+                viewModel.NewCustomersThisWeek = users.Count(u => u.CreatedAt.HasValue && u.CreatedAt.Value >= startOfWeek);
+                viewModel.NewCustomersThisMonth = users.Count(u => u.CreatedAt.HasValue && u.CreatedAt.Value >= startOfMonth);
                 viewModel.TotalCustomers = users.Count;
 
                 // Top Selling Products
@@ -90,7 +90,7 @@ namespace SportShop.Areas.Admin.Controllers
                     ? Math.Round(((decimal)(thisMonthOrders - lastMonthOrders) / lastMonthOrders) * 100, 1)
                     : 0;
 
-                var lastMonthCustomers = users.Count(u => u.CreatedAt >= startOfMonth.AddMonths(-1) && u.CreatedAt < startOfMonth);
+                var lastMonthCustomers = users.Count(u => u.CreatedAt.HasValue && u.CreatedAt.Value >= startOfMonth.AddMonths(-1) && u.CreatedAt.Value < startOfMonth);
                 
                 viewModel.CustomerGrowthPercent = lastMonthCustomers > 0 
                     ? Math.Round(((decimal)(viewModel.NewCustomersThisMonth - lastMonthCustomers) / lastMonthCustomers) * 100, 1)
@@ -264,7 +264,7 @@ namespace SportShop.Areas.Admin.Controllers
                         CategoryID = category.CategoryID,
                         Name = category.Name,
                         ImageURL = category.ImageURL ?? "",
-                        TotalProducts = category.Products.Count,
+                        TotalProducts = category.Products?.Count ?? 0,
                         TotalSold = totalSold,
                         Revenue = revenue
                     });

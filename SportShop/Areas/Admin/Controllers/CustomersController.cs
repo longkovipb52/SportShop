@@ -54,7 +54,7 @@ namespace SportShop.Areas.Admin.Controllers
                     Email = u.Email,
                     Phone = u.Phone,
                     Address = u.Address,
-                    CreatedAt = u.CreatedAt,
+                    CreatedAt = u.CreatedAt ?? DateTime.Now,
                     TotalOrders = u.Orders.Count(),
                     TotalSpent = u.Orders.Where(o => o.Status == "Hoàn thành").Sum(o => o.TotalAmount)
                 })
@@ -98,7 +98,7 @@ namespace SportShop.Areas.Admin.Controllers
                 Email = customer.Email,
                 Phone = customer.Phone,
                 Address = customer.Address,
-                CreatedAt = customer.CreatedAt,
+                CreatedAt = customer.CreatedAt ?? DateTime.Now,
                 TotalOrders = customer.Orders.Count(),
                 TotalSpent = customer.Orders.Where(o => o.Status == "Hoàn thành").Sum(o => o.TotalAmount),
                 RecentOrders = customer.Orders
@@ -161,7 +161,7 @@ namespace SportShop.Areas.Admin.Controllers
                     Email = customer.Email,
                     Phone = customer.Phone,
                     Address = customer.Address,
-                    CreatedAt = customer.CreatedAt
+                    CreatedAt = customer.CreatedAt ?? DateTime.Now
                 },
                 Orders = orders,
                 CurrentPage = page,

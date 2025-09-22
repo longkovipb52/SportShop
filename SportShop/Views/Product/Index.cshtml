@@ -219,7 +219,7 @@
                             <div class="col product-item" data-aos="fade-up">
                                 <div class="card h-100 product-card">
                                     <div class="card-img-top-container position-relative overflow-hidden">
-                                        <img src="@(string.IsNullOrEmpty(product.ImageURL) ? "/images/product-placeholder.jpg" : $"/upload/product/{product.ImageURL}")" 
+                                        <img src="@(string.IsNullOrEmpty(product.ImageURL) ? "/image/product-placeholder.png" : $"/upload/product/{product.ImageURL}")" 
                                              class="card-img-top" alt="@product.Name">
                                         
                                         @if (product.Price > 3000000)

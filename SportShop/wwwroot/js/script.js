@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initProductSearch()
   initHeroEffects() // Added line
   initProductMarquee();
+  initChatbot(); // Initialize chatbot
 })
 
 // Scroll to Top Button
@@ -196,14 +197,6 @@ function showNotification(message, type = "success") {
   })
 }
 
-// AI Chat Button Functionality
-document.addEventListener("click", (e) => {
-  if (e.target.textContent.includes("Chat with AI")) {
-    e.preventDefault()
-    showNotification("AI Assistant is coming soon! Stay tuned for personalized recommendations.", "info")
-  }
-})
-
 // Newsletter Subscription
 document.addEventListener("click", (e) => {
   if (e.target.textContent.includes("Subscribe")) {
@@ -361,6 +354,27 @@ function initProductSearch() {
     if (!e.target.closest('.search-form')) {
       const suggestions = document.querySelectorAll('.search-suggestions');
       suggestions.forEach(el => hideSuggestions(el));
+    }
+  });
+  
+  // Check voice search support and show info
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.voiceSearchManager) {
+      const supportInfo = window.voiceSearchManager.getSupportInfo();
+      
+      if (!supportInfo.supported) {
+        // Show browser support info in search areas
+        const searchForms = document.querySelectorAll('.search-form');
+        searchForms.forEach(form => {
+          const infoDiv = document.createElement('div');
+          infoDiv.className = 'voice-support-info show';
+          infoDiv.innerHTML = `
+            <i class="fas fa-info-circle me-2"></i>
+            ${supportInfo.message}
+          `;
+          form.appendChild(infoDiv);
+        });
+      }
     }
   });
 }
@@ -790,6 +804,282 @@ function initProductMarquee() {
     setInterval(function() {
       carousel.next();
     }, 5000);
+  }
+}
+
+// Chatbot Functionality
+function initChatbot() {
+  const chatbotBtn = document.getElementById('chatbotBtn');
+  const chatbotWidget = document.getElementById('chatbotWidget');
+  const closeChatbot = document.getElementById('closeChatbot');
+  const minimizeChatbot = document.getElementById('minimizeChatbot');
+  const chatbotInput = document.getElementById('chatbotInput');
+  const sendButton = document.getElementById('sendMessage');
+  const chatbotMessages = document.getElementById('chatbotMessages');
+  const chatbotTyping = document.getElementById('chatbotTyping');
+  const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+
+  // Toggle chatbot widget
+  chatbotBtn.addEventListener('click', () => {
+    const isVisible = chatbotWidget.style.display === 'flex';
+    if (isVisible) {
+      chatbotWidget.style.display = 'none';
+    } else {
+      chatbotWidget.style.display = 'flex';
+      chatbotWidget.classList.remove('minimized');
+      chatbotInput.focus();
+    }
+  });
+
+  // Close chatbot
+  closeChatbot.addEventListener('click', () => {
+    chatbotWidget.style.display = 'none';
+  });
+
+  // Minimize/maximize chatbot
+  minimizeChatbot.addEventListener('click', () => {
+    chatbotWidget.classList.toggle('minimized');
+    if (chatbotWidget.classList.contains('minimized')) {
+      minimizeChatbot.innerHTML = '<i class="fas fa-window-maximize"></i>';
+    } else {
+      minimizeChatbot.innerHTML = '<i class="fas fa-minus"></i>';
+      chatbotInput.focus();
+    }
+  });
+
+  // Send message function
+  function sendMessage() {
+    const message = chatbotInput.value.trim();
+    if (!message) return;
+
+    // Add user message
+    addMessage(message, 'user');
+    chatbotInput.value = '';
+
+    // Show typing indicator
+    showTypingIndicator();
+
+    // Simulate bot response after delay
+    setTimeout(() => {
+      hideTypingIndicator();
+      const botResponse = generateBotResponse(message);
+      addMessage(botResponse, 'bot');
+    }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+  }
+
+  // Send message on button click
+  sendButton.addEventListener('click', sendMessage);
+
+  // Send message on Enter key
+  chatbotInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+
+  // Quick action buttons
+  quickActionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      const actionText = btn.textContent.trim();
+      
+      // Add user message
+      addMessage(actionText, 'user');
+      
+      // Show typing indicator
+      showTypingIndicator();
+      
+      // Generate response based on action
+      setTimeout(() => {
+        hideTypingIndicator();
+        const response = generateQuickActionResponse(action);
+        addMessage(response, 'bot');
+      }, 1500);
+    });
+  });
+
+  // Add message to chat
+  function addMessage(text, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const currentTime = new Date().toLocaleTimeString('vi-VN', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    if (sender === 'bot') {
+      messageDiv.innerHTML = `
+        <div class="message-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">
+          <div class="message-bubble">${text}</div>
+          <div class="message-time">${currentTime}</div>
+        </div>
+      `;
+    } else {
+      messageDiv.innerHTML = `
+        <div class="message-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="message-content">
+          <div class="message-bubble">${text}</div>
+          <div class="message-time">${currentTime}</div>
+        </div>
+      `;
+    }
+
+    chatbotMessages.appendChild(messageDiv);
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+  }
+
+  // Show typing indicator
+  function showTypingIndicator() {
+    chatbotTyping.style.display = 'flex';
+    sendButton.disabled = true;
+  }
+
+  // Hide typing indicator
+  function hideTypingIndicator() {
+    chatbotTyping.style.display = 'none';
+    sendButton.disabled = false;
+  }
+
+  // Generate bot response based on user input
+  function generateBotResponse(userMessage) {
+    const message = userMessage.toLowerCase();
+    
+    // Greetings
+    if (message.includes('xin chào') || message.includes('hello') || message.includes('hi')) {
+      return 'Xin chào! 😊 Tôi là trợ lý ảo của LoLo Sport. Tôi có thể giúp bạn tìm kiếm sản phẩm, tư vấn kích cỡ, hoặc hỗ trợ đặt hàng. Bạn cần hỗ trợ gì ạ?';
+    }
+    
+    // Product search
+    if (message.includes('sản phẩm') || message.includes('tìm') || message.includes('mua')) {
+      return 'Tôi có thể giúp bạn tìm sản phẩm! 🛍️ Bạn đang quan tâm đến loại sản phẩm nào? Ví dụ: giày thể thao, áo tập gym, dụng cụ tập luyện, v.v. Hoặc bạn có thể sử dụng thanh tìm kiếm ở trên để tìm kiếm trực tiếp.';
+    }
+    
+    // Size guide
+    if (message.includes('size') || message.includes('kích cỡ') || message.includes('số') || message.includes('đo')) {
+      return `Hướng dẫn chọn size: 📏
+      
+• **Giày thể thao**: Đo chiều dài bàn chân và cộng thêm 0.5-1cm
+• **Áo quần**: Tham khảo bảng size chi tiết trong mỗi sản phẩm  
+• **Phụ kiện**: Thông tin size được ghi rõ trong mô tả
+
+Bạn cần tư vấn size cho sản phẩm nào cụ thể không ạ?`;
+    }
+    
+    // Order support
+    if (message.includes('đặt hàng') || message.includes('mua hàng') || message.includes('thanh toán')) {
+      return `Quy trình đặt hàng dễ dàng: ✨
+      
+1. Thêm sản phẩm vào giỏ hàng
+2. Xem lại giỏ hàng và chọn "Thanh toán"
+3. Nhập thông tin giao hàng
+4. Chọn phương thức thanh toán
+5. Xác nhận đơn hàng
+
+Bạn cần hỗ trợ thêm về quy trình nào không ạ?`;
+    }
+    
+    // Shipping
+    if (message.includes('giao hàng') || message.includes('ship') || message.includes('vận chuyển')) {
+      return `Thông tin giao hàng: 🚚
+      
+• **Miễn phí ship** đơn hàng từ 500.000đ
+• **Giao hàng nhanh** trong nội thành 1-2 ngày
+• **Giao hàng toàn quốc** 2-5 ngày làm việc
+• **Thanh toán khi nhận hàng (COD)** được hỗ trợ
+
+Bạn có câu hỏi gì khác về giao hàng không ạ?`;
+    }
+    
+    // Return policy
+    if (message.includes('đổi trả') || message.includes('bảo hành') || message.includes('chính sách')) {
+      return `Chính sách đổi trả: 🔄
+      
+• **Đổi trả miễn phí** trong 30 ngày
+• Sản phẩm chưa qua sử dụng, còn nguyên tag
+• **Bảo hành** 6-12 tháng tùy theo sản phẩm
+• Hỗ trợ đổi size miễn phí lần đầu
+
+Bạn cần hỗ trợ đổi trả sản phẩm nào không ạ?`;
+    }
+    
+    // Contact
+    if (message.includes('liên hệ') || message.includes('hotline') || message.includes('số điện thoại')) {
+      return `Thông tin liên hệ: 📞
+      
+• **Hotline**: (028) 3835 4266
+• **Email**: support@lolosport.com  
+• **Địa chỉ**: 227 Nguyễn Văn Cừ, Quận 5, TP.HCM
+• **Giờ làm việc**: 8:00 - 22:00 hằng ngày
+
+Chúng tôi luôn sẵn sàng hỗ trợ bạn! 😊`;
+    }
+    
+    // Thanks
+    if (message.includes('cảm ơn') || message.includes('thanks') || message.includes('tks')) {
+      return 'Không có gì ạ! 😊 Rất vui được hỗ trợ bạn. Nếu bạn có thêm câu hỏi gì khác, đừng ngần ngại hỏi tôi nhé!';
+    }
+    
+    // Default response
+    const defaultResponses = [
+      'Tôi hiểu bạn đang cần hỗ trợ. Bạn có thể nói rõ hơn để tôi giúp bạn tốt nhất có thể được không ạ? 😊',
+      'Xin lỗi, tôi chưa hiểu rõ câu hỏi của bạn. Bạn có thể sử dụng các nút tắt bên dưới hoặc liên hệ trực tiếp với nhân viên tư vấn qua hotline (028) 3835 4266.',
+      'Tôi đang học hỏi thêm để hỗ trợ bạn tốt hơn. Hiện tại bạn có thể hỏi tôi về sản phẩm, size, đặt hàng, hoặc chính sách của cửa hàng nhé! 💪'
+    ];
+    
+    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+  }
+
+  // Generate quick action responses
+  function generateQuickActionResponse(action) {
+    switch (action) {
+      case 'products':
+        return `Sản phẩm HOT nhất hiện tại: 🔥
+        
+• **Giày Nike Air Max** - Giảm 30%
+• **Áo tập Under Armour** - Mẫu mới 2024
+• **Găng tay tập gym Adidas** - Best seller
+• **Bình nước thể thao** - Miễn phí ship
+
+<a href="/Product" class="text-primary">👉 Xem tất cả sản phẩm</a>`;
+        
+      case 'size-guide':
+        return `Bảng hướng dẫn size chi tiết: 📐
+        
+**Giày thể thao (cm):**
+• Size 39: 24.5cm | Size 40: 25.5cm
+• Size 41: 26.0cm | Size 42: 27.0cm
+• Size 43: 27.5cm | Size 44: 28.5cm
+
+**Quần áo:**
+• **S**: Ngực 86-91cm, Eo 71-76cm
+• **M**: Ngực 91-96cm, Eo 76-81cm  
+• **L**: Ngực 96-101cm, Eo 81-86cm
+
+💡 *Tip: Đo vào buổi chiều để có kết quả chính xác nhất!*`;
+        
+      case 'support':
+        return `Đội ngũ hỗ trợ LoLo Sport: 👥
+        
+🔹 **Chat trực tuyến**: 24/7 (như bây giờ)
+🔹 **Hotline**: (028) 3835 4266  
+🔹 **Email**: support@lolosport.com
+🔹 **Facebook**: LoLoSport Official
+
+**Thời gian phản hồi:**
+• Chat/Call: Ngay lập tức
+• Email: Trong 2 giờ làm việc
+
+Bạn cần hỗ trợ gì cụ thể không ạ? 😊`;
+        
+      default:
+        return 'Tôi đang xử lý yêu cầu của bạn... 🤔';
+    }
   }
 }
 

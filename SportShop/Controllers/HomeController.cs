@@ -24,10 +24,10 @@ namespace SportShop.Controllers
             Console.WriteLine($"HomeController.Index called - Request Path: {Request.Path}");
             Console.WriteLine($"Request Headers: {string.Join(", ", Request.Headers.Select(h => $"{h.Key}: {h.Value}"))}");
             
-            // Lấy 3 danh mục nổi bật với thông tin sản phẩm
+            // Lấy 8 danh mục nổi bật với thông tin sản phẩm
             var categories = await _context.Categories
                 .Include(c => c.Products)
-                .Take(3)
+                .Take(8)
                 .ToListAsync();
 
             // Lấy 8 sản phẩm nổi bật

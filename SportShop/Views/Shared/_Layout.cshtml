@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/checkout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/voice-search.css" asp-append-version="true" />
     
     <!-- Custom CSS per page -->
     @if (ViewData["CustomCSS"] != null)
@@ -373,15 +374,102 @@
         </div>
     </div>
 
+    <!-- Chatbot Button -->
+    <button id="chatbotBtn" class="btn btn-primary chatbot-btn">
+        <i class="fas fa-comments"></i>
+    </button>
+
     <!-- Scroll to Top Button -->
     <button id="scrollToTop" class="btn btn-primary scroll-to-top">
         <i class="fas fa-arrow-up"></i>
     </button>
 
+    <!-- Chatbot Widget -->
+    <div id="chatbotWidget" class="chatbot-widget">
+        <div class="chatbot-header">
+            <div class="chatbot-header-info">
+                <div class="chatbot-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="chatbot-header-text">
+                    <h6 class="chatbot-title mb-0">LoLo Sport Assistant</h6>
+                    <small class="chatbot-status text-success">
+                        <i class="fas fa-circle"></i> Đang online
+                    </small>
+                </div>
+            </div>
+            <div class="chatbot-header-actions">
+                <button class="btn btn-sm chatbot-minimize" id="minimizeChatbot">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="btn btn-sm chatbot-close" id="closeChatbot">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="chatbot-body">
+            <div class="chatbot-messages" id="chatbotMessages">
+                <!-- Welcome message -->
+                <div class="message bot-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            Xin chào! 👋 Tôi là trợ lý ảo của LoLo Sport. Tôi có thể giúp bạn:
+                            <ul class="mt-2 mb-0">
+                                <li>Tìm kiếm sản phẩm</li>
+                                <li>Tư vấn kích cỡ</li>
+                                <li>Hỗ trợ đặt hàng</li>
+                                <li>Giải đáp thắc mắc</li>
+                            </ul>
+                        </div>
+                        <div class="message-time">vừa xong</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="chatbot-quick-actions">
+                <button class="quick-action-btn" data-action="products">
+                    <i class="fas fa-shopping-bag"></i>
+                    Sản phẩm hot
+                </button>
+                <button class="quick-action-btn" data-action="size-guide">
+                    <i class="fas fa-ruler"></i>
+                    Hướng dẫn size
+                </button>
+                <button class="quick-action-btn" data-action="support">
+                    <i class="fas fa-headset"></i>
+                    Hỗ trợ
+                </button>
+            </div>
+        </div>
+        
+        <div class="chatbot-footer">
+            <div class="chatbot-input-group">
+                <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Nhập tin nhắn của bạn..." autocomplete="off">
+                <button class="btn chatbot-send-btn" id="sendMessage">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="chatbot-typing" id="chatbotTyping">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <small>LoLo Assistant đang trả lời...</small>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/script.js" asp-append-version="true"></script>
+    <script src="~/js/voice-search.js" asp-append-version="true"></script>
     
     <script>
         // Search functionality

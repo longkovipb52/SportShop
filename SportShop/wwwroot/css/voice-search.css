@@ -1,0 +1,223 @@
+/* Voice Search Styles */
+
+/* Voice Button Styling */
+.btn-voice {
+    position: absolute;
+    right: 45px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    font-size: 1.1rem;
+    padding: 8px 10px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.btn-voice:hover {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+    transform: translateY(-50%) !important;
+}
+
+.btn-voice.listening {
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    animation: pulse-red 1.5s infinite;
+}
+
+/* Pulse Animation for Listening State */
+@keyframes pulse-red {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0.1);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+/* Voice Search Modal */
+.voice-animation {
+    position: relative;
+    display: inline-block;
+}
+
+.voice-pulse {
+    position: relative;
+    display: inline-block;
+    animation: voice-pulse 2s infinite;
+}
+
+.voice-pulse::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100px;
+    height: 100px;
+    border: 2px solid rgba(0, 123, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: voice-ripple 2s infinite;
+}
+
+.voice-pulse::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80px;
+    height: 80px;
+    border: 2px solid rgba(0, 123, 255, 0.5);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: voice-ripple 2s infinite 0.5s;
+}
+
+@keyframes voice-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes voice-ripple {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.4);
+        opacity: 0;
+    }
+}
+
+/* Voice Examples Styling */
+.voice-examples {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px 15px;
+    border-left: 4px solid #007bff;
+}
+
+/* Toast Notifications for Voice */
+.voice-toast {
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.voice-toast .toast-header {
+    border: none;
+}
+
+.voice-toast .toast-body {
+    background: white;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Search Form Adjustments for Voice Button */
+.search-form {
+    position: relative;
+}
+
+.search-form .form-control {
+    padding-right: 130px; 
+}
+
+.search-form .btn-search {
+    right: 8px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .btn-voice {
+        right: 50px;
+        padding: 6px 8px;
+        font-size: 1rem;
+    }
+    
+    .search-form .form-control {
+        padding-right: 85px;
+    }
+    
+    .voice-toast {
+        min-width: 280px;
+        margin: 10px;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .btn-voice {
+        border: 1px solid currentColor;
+    }
+    
+    .btn-voice.listening {
+        background-color: rgba(220, 53, 69, 0.3);
+        border-color: #dc3545;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .btn-voice.listening,
+    .voice-pulse,
+    .voice-pulse::before,
+    .voice-pulse::after {
+        animation: none;
+    }
+    
+    .btn-voice.listening {
+        background-color: rgba(220, 53, 69, 0.2);
+    }
+}
+
+/* Browser Support Indicator */
+.voice-support-info {
+    display: none;
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    margin-top: 10px;
+}
+
+.voice-support-info.show {
+    display: block;
+}
+
+/* Loading State for Voice Recognition */
+.voice-loading {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 8px;
+}
+
+.voice-loading.show {
+    display: flex;
+}
+
+.voice-loading .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

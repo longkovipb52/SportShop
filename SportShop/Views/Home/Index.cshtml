@@ -56,9 +56,10 @@
         <div class="row g-4">
             @if (Model.FeaturedCategories != null && Model.FeaturedCategories.Any())
             {
-                foreach (var category in Model.FeaturedCategories)
+                @* Hàng đầu tiên: 4 danh mục đầu *@
+                @foreach (var category in Model.FeaturedCategories.Take(4))
                 {
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="category-card card h-100 border-0 shadow-sm">
                             <div class="card-img-wrapper">
                                 @if (!string.IsNullOrEmpty(category.ImageURL))
@@ -84,13 +85,51 @@
                     </div>
                 }
             }
-            else
-            {
+        </div>
+        
+        @* Hàng thứ hai: 4 danh mục tiếp theo (nếu có) *@
+        @if (Model.FeaturedCategories != null && Model.FeaturedCategories.Count() > 4)
+        {
+            <div class="row g-4 mt-4">
+                @foreach (var category in Model.FeaturedCategories.Skip(4).Take(4))
+                {
+                    <div class="col-lg-3 col-md-6">
+                        <div class="category-card card h-100 border-0 shadow-sm">
+                            <div class="card-img-wrapper">
+                                @if (!string.IsNullOrEmpty(category.ImageURL))
+                                {
+                                    <img src="~/upload/category/@category.ImageURL" class="card-img-top" alt="@category.Name">
+                                }
+                                else
+                                {
+                                    <img src="/placeholder.svg?height=250&width=400&text=@category.Name" class="card-img-top" alt="@category.Name">
+                                }
+                                <div class="card-overlay">
+                                    <a asp-controller="Product" asp-action="ByCategory" asp-route-id="@category.CategoryID" class="btn btn-primary">Xem chi tiết</a>
+                                </div>
+                            </div>
+                            <div class="card-body text-center">
+                                <h5 class="card-title fw-bold">@category.Name</h5>
+                                <p class="card-text text-muted">@category.Description</p>
+                                <div class="price-tag">
+                                    <span class="h5 text-primary fw-bold">Từ @(category.Products?.Min(p => p.Price).ToString("N0") ?? "0") đ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        
+        @* Hiển thị thông báo nếu không có danh mục nào *@
+        @if (Model.FeaturedCategories == null || !Model.FeaturedCategories.Any())
+        {
+            <div class="row">
                 <div class="col-12 text-center">
                     <p>Không có danh mục nào.</p>
                 </div>
-            }
-        </div>
+            </div>
+        }
     </div>
 </section>
 
@@ -157,34 +196,6 @@
                 <a href="#" class="btn btn-outline-primary">
                     <i class="fas fa-th-large me-2"></i>Xem tất cả thương hiệu
                 </a>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- AI Assistant Section -->
-<section class="py-5 ai-section">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <div class="ai-content">
-                    <div class="ai-icon mb-4">
-                        <i class="fas fa-robot fa-4x text-primary"></i>
-                    </div>
-                    <h3 class="display-6 fw-bold mb-4">Gợi ý thông minh</h3>
-                    <p class="lead mb-4">
-                        Nhận các gợi ý sản phẩm được cá nhân hóa phù hợp với nhu cầu và sở thích thể thao của bạn. 
-                        Hệ thống của chúng tôi phân tích hoạt động, phong cách và mục tiêu của bạn để đề xuất các trang thiết bị phù hợp nhất.
-                    </p>
-                    <button class="btn btn-primary btn-lg gradient-btn">
-                        <i class="fas fa-comments me-2"></i>Tư vấn ngay
-                    </button>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="ai-visual text-center">
-                    <img src="/image/chatbot.png" alt="AI Assistant" class="img-fluid rounded-3 shadow">
-                </div>
             </div>
         </div>
     </div>

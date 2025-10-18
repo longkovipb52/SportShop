@@ -138,8 +138,8 @@
     <div class="container">
         <div class="row">
             <div class="col-12 text-center mb-5">
-                <h2 class="display-5 fw-bold text-dark">Thương hiệu nổi bật</h2>
-                <p class="lead text-muted">Những thương hiệu uy tín hàng đầu trên thế giới</p>
+                <h2 class="display-5 fw-bold text-dark">Top 5 thương hiệu yêu thích nhất</h2>
+                <p class="lead text-muted">Những thương hiệu được yêu thích nhất dựa trên số lượng sản phẩm</p>
             </div>
         </div>
         
@@ -147,7 +147,7 @@
             <div class="row g-4 justify-content-center">
                 @if (Model.FeaturedBrands != null && Model.FeaturedBrands.Any())
                 {
-                    foreach (var brand in Model.FeaturedBrands.Take(6))
+                    foreach (var brand in Model.FeaturedBrands)
                     {
                         <div class="col-lg-2 col-md-3 col-4">
                             <div class="brand-item text-center">
@@ -169,159 +169,132 @@
                     </div>
                 }
             </div>
-            
-            @if (Model.FeaturedBrands != null && Model.FeaturedBrands.Count() > 6)
-            {
-                <div class="row g-4 justify-content-center mt-4">
-                    @foreach (var brand in Model.FeaturedBrands.Skip(6).Take(5))
-                    {
-                        <div class="col-lg-2 col-md-3 col-4">
-                            <div class="brand-item text-center">
-                                <a asp-controller="Product" asp-action="ByBrand" asp-route-id="@brand.BrandID" class="brand-link">
-                                    <div class="brand-logo-wrapper">
-                                        <img src="~/upload/branch/@brand.Logo" alt="@brand.Name" class="img-fluid brand-logo" 
-                                             onerror="this.src='/placeholder.svg?height=80&width=120&text=@brand.Name'">
-                                    </div>
-                                    <h6 class="brand-name mt-2">@brand.Name</h6>
-                                </a>
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
         </div>
-        
-        <div class="row mt-5">
-            <div class="col-12 text-center">
-                <a href="#" class="btn btn-outline-primary">
-                    <i class="fas fa-th-large me-2"></i>Xem tất cả thương hiệu
-                </a>
+    </div>
+</section>
+
+<!-- Brand Navigation -->
+<section class="category-navigation">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <ul class="nav nav-tabs category-nav-tabs" id="brandTabs" role="tablist">
+                    @if (Model.FeaturedBrands != null && Model.FeaturedBrands.Any())
+                    {
+                        @for (int i = 0; i < Model.FeaturedBrands.Count(); i++)
+                        {
+                            var brand = Model.FeaturedBrands.ElementAt(i);
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link @(i == 0 ? "active" : "")" 
+                                   id="brand-@brand.BrandID-tab" 
+                                   data-bs-toggle="tab" 
+                                   data-bs-target="#brand-@brand.BrandID" 
+                                   type="button" 
+                                   role="tab" 
+                                   aria-controls="brand-@brand.BrandID" 
+                                   aria-selected="@(i == 0 ? "true" : "false")">
+                                    <span>@brand.Name</span>
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Recommended Products -->
-<section id="products" class="py-5 bg-light">
+<!-- Products by Brand -->
+<section class="home-products-section">
     <div class="container">
-        <div class="row">
-            <div class="col-12 text-center mb-5">
-                <h2 class="display-5 fw-bold text-dark">Sản phẩm đề xuất</h2>
-                <p class="lead text-muted">Những sản phẩm chất lượng dành riêng cho bạn</p>
-            </div>
-        </div>
-        
-        <div id="productCarousel" class="carousel slide product-marquee" data-bs-ride="carousel" data-bs-interval="3000">
-            <div class="carousel-inner">
-                <!-- Trang 1: Sản phẩm 1-4 -->
-                <div class="carousel-item active">
-                    <div class="row g-4">
-                        @if (Model.FeaturedProducts != null && Model.FeaturedProducts.Any())
-                        {
-                            foreach (var product in Model.FeaturedProducts.Take(4))
-                            {
-                                <div class="col-lg-3 col-md-6">
-                                    <div class="product-card card h-100 border-0 shadow-sm">
-                                        <div class="product-img-wrapper">
-                                            @if (!string.IsNullOrEmpty(product.ImageURL))
-                                            {
-                                                <img src="~/upload/product/@product.ImageURL" class="card-img-top" alt="@product.Name">
-                                            }
-                                            else
-                                            {
-                                                <img src="/placeholder.svg?height=200&width=300&text=@product.Name" class="card-img-top" alt="@product.Name">
-                                            }
-                                            @if (product.CreatedAt >= DateTime.Now.AddDays(-7))
-                                            {
-                                                <div class="product-badge">
-                                                    <span class="badge bg-success">Mới</span>
-                                                </div>
-                                            }
-                                        </div>
-                                        <div class="card-body">
-                                            <h6 class="card-title fw-bold">@product.Name</h6>
-                                            <p class="card-text text-muted small">@(product.Description?.Length > 50 ? product.Description.Substring(0, 50) + "..." : product.Description)</p>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="h6 text-primary fw-bold mb-0">@product.Price.ToString("N0") đ</span>
-                                                <a asp-controller="Cart" asp-action="Add" asp-route-id="@product.ProductID" class="btn btn-sm btn-primary">Thêm vào giỏ</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        }
-                    </div>
-                </div>
-                
-                <!-- Trang 2: Sản phẩm 5-8 -->
-                @if (Model.FeaturedProducts != null && Model.FeaturedProducts.Count() > 4)
+        <div class="tab-content" id="brandTabsContent">
+            @if (Model.ProductsByBrand != null && Model.ProductsByBrand.Any())
+            {
+                @for (int i = 0; i < Model.FeaturedBrands.Count(); i++)
                 {
-                    <div class="carousel-item">
-                        <div class="row g-4">
-                            @foreach (var product in Model.FeaturedProducts.Skip(4).Take(4))
+                    var brand = Model.FeaturedBrands.ElementAt(i);
+                    var products = Model.ProductsByBrand.ContainsKey(brand) ? Model.ProductsByBrand[brand] : new List<Product>();
+                    
+                    <div class="tab-pane fade @(i == 0 ? "show active" : "")" 
+                         id="brand-@brand.BrandID" 
+                         role="tabpanel" 
+                         aria-labelledby="brand-@brand.BrandID-tab">
+                        
+                        <div class="category-product-container">
+                            <h3 class="category-title">Sản phẩm @brand.Name</h3>
+                            
+                            @if (products.Any())
                             {
-                                <div class="col-lg-3 col-md-6">
-                                    <div class="product-card card h-100 border-0 shadow-sm">
-                                        <div class="product-img-wrapper">
-                                            @if (!string.IsNullOrEmpty(product.ImageURL))
-                                            {
-                                                <img src="~/upload/product/@product.ImageURL" class="card-img-top" alt="@product.Name">
-                                            }
-                                            else
-                                            {
-                                                <img src="/placeholder.svg?height=200&width=300&text=@product.Name" class="card-img-top" alt="@product.Name">
-                                            }
-                                            @if (product.CreatedAt >= DateTime.Now.AddDays(-7))
-                                            {
-                                                <div class="product-badge">
-                                                    <span class="badge bg-success">Mới</span>
+                                <div class="row g-3">
+                                    @foreach (var product in products)
+                                    {
+                                        <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                                            <div class="home-product-card card h-100">
+                                                <div class="card-img-top-container">
+                                                    <img src="@(!string.IsNullOrEmpty(product.ImageURL) ? "/upload/product/" + product.ImageURL : "/image/default-product.png")" 
+                                                         class="card-img-top" alt="@product.Name">
+                                                    
+                                                    <div class="product-actions">
+                                                        <button class="btn quick-view" 
+                                                                data-product-id="@product.ProductID" 
+                                                                title="Xem nhanh">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                        <button class="btn add-to-wishlist" 
+                                                                data-product-id="@product.ProductID" 
+                                                                title="Thêm vào yêu thích">
+                                                            <i class="fas fa-heart"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            }
-                                        </div>
-                                        <div class="card-body">
-                                            <h6 class="card-title fw-bold">@product.Name</h6>
-                                            <p class="card-text text-muted small">@(product.Description?.Length > 50 ? product.Description.Substring(0, 50) + "..." : product.Description)</p>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="h6 text-primary fw-bold mb-0">@product.Price.ToString("N0") đ</span>
-                                                <a asp-controller="Cart" asp-action="Add" asp-route-id="@product.ProductID" class="btn btn-sm btn-primary">Thêm vào giỏ</a>
+                                                
+                                                <div class="card-body">
+                                                    <h5 class="card-title">
+                                                        <a asp-controller="Product" asp-action="Details" asp-route-id="@product.ProductID">
+                                                            @product.Name
+                                                        </a>
+                                                    </h5>
+                                                    
+                                                    <div class="product-meta">
+                                                        <span class="product-category">@(product.Category?.Name ?? "N/A")</span>
+                                                        <div class="product-rating">
+                                                            @for (int star = 1; star <= 5; star++)
+                                                            {
+                                                                <i class="fas fa-star @(star <= product.AverageRating ? "" : "text-muted")"></i>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <p class="product-price">@product.Price.ToString("C0", new System.Globalization.CultureInfo("vi-VN"))</p>
+                                                    
+                                                    <button class="btn add-to-cart" 
+                                                            data-product-id="@product.ProductID" 
+                                                            data-quantity="1">
+                                                        <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    }
                                 </div>
                             }
+                            else
+                            {
+                                <div class="text-center py-5">
+                                    <i class="fas fa-box-open display-4 text-muted mb-3"></i>
+                                    <h5 class="text-muted">Chưa có sản phẩm nào của thương hiệu này</h5>
+                                </div>
+                            }
+                            
+                            <div class="view-all-products">
+                                <a asp-controller="Product" asp-action="Index" asp-route-brandId="@brand.BrandID" class="btn">
+                                    <i class="fas fa-th-large me-2"></i>Xem tất cả sản phẩm @brand.Name
+                                </a>
+                            </div>
                         </div>
                     </div>
                 }
-                else
-                {
-                    <div class="col-12 text-center">
-                        <p>Không đủ sản phẩm để hiển thị.</p>
-                    </div>
-                }
-            </div>
-            
-            <!-- Carousel Indicators -->
-            <div class="carousel-indicators-container mt-4">
-                <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                    @if (Model.FeaturedProducts != null && Model.FeaturedProducts.Count() > 4)
-                    {
-                        <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                    }
-                </div>
-            </div>
-            
-            <!-- Carousel Controls - optional, có thể ẩn đi nếu muốn auto scroll không bị gián đoạn -->
-            <div class="carousel-control-container">
-                <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
-            </div>
+            }
         </div>
     </div>
 </section>
@@ -418,3 +391,260 @@
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize add to cart functionality
+    initAddToCart();
+    
+    // Initialize wishlist functionality
+    initWishlist();
+    
+    // Initialize quick view functionality
+    initQuickView();
+});
+
+// Add to cart functionality
+function initAddToCart() {
+    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+    
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productId = this.getAttribute('data-product-id');
+            const quantity = this.getAttribute('data-quantity') || 1;
+            
+            if (productId) {
+                addToCart(productId, quantity, null, this);
+            }
+        });
+    });
+}
+
+// Wishlist functionality
+function initWishlist() {
+    const wishlistButtons = document.querySelectorAll('.add-to-wishlist');
+    
+    wishlistButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productId = this.getAttribute('data-product-id');
+            
+            if (productId) {
+                toggleWishlist(productId);
+            }
+        });
+    });
+}
+
+// Quick view functionality
+function initQuickView() {
+    const quickViewButtons = document.querySelectorAll('.quick-view');
+    
+    quickViewButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productId = this.getAttribute('data-product-id');
+            
+            if (productId) {
+                openQuickViewModal(productId);
+            }
+        });
+    });
+}
+
+// Add to cart function (from product.js)
+function addToCart(productId, quantity, attributeId = null, buttonElement = null) {
+    console.log("Adding to cart:", { productId, quantity, attributeId });
+    
+    // Đảm bảo các tham số là kiểu dữ liệu đúng
+    productId = parseInt(productId, 10);
+    quantity = parseInt(quantity, 10);
+    if (attributeId !== null && attributeId !== undefined) {
+        attributeId = parseInt(attributeId, 10);
+    }
+    
+    // Kiểm tra giá trị
+    if (isNaN(productId) || productId <= 0) {
+        showNotification('ID sản phẩm không hợp lệ', 'error');
+        return;
+    }
+    
+    // Show loading state
+    if (buttonElement) {
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang thêm...';
+        buttonElement.disabled = true;
+    }
+    
+    // Gửi request đến endpoint
+    fetch('/Cart/AddToCartJson', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            productId: productId,
+            quantity: quantity,
+            attributeId: attributeId
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Đã thêm sản phẩm vào giỏ hàng thành công!', 'success');
+            updateCartCounter(data.cartCount);
+        } else {
+            showNotification(data.message || 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng', 'error');
+    })
+    .finally(() => {
+        // Restore button state
+        if (buttonElement) {
+            buttonElement.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ';
+            buttonElement.disabled = false;
+        }
+    });
+}
+
+// Toggle wishlist function
+function toggleWishlist(productId) {
+    fetch('/Wishlist/Toggle', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ productId: parseInt(productId) })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            
+            // Update all wishlist buttons for this product
+            const wishlistButtons = document.querySelectorAll(`[data-product-id="${productId}"].add-to-wishlist`);
+            wishlistButtons.forEach(button => {
+                const icon = button.querySelector('i');
+                if (data.isInWishlist) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    button.classList.add('text-danger');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    button.classList.remove('text-danger');
+                }
+            });
+            
+            updateWishlistCount();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Có lỗi xảy ra khi cập nhật danh sách yêu thích', 'error');
+    });
+}
+
+// Quick view modal function
+function openQuickViewModal(productId) {
+    // If quick view modal exists, use it; otherwise redirect to product detail
+    const quickViewModal = document.getElementById('quickViewModal');
+    if (quickViewModal) {
+        // Load product data and show modal
+        fetch(`/Product/GetProductDetails/${productId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateQuickView(data.product);
+                const modal = new bootstrap.Modal(quickViewModal);
+                modal.show();
+            } else {
+                window.location.href = `/Product/Details/${productId}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.location.href = `/Product/Details/${productId}`;
+        });
+    } else {
+        // Redirect to product detail page
+        window.location.href = `/Product/Details/${productId}`;
+    }
+}
+
+// Update cart counter
+function updateCartCounter(count) {
+    const cartCounters = document.querySelectorAll('.cart-count');
+    cartCounters.forEach(counter => {
+        counter.textContent = count;
+        if (count > 0) {
+            counter.style.display = 'inline';
+        } else {
+            counter.style.display = 'none';
+        }
+    });
+}
+
+// Update wishlist count
+function updateWishlistCount() {
+    fetch('/Wishlist/GetCount')
+    .then(response => response.json())
+    .then(data => {
+        const wishlistCounters = document.querySelectorAll('.wishlist-count');
+        wishlistCounters.forEach(counter => {
+            counter.textContent = data.count;
+            if (data.count > 0) {
+                counter.style.display = 'inline';
+            } else {
+                counter.style.display = 'none';
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error updating wishlist count:', error);
+    });
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    // Remove any existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+</script>

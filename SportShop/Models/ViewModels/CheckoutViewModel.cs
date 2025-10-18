@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using SportShop.Services;
 
 namespace SportShop.Models.ViewModels
 {
@@ -9,6 +10,12 @@ namespace SportShop.Models.ViewModels
         public decimal ShippingFee { get; set; }
         public decimal Tax { get; set; }
         public decimal Total { get; set; }
+
+        // Voucher fields
+        public string? VoucherCode { get; set; }
+        public int? SelectedUserVoucherID { get; set; }
+        public decimal DiscountAmount { get; set; }
+        public List<UserVoucherDTO> AvailableVouchers { get; set; } = new List<UserVoucherDTO>();
         
         [Required(ErrorMessage = "Vui lòng nhập họ tên")]
         [Display(Name = "Họ và tên")]

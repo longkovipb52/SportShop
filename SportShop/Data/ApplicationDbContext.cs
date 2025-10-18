@@ -23,6 +23,8 @@ namespace SportShop.Data
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Brand> Brands { get; set; }
+        public DbSet<Voucher> Vouchers { get; set; }
+        public DbSet<UserVoucher> UserVouchers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -93,6 +95,24 @@ namespace SportShop.Data
                 .WithMany()
                 .HasForeignKey(c => c.AttributeID)
                 .IsRequired(false);
+
+            // Cấu hình quan hệ UserVoucher
+            modelBuilder.Entity<UserVoucher>()
+                .HasOne(uv => uv.User)
+                .WithMany()
+                .HasForeignKey(uv => uv.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserVoucher>()
+                .HasOne(uv => uv.Voucher)
+                .WithMany()
+                .HasForeignKey(uv => uv.VoucherID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Đảm bảo mỗi user chỉ có một voucher cụ thể
+            modelBuilder.Entity<UserVoucher>()
+                .HasIndex(uv => new { uv.UserID, uv.VoucherID })
+                .IsUnique();
         }
     }
 }

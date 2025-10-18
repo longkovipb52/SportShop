@@ -40,9 +40,22 @@ namespace SportShop.Models
         [StringLength(255)]
         public string Note { get; set; }
         
+        // Voucher fields
+        public int? VoucherID { get; set; }
+        
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? DiscountAmount { get; set; } = 0;
+        
+        [ForeignKey("VoucherID")]
+        public virtual Voucher? Voucher { get; set; }
+        
         // Navigation property
         public virtual ICollection<OrderItem> OrderItems { get; set; }
         
         public virtual ICollection<Payment> Payments { get; set; }
+        
+        // Computed property
+        [NotMapped]
+        public decimal FinalAmount => TotalAmount - (DiscountAmount ?? 0);
     }
 }

@@ -23,14 +23,16 @@ namespace SportShop.Controllers
         private readonly MoMoService _moMoService;
         private readonly VnPayServiceNew _vnPayService;
         private readonly IConfiguration _configuration;
+        private readonly VoucherService _voucherService;
 
-        public CartController(ApplicationDbContext context, PayPalService payPalService, MoMoService moMoService, VnPayServiceNew vnPayService, IConfiguration configuration)
+        public CartController(ApplicationDbContext context, PayPalService payPalService, MoMoService moMoService, VnPayServiceNew vnPayService, IConfiguration configuration, VoucherService voucherService)
         {
             _context = context;
             _payPalService = payPalService;
             _moMoService = moMoService;
             _vnPayService = vnPayService;
             _configuration = configuration;
+            _voucherService = voucherService;
         }
 
         // GET: Cart - Hiển thị trang giỏ hàng
@@ -980,14 +982,34 @@ namespace SportShop.Controllers
                     TotalPrice = c.TotalPrice
                 }).ToList(),
                 Subtotal = cartItems.Sum(item => item.TotalPrice),
-                ShippingFee = CalculateShippingFee(cartItems.Sum(item => item.TotalPrice)),
+                ShippingFee = 0, // Loại bỏ phí vận chuyển theo yêu cầu
                 Tax = 0 // Có thể thêm thuế nếu cần
             };
-            
-            model.Total = model.Subtotal + model.ShippingFee + model.Tax;
 
-            // Nếu người dùng đã đăng nhập, lấy thông tin mặc định
+            // Get user ID for voucher processing
             int? userId = HttpContext.Session.GetInt32("UserId");
+
+            // Apply voucher from session if exists
+            var selectedUserVoucherID = HttpContext.Session.GetInt32("SelectedUserVoucherID");
+            if (selectedUserVoucherID.HasValue && userId.HasValue)
+            {
+                var validation = await _voucherService.ValidateAndCalculateByUserVoucherAsync(selectedUserVoucherID.Value, userId.Value, model.Subtotal);
+                if (validation.Success && validation.UserVoucher != null)
+                {
+                    model.SelectedUserVoucherID = selectedUserVoucherID.Value;
+                    model.VoucherCode = validation.Voucher?.Code;
+                    model.DiscountAmount = validation.DiscountAmount;
+                }
+                else
+                {
+                    // remove invalid voucher from session
+                    HttpContext.Session.Remove("SelectedUserVoucherID");
+                }
+            }
+
+            model.Total = model.Subtotal + model.ShippingFee + model.Tax - model.DiscountAmount;
+
+            // Nếu người dùng đã đăng nhập, lấy thông tin mặc định và voucher
             if (userId.HasValue)
             {
                 var user = await _context.Users.FindAsync(userId.Value);
@@ -998,9 +1020,141 @@ namespace SportShop.Controllers
                     model.ShippingAddress = user.Address ?? "";
                     model.Email = user.Email ?? "";
                 }
+
+                // Load available vouchers for user
+                model.AvailableVouchers = await _voucherService.GetAvailableVouchersForUserAsync(userId.Value);
             }
 
             return View(model);
+        }
+
+        [HttpPost]
+        [Route("ApplyUserVoucher")]
+        public async Task<IActionResult> ApplyUserVoucher([FromForm] int userVoucherID)
+        {
+            try
+            {
+                int? userId = HttpContext.Session.GetInt32("UserId");
+                if (!userId.HasValue)
+                {
+                    return Json(new { success = false, message = "Vui lòng đăng nhập để sử dụng voucher." });
+                }
+
+                var cartItems = await GetCartItemsAsync();
+                var subtotal = cartItems.Sum(i => i.TotalPrice);
+                var validation = await _voucherService.ValidateAndCalculateByUserVoucherAsync(userVoucherID, userId.Value, subtotal);
+
+                if (!validation.Success)
+                {
+                    return Json(new { success = false, message = validation.Message });
+                }
+
+                // Store UserVoucherID in session
+                HttpContext.Session.SetInt32("SelectedUserVoucherID", userVoucherID);
+
+                var total = subtotal - validation.DiscountAmount;
+
+                return Json(new
+                {
+                    success = true,
+                    message = validation.Message,
+                    discount = validation.DiscountAmount,
+                    formattedDiscount = string.Format("{0:N0}đ", validation.DiscountAmount),
+                    subtotal,
+                    formattedSubtotal = string.Format("{0:N0}đ", subtotal),
+                    shippingFee = 0,
+                    formattedShipping = "Miễn phí",
+                    total,
+                    formattedTotal = string.Format("{0:N0}đ", total),
+                    voucherCode = validation.Voucher?.Code
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Có lỗi xảy ra: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        [Route("RemoveUserVoucher")]
+        public async Task<IActionResult> RemoveUserVoucher()
+        {
+            HttpContext.Session.Remove("SelectedUserVoucherID");
+            var cartItems = await GetCartItemsAsync();
+            var subtotal = cartItems.Sum(i => i.TotalPrice);
+            var total = subtotal;
+            return Json(new
+            {
+                success = true,
+                message = "Đã bỏ áp dụng voucher.",
+                subtotal,
+                formattedSubtotal = string.Format("{0:N0}đ", subtotal),
+                shippingFee = 0,
+                formattedShipping = "Miễn phí",
+                total,
+                formattedTotal = string.Format("{0:N0}đ", total)
+            });
+        }
+
+        [HttpPost]
+        [Route("ApplyVoucher")]
+        public async Task<IActionResult> ApplyVoucher([FromForm] string code)
+        {
+            try
+            {
+                var cartItems = await GetCartItemsAsync();
+                var subtotal = cartItems.Sum(i => i.TotalPrice);
+                var validation = await _voucherService.ValidateAndCalculateAsync(code, subtotal);
+
+                if (!validation.Success)
+                {
+                    return Json(new { success = false, message = validation.Message });
+                }
+
+                // Store code in session
+                HttpContext.Session.SetString("VoucherCode", validation.Voucher!.Code);
+
+                var total = subtotal - validation.DiscountAmount;
+
+                return Json(new
+                {
+                    success = true,
+                    message = validation.Message,
+                    discount = validation.DiscountAmount,
+                    formattedDiscount = string.Format("{0:N0}đ", validation.DiscountAmount),
+                    subtotal,
+                    formattedSubtotal = string.Format("{0:N0}đ", subtotal),
+                    shippingFee = 0,
+                    formattedShipping = "Miễn phí",
+                    total,
+                    formattedTotal = string.Format("{0:N0}đ", total)
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Có lỗi xảy ra: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        [Route("RemoveVoucher")]
+        public async Task<IActionResult> RemoveVoucher()
+        {
+            HttpContext.Session.Remove("VoucherCode");
+            var cartItems = await GetCartItemsAsync();
+            var subtotal = cartItems.Sum(i => i.TotalPrice);
+            var total = subtotal;
+            return Json(new
+            {
+                success = true,
+                message = "Đã bỏ áp dụng voucher.",
+                subtotal,
+                formattedSubtotal = string.Format("{0:N0}đ", subtotal),
+                shippingFee = 0,
+                formattedShipping = "Miễn phí",
+                total,
+                formattedTotal = string.Format("{0:N0}đ", total)
+            });
         }
 
         // Xử lý thanh toán
@@ -1044,16 +1198,38 @@ namespace SportShop.Controllers
 
                 // Tính toán lại tổng tiền từ dữ liệu thực tế
                 decimal subtotal = cartItems.Sum(item => item.TotalPrice);
-                decimal shippingFee = CalculateShippingFee(subtotal);
                 decimal tax = 0;
-                decimal totalAmount = subtotal + shippingFee + tax;
+                decimal discountAmount = 0m;
+                int? voucherId = null;
+                int? userVoucherId = null;
+
+                // Check for user voucher first
+                int? userId = HttpContext.Session.GetInt32("UserId");
+                var selectedUserVoucherID = HttpContext.Session.GetInt32("SelectedUserVoucherID");
+                
+                if (selectedUserVoucherID.HasValue && userId.HasValue)
+                {
+                    var validation = await _voucherService.ValidateAndCalculateByUserVoucherAsync(selectedUserVoucherID.Value, userId.Value, subtotal);
+                    if (validation.Success && validation.Voucher != null && validation.UserVoucher != null)
+                    {
+                        discountAmount = validation.DiscountAmount;
+                        voucherId = validation.Voucher.VoucherID;
+                        userVoucherId = validation.UserVoucher.UserVoucherID;
+                    }
+                    else
+                    {
+                        // clear invalid
+                        HttpContext.Session.Remove("SelectedUserVoucherID");
+                    }
+                }
+
+                decimal totalAmount = subtotal + tax - discountAmount;
 
                 // Debug log
-                Console.WriteLine($"Debug - Subtotal: {subtotal:C}, ShippingFee: {shippingFee:C}, TotalAmount: {totalAmount:C}");
+                Console.WriteLine($"Debug - Subtotal: {subtotal:C}, Discount: {discountAmount:C}, TotalAmount: {totalAmount:C}");
                 Console.WriteLine($"Debug - PaymentMethod: {model.PaymentMethod}");
 
                 // Tạo đơn hàng
-                var userId = HttpContext.Session.GetInt32("UserId");
                 var order = new Order
                 {
                     UserID = userId ?? 0, 
@@ -1063,11 +1239,16 @@ namespace SportShop.Controllers
                     ShippingName = model.ShippingName ?? "",
                     ShippingAddress = model.ShippingAddress ?? "",
                     ShippingPhone = model.ShippingPhone ?? "",
-                    Note = model.Note ?? ""
+                    Note = model.Note ?? "",
+                    VoucherID = voucherId,
+                    DiscountAmount = discountAmount
                 };
 
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
+
+                // clear voucher after order placed
+                HttpContext.Session.Remove("VoucherCode");
 
                 // Tạo chi tiết đơn hàng
                 foreach (var item in cartItems)
@@ -1131,6 +1312,13 @@ namespace SportShop.Controllers
                 _context.Payments.Add(payment);
 
                 await _context.SaveChangesAsync();
+
+                // Mark voucher as used if applicable
+                if (userVoucherId.HasValue && userId.HasValue)
+                {
+                    await _voucherService.MarkVoucherAsUsedAsync(userVoucherId.Value, userId.Value);
+                    HttpContext.Session.Remove("SelectedUserVoucherID");
+                }
 
                 // Xóa giỏ hàng sau khi đặt hàng thành công
                 await ClearCartAsync();
@@ -1208,11 +1396,23 @@ namespace SportShop.Controllers
                     return RedirectToAction("Checkout");
                 }
 
-                // Tính tổng tiền VND
-                decimal totalVND = cartItems.Sum(item => item.TotalPrice);
-                decimal shippingFee = CalculateShippingFee(totalVND);
-                decimal totalAmountVND = totalVND + shippingFee;
-                Console.WriteLine($"[CartController] Total VND: {totalAmountVND}");
+                // Tính tổng tiền VND (áp dụng voucher, loại bỏ phí vận chuyển)
+                decimal subtotal = cartItems.Sum(item => item.TotalPrice);
+                decimal discountAmount = 0m;
+                int? voucherId = null;
+                var voucherCode = HttpContext.Session.GetString("VoucherCode");
+                if (!string.IsNullOrWhiteSpace(voucherCode))
+                {
+                    var validation = await _voucherService.ValidateAndCalculateAsync(voucherCode, subtotal);
+                    if (validation.Success && validation.Voucher != null)
+                    {
+                        discountAmount = validation.DiscountAmount;
+                        voucherId = validation.Voucher.VoucherID;
+                    }
+                }
+                decimal totalAmountVND = subtotal - discountAmount;
+                if (totalAmountVND < 0) totalAmountVND = 0;
+                Console.WriteLine($"[CartController] Subtotal: {subtotal} | Discount: {discountAmount} | Total VND: {totalAmountVND}");
 
                 // Chuyển đổi sang USD (1 USD = 25,000 VND)
                 decimal totalAmountUSD = totalAmountVND / 25000;
@@ -1311,6 +1511,20 @@ namespace SportShop.Controllers
         {
             var cartItems = await GetCartItemsAsync();
             var userId = HttpContext.Session.GetInt32("UserId");
+            
+            // Apply voucher if exists
+            decimal discountAmount = 0m;
+            int? voucherId = null;
+            var voucherCode = HttpContext.Session.GetString("VoucherCode");
+            if (!string.IsNullOrWhiteSpace(voucherCode))
+            {
+                var validation = await _voucherService.ValidateAndCalculateAsync(voucherCode, totalAmount);
+                if (validation.Success && validation.Voucher != null)
+                {
+                    discountAmount = validation.DiscountAmount;
+                    voucherId = validation.Voucher.VoucherID;
+                }
+            }
 
             // Tạo đơn hàng
             var order = new Order
@@ -1322,7 +1536,9 @@ namespace SportShop.Controllers
                 ShippingName = model.ShippingName ?? "",
                 ShippingAddress = model.ShippingAddress ?? "",
                 ShippingPhone = model.ShippingPhone ?? "",
-                Note = model.Note ?? ""
+                Note = model.Note ?? "",
+                VoucherID = voucherId,
+                DiscountAmount = discountAmount
             };
 
             _context.Orders.Add(order);
@@ -1384,10 +1600,20 @@ namespace SportShop.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // Tính tổng tiền
+                // Tính tổng tiền (áp dụng voucher, loại bỏ phí vận chuyển)
                 var subtotal = cartItems.Sum(item => item.TotalPrice);
-                var shippingFee = CalculateShippingFee(subtotal);
-                var totalAmount = subtotal + shippingFee;
+                decimal discountAmount = 0m;
+                var voucherCode = HttpContext.Session.GetString("VoucherCode");
+                if (!string.IsNullOrWhiteSpace(voucherCode))
+                {
+                    var validation = await _voucherService.ValidateAndCalculateAsync(voucherCode, subtotal);
+                    if (validation.Success)
+                    {
+                        discountAmount = validation.DiscountAmount;
+                    }
+                }
+                var totalAmount = subtotal - discountAmount;
+                if (totalAmount < 0) totalAmount = 0;
 
                 // Tạo order ID duy nhất
                 var orderId = $"ORDER_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}";
@@ -1565,6 +1791,20 @@ namespace SportShop.Controllers
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             var user = userId.HasValue ? await _context.Users.FindAsync(userId.Value) : null;
+            
+            // Apply voucher if exists
+            decimal discountAmount = 0m;
+            int? voucherId = null;
+            var voucherCode = HttpContext.Session.GetString("VoucherCode");
+            if (!string.IsNullOrWhiteSpace(voucherCode))
+            {
+                var validation = await _voucherService.ValidateAndCalculateAsync(voucherCode, totalAmount);
+                if (validation.Success && validation.Voucher != null)
+                {
+                    discountAmount = validation.DiscountAmount;
+                    voucherId = validation.Voucher.VoucherID;
+                }
+            }
 
             var order = new Order
             {
@@ -1575,7 +1815,9 @@ namespace SportShop.Controllers
                 ShippingName = model.ShippingName ?? (user?.FullName ?? ""),
                 ShippingAddress = model.ShippingAddress ?? (user?.Address ?? ""),
                 ShippingPhone = model.ShippingPhone ?? (user?.Phone ?? ""),
-                Note = model.Note ?? ""
+                Note = model.Note ?? "",
+                VoucherID = voucherId,
+                DiscountAmount = discountAmount
             };
 
             _context.Orders.Add(order);
@@ -1680,10 +1922,20 @@ namespace SportShop.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // Tính tổng tiền
+                // Tính tổng tiền (áp dụng voucher, loại bỏ phí vận chuyển)
                 decimal subtotal = cartItems.Sum(item => item.TotalPrice);
-                decimal shippingFee = CalculateShippingFee(subtotal);
-                decimal totalAmount = subtotal + shippingFee;
+                decimal discountAmount = 0m;
+                var voucherCode = HttpContext.Session.GetString("VoucherCode");
+                if (!string.IsNullOrWhiteSpace(voucherCode))
+                {
+                    var validation = await _voucherService.ValidateAndCalculateAsync(voucherCode, subtotal);
+                    if (validation.Success)
+                    {
+                        discountAmount = validation.DiscountAmount;
+                    }
+                }
+                decimal totalAmount = subtotal - discountAmount;
+                if (totalAmount < 0) totalAmount = 0;
 
                 // Debug: Log cart calculation
                 Console.WriteLine($"Cart calculation:");
@@ -1693,7 +1945,7 @@ namespace SportShop.Controllers
                     Console.WriteLine($"  Item: {item.ProductName} - Price: {item.Price} - Qty: {item.Quantity} - Total: {item.TotalPrice}");
                 }
                 Console.WriteLine($"  Subtotal: {subtotal}");
-                Console.WriteLine($"  Shipping fee: {shippingFee}");
+                Console.WriteLine($"  Discount: {discountAmount}");
                 Console.WriteLine($"  Total amount: {totalAmount}");
 
                 // Tạo orderId unique
@@ -1848,6 +2100,20 @@ namespace SportShop.Controllers
             {
                 var userId = HttpContext.Session.GetInt32("UserId");
                 var user = userId.HasValue ? await _context.Users.FindAsync(userId.Value) : null;
+                
+                // Apply voucher if exists
+                decimal discountAmount = 0m;
+                int? voucherId = null;
+                var voucherCode = HttpContext.Session.GetString("VoucherCode");
+                if (!string.IsNullOrWhiteSpace(voucherCode))
+                {
+                    var validation = await _voucherService.ValidateAndCalculateAsync(voucherCode, totalAmount);
+                    if (validation.Success && validation.Voucher != null)
+                    {
+                        discountAmount = validation.DiscountAmount;
+                        voucherId = validation.Voucher.VoucherID;
+                    }
+                }
 
                 var order = new Order
                 {
@@ -1858,7 +2124,9 @@ namespace SportShop.Controllers
                     ShippingName = model.ShippingName ?? (user?.FullName ?? ""),
                     ShippingAddress = model.ShippingAddress ?? (user?.Address ?? ""),
                     ShippingPhone = model.ShippingPhone ?? (user?.Phone ?? ""),
-                    Note = model.Note ?? ""
+                    Note = model.Note ?? "",
+                    VoucherID = voucherId,
+                    DiscountAmount = discountAmount
                 };
 
                 _context.Orders.Add(order);

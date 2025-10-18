@@ -49,6 +49,9 @@ builder.Services.AddScoped<MoMoService>();
 // Thêm VnPay Service
 builder.Services.AddScoped<VnPayServiceNew>();
 
+// Thêm Voucher Service
+builder.Services.AddScoped<VoucherService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

@@ -451,23 +451,60 @@
                     }
 
                     <!-- Tổng kết -->
+                    <!-- Voucher selection -->
+                    <div class="mb-3">
+                        <label for="voucherSelect" class="form-label">Chọn voucher khuyến mãi</label>
+                        @if (Model.AvailableVouchers.Any())
+                        {
+                            <div class="input-group">
+                                <select id="voucherSelect" name="SelectedUserVoucherID" class="form-select">
+                                    <option value="">-- Chọn voucher --</option>
+                                    @foreach (var voucher in Model.AvailableVouchers)
+                                    {
+                                        <option value="@voucher.UserVoucherID" 
+                                                data-discount="@voucher.DiscountDisplay"
+                                                data-description="@voucher.Description"
+                                                selected="@(Model.SelectedUserVoucherID == voucher.UserVoucherID)">
+                                            @voucher.Code - @voucher.DiscountDisplay
+                                            @if (voucher.EndDate.HasValue)
+                                            {
+                                                <text> (HSD: @voucher.EndDate.Value.ToString("dd/MM/yyyy"))</text>
+                                            }
+                                        </option>
+                                    }
+                                </select>
+                                <button type="button" id="btnApplyVoucher" class="btn btn-outline-primary">Áp dụng</button>
+                                <button type="button" id="btnRemoveVoucher" class="btn btn-outline-secondary" style="display:@(Model.SelectedUserVoucherID.HasValue ? "inline-block" : "none")">Bỏ</button>
+                            </div>
+                            <small id="voucherMessage" class="text-muted"></small>
+                        }
+                        else
+                        {
+                            <div class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                @if (ViewContext.HttpContext.Session.GetInt32("UserId").HasValue)
+                                {
+                                    <text>Bạn chưa có voucher nào khả dụng.</text>
+                                }
+                                else
+                                {
+                                    <text>Vui lòng đăng nhập để sử dụng voucher.</text>
+                                }
+                            </div>
+                        }
+                    </div>
+
                     <div class="summary-row">
                         <span>Tạm tính:</span>
-                        <span>@string.Format("{0:N0}đ", Model.Subtotal)</span>
+                        <span id="subtotalText">@string.Format("{0:N0}đ", Model.Subtotal)</span>
                     </div>
-                    <div class="summary-row">
-                        <span>Phí vận chuyển:</span>
-                        <span class="shipping-fee">
-                            @if (Model.ShippingFee == 0)
-                            {
-                                <span class="text-success">Miễn phí</span>
-                            }
-                            else
-                            {
-                                @string.Format("{0:N0}đ", Model.ShippingFee)
-                            }
-                        </span>
-                    </div>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div class="summary-row">
+                            <span>Giảm giá:</span>
+                            <span id="discountText" class="text-success">-@string.Format("{0:N0}đ", Model.DiscountAmount)</span>
+                        </div>
+                    }
                     @if (Model.Tax > 0)
                     {
                         <div class="summary-row">
@@ -477,7 +514,7 @@
                     }
                     <div class="summary-row total">
                         <span>Tổng cộng:</span>
-                        <span>@string.Format("{0:N0}đ", Model.Total)</span>
+                        <span id="totalText">@string.Format("{0:N0}đ", Model.Total)</span>
                     </div>
 
                     <button type="submit" class="btn btn-checkout mt-3" id="normalCheckoutBtn">
@@ -497,6 +534,79 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const voucherSelect = document.getElementById('voucherSelect');
+            const btnApply = document.getElementById('btnApplyVoucher');
+            const btnRemove = document.getElementById('btnRemoveVoucher');
+            const voucherMsg = document.getElementById('voucherMessage');
+            const subtotalText = document.getElementById('subtotalText');
+            const discountTextElId = 'discountText';
+            const totalText = document.getElementById('totalText');
+
+            function setMessage(msg, type = 'muted') {
+                voucherMsg.className = type === 'error' ? 'text-danger' : (type === 'success' ? 'text-success' : 'text-muted');
+                voucherMsg.textContent = msg || '';
+            }
+
+            if (btnApply) {
+                btnApply.addEventListener('click', async () => {
+                    const selectedUserVoucherID = voucherSelect ? voucherSelect.value : '';
+                    if (!selectedUserVoucherID) { setMessage('Vui lòng chọn voucher', 'error'); return; }
+                    btnApply.disabled = true; setMessage('Đang kiểm tra...', '');
+                    try {
+                        const formData = new FormData();
+                        formData.append('userVoucherID', selectedUserVoucherID);
+                        const res = await fetch('/Cart/ApplyUserVoucher', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (!data.success) { setMessage(data.message || 'Không áp dụng được', 'error'); btnApply.disabled = false; return; }
+                        // Update UI
+                        subtotalText.textContent = data.formattedSubtotal;
+                        // Discount
+                        let discountEl = document.getElementById(discountTextElId);
+                        if (!discountEl) {
+                            const container = document.createElement('div');
+                            container.className = 'summary-row';
+                            container.innerHTML = `<span>Giảm giá:</span><span id="${discountTextElId}" class="text-success">-${data.formattedDiscount}</span>`;
+                            // insert before tax/total rows
+                            const totalRow = document.querySelector('.summary-row.total');
+                            totalRow.parentNode.insertBefore(container, totalRow);
+                            discountEl = document.getElementById(discountTextElId);
+                        } else {
+                            discountEl.textContent = '-' + data.formattedDiscount;
+                        }
+                        totalText.textContent = data.formattedTotal;
+                        setMessage(data.message, 'success');
+                        btnApply.style.display = 'none';
+                        btnRemove.style.display = 'inline-block';
+                    } catch (e) {
+                        setMessage('Có lỗi xảy ra khi áp dụng voucher', 'error');
+                    } finally {
+                        btnApply.disabled = false;
+                    }
+                });
+            }
+
+            if (btnRemove) {
+                btnRemove.addEventListener('click', async () => {
+                    btnRemove.disabled = true; setMessage('Đang bỏ áp dụng...', '');
+                    try {
+                        const res = await fetch('/Cart/RemoveUserVoucher', { method: 'POST' });
+                        const data = await res.json();
+                        if (!data.success) { setMessage('Không thể bỏ voucher', 'error'); btnRemove.disabled = false; return; }
+                        subtotalText.textContent = data.formattedSubtotal;
+                        const discountEl = document.getElementById(discountTextElId);
+                        if (discountEl) discountEl.parentElement.remove();
+                        totalText.textContent = data.formattedTotal;
+                        if (voucherSelect) voucherSelect.value = '';
+                        setMessage('');
+                        btnApply.style.display = 'inline-block';
+                        btnRemove.style.display = 'none';
+                    } catch (e) {
+                        setMessage('Có lỗi xảy ra khi bỏ voucher', 'error');
+                    } finally {
+                        btnRemove.disabled = false;
+                    }
+                });
+            }
             // Xử lý chọn phương thức thanh toán
             const paymentMethods = document.querySelectorAll('.payment-method');
             const paypalContainer = document.getElementById('paypalContainer');

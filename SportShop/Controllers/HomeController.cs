@@ -37,15 +37,36 @@ namespace SportShop.Controllers
                 .Take(8) // Lấy 8 sản phẩm thay vì 4
                 .ToListAsync();
 
-            // Lấy tất cả thương hiệu
-            var brands = await _context.Brands.ToListAsync();
+            // Lấy top 5 thương hiệu yêu thích nhất (có nhiều sản phẩm nhất)
+            var brands = await _context.Brands
+                .Include(b => b.Products)
+                .OrderByDescending(b => b.Products.Count())
+                .Take(5)
+                .ToListAsync();
+
+            // Lấy sản phẩm theo từng thương hiệu (6 sản phẩm mỗi thương hiệu)
+            var productsByBrand = new Dictionary<Brand, IEnumerable<Product>>();
+            foreach (var brand in brands)
+            {
+                var brandProducts = await _context.Products
+                    .Include(p => p.Attributes)
+                    .Include(p => p.Category)
+                    .Include(p => p.Brand)
+                    .Where(p => p.BrandID == brand.BrandID)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Take(6)
+                    .ToListAsync();
+                
+                productsByBrand[brand] = brandProducts;
+            }
 
             // Tạo HomeViewModel
             var viewModel = new HomeViewModel
             {
                 FeaturedCategories = categories,
                 FeaturedProducts = products,
-                FeaturedBrands = brands
+                FeaturedBrands = brands,
+                ProductsByBrand = productsByBrand
             };
 
             return View(viewModel);

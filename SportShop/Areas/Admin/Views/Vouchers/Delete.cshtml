@@ -1,0 +1,127 @@
+@model SportShop.Models.Voucher
+
+@{
+    ViewData["Title"] = "Xóa Voucher";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_vouchers.css" asp-append-version="true" />
+}
+
+<div class="vouchers-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="@Url.Action("Index")" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-trash-alt"></i>
+                        Xóa voucher
+                    </h1>
+                    <p class="page-description">Xác nhận xóa voucher khỏi hệ thống</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="delete-container">
+        <div class="delete-card">
+            <div class="delete-header">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h2>Bạn có chắc chắn muốn xóa voucher này?</h2>
+                <p class="text-muted">Hành động này không thể hoàn tác!</p>
+            </div>
+
+            <div class="voucher-preview">
+                <div class="preview-code">
+                    <i class="fas fa-tag"></i>
+                    <span>@Model.Code</span>
+                </div>
+                <div class="preview-details">
+                    <div class="detail-row">
+                        <span class="label">Loại giảm giá:</span>
+                        <span class="value">@(Model.DiscountType == "Percentage" ? "Phần trăm" : "Cố định")</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Giá trị:</span>
+                        <span class="value">@Model.DiscountDisplay</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Thời gian:</span>
+                        <span class="value">
+                            @Model.StartDate.ToString("dd/MM/yyyy") - @Model.EndDate.ToString("dd/MM/yyyy")
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Trạng thái:</span>
+                        <span class="value">
+                            <span class="@Model.StatusClass">@Model.StatusDisplay</span>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Đã sử dụng:</span>
+                        <span class="value">
+                            <strong>@Model.Orders.Count</strong> đơn hàng
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.Orders.Any())
+            {
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <strong>Cảnh báo:</strong> Voucher này đã được sử dụng trong <strong>@Model.Orders.Count đơn hàng</strong>. 
+                    Không thể xóa voucher đã có lịch sử sử dụng để đảm bảo tính toàn vẹn dữ liệu.
+                </div>
+
+                <div class="form-actions">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Quay lại danh sách
+                    </a>
+                    <a href="@Url.Action("Details", new { id = Model.VoucherID })" class="btn btn-info">
+                        <i class="fas fa-eye"></i>
+                        Xem chi tiết
+                    </a>
+                </div>
+            }
+            else
+            {
+                <form method="post" asp-action="Delete">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="VoucherID" />
+
+                    <div class="form-actions">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            Hủy bỏ
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i>
+                            Xác nhận xóa
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Confirm before delete
+        $('form').on('submit', function(e) {
+            if (!confirm('Bạn có hoàn toàn chắc chắn muốn xóa voucher này? Hành động này không thể hoàn tác!')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+}

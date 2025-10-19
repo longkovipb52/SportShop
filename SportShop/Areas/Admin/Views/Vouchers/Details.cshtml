@@ -1,0 +1,330 @@
+@model SportShop.Models.Voucher
+
+@{
+    ViewData["Title"] = "Chi tiết Voucher";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_vouchers.css" asp-append-version="true" />
+}
+
+<div class="vouchers-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="@Url.Action("Index")" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-ticket-alt"></i>
+                        Chi tiết voucher
+                    </h1>
+                    <p class="page-description">Thông tin chi tiết về voucher</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="@Url.Action("Edit", new { id = Model.VoucherID })" class="btn btn-warning">
+                    <i class="fas fa-edit"></i>
+                    Chỉnh sửa
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-container">
+        <div class="row">
+            <!-- Voucher Info Card -->
+            <div class="col-lg-8">
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-info-circle"></i> Thông tin voucher</h3>
+                        <span class="@Model.StatusClass">@Model.StatusDisplay</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="voucher-code-display">
+                            <div class="code-box">
+                                <i class="fas fa-tag"></i>
+                                <span class="code">@Model.Code</span>
+                            </div>
+                            <div class="discount-box">
+                                <div class="discount-label">Giảm giá</div>
+                                <div class="discount-value">@Model.DiscountDisplay</div>
+                            </div>
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">
+                                    <i class="fas fa-hashtag"></i> ID
+                                </span>
+                                <span class="value">#@Model.VoucherID</span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="label">
+                                    <i class="fas fa-percent"></i> Loại giảm giá
+                                </span>
+                                <span class="value">
+                                    @(Model.DiscountType == "Percentage" ? "Phần trăm" : "Số tiền cố định")
+                                </span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="label">
+                                    <i class="fas fa-dollar-sign"></i> Giá trị giảm
+                                </span>
+                                <span class="value">
+                                    @if (Model.DiscountType == "Percentage")
+                                    {
+                                        <text>@Model.DiscountValue%</text>
+                                    }
+                                    else
+                                    {
+                                        <text>@Model.DiscountValue.ToString("N0")đ</text>
+                                    }
+                                </span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="label">
+                                    <i class="fas fa-shopping-cart"></i> Đơn hàng tối thiểu
+                                </span>
+                                <span class="value">
+                                    @if (Model.MinOrderAmount.HasValue)
+                                    {
+                                        <text>@Model.MinOrderAmount.Value.ToString("N0")đ</text>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không giới hạn</span>
+                                    }
+                                </span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="label">
+                                    <i class="fas fa-calendar-check"></i> Ngày bắt đầu
+                                </span>
+                                <span class="value">@Model.StartDate.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="label">
+                                    <i class="fas fa-calendar-times"></i> Ngày kết thúc
+                                </span>
+                                <span class="value">@Model.EndDate.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="label">
+                                    <i class="fas fa-clock"></i> Thời gian còn lại
+                                </span>
+                                <span class="value">
+                                    @if (Model.IsExpired)
+                                    {
+                                        <span class="text-danger">Đã hết hạn</span>
+                                    }
+                                    else if (Model.IsNotStarted)
+                                    {
+                                        var daysUntilStart = (Model.StartDate - DateTime.Now).Days;
+                                        <span class="text-info">Bắt đầu sau @daysUntilStart ngày</span>
+                                    }
+                                    else
+                                    {
+                                        var daysRemaining = (Model.EndDate - DateTime.Now).Days;
+                                        <span class="text-success">Còn @daysRemaining ngày</span>
+                                    }
+                                </span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="label">
+                                    <i class="fas fa-toggle-on"></i> Trạng thái
+                                </span>
+                                <span class="value">
+                                    @if (Model.IsActive)
+                                    {
+                                        <span class="badge bg-success">Đang kích hoạt</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Ngưng hoạt động</span>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage History -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-history"></i> 
+                            Lịch sử sử dụng
+                            <span class="badge bg-primary ms-2">@Model.Orders.Count đơn hàng</span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Orders.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã đơn</th>
+                                            <th>Khách hàng</th>
+                                            <th>Ngày đặt</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Giảm giá</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var order in Model.Orders.OrderByDescending(o => o.OrderDate))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <a href="@Url.Action("Details", "Orders", new { id = order.OrderID })">
+                                                        #@order.OrderID
+                                                    </a>
+                                                </td>
+                                                <td>@order.User?.FullName</td>
+                                                <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>@order.TotalAmount.ToString("N0")đ</td>
+                                                <td class="text-success">
+                                                    @if (order.DiscountAmount.HasValue)
+                                                    {
+                                                        <text>-@order.DiscountAmount.Value.ToString("N0")đ</text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <text>-</text>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @switch (order.Status)
+                                                    {
+                                                        case "Chờ xử lý":
+                                                            <span class="badge bg-warning">@order.Status</span>
+                                                            break;
+                                                        case "Đang xử lý":
+                                                            <span class="badge bg-info">@order.Status</span>
+                                                            break;
+                                                        case "Hoàn thành":
+                                                            <span class="badge bg-success">@order.Status</span>
+                                                            break;
+                                                        default:
+                                                            <span class="badge bg-secondary">@order.Status</span>
+                                                            break;
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-small">
+                                <i class="fas fa-inbox"></i>
+                                <p>Voucher chưa được sử dụng</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Sidebar -->
+            <div class="col-lg-4">
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-bar"></i> Thống kê</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-item">
+                            <div class="stat-icon bg-primary">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value">@Model.Orders.Count</div>
+                                <div class="stat-label">Lượt sử dụng</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon bg-success">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value">
+                                    @Model.Orders.Sum(o => o.DiscountAmount ?? 0).ToString("N0")đ
+                                </div>
+                                <div class="stat-label">Tổng tiền giảm</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon bg-info">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value">
+                                    @Model.Orders.Sum(o => o.TotalAmount).ToString("N0")đ
+                                </div>
+                                <div class="stat-label">Tổng doanh thu</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-tools"></i> Thao tác</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="action-buttons-vertical">
+                            <a href="@Url.Action("Edit", new { id = Model.VoucherID })" 
+                               class="btn btn-warning btn-block">
+                                <i class="fas fa-edit"></i>
+                                Chỉnh sửa voucher
+                            </a>
+
+                            <form method="post" 
+                                  asp-action="ToggleStatus" 
+                                  asp-route-id="@Model.VoucherID">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" 
+                                        class="btn @(Model.IsActive ? "btn-secondary" : "btn-success") btn-block">
+                                    <i class="fas fa-@(Model.IsActive ? "toggle-off" : "toggle-on")"></i>
+                                    @(Model.IsActive ? "Tắt voucher" : "Kích hoạt voucher")
+                                </button>
+                            </form>
+
+                            @if (!Model.Orders.Any())
+                            {
+                                <a href="@Url.Action("Delete", new { id = Model.VoucherID })" 
+                                   class="btn btn-danger btn-block"
+                                   onclick="return confirm('Bạn có chắc chắn muốn xóa voucher này?')">
+                                    <i class="fas fa-trash"></i>
+                                    Xóa voucher
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-danger btn-block" disabled title="Không thể xóa voucher đã được sử dụng">
+                                    <i class="fas fa-trash"></i>
+                                    Không thể xóa
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

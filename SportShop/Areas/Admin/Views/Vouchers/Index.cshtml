@@ -1,0 +1,329 @@
+@model IEnumerable<SportShop.Models.Voucher>
+
+@{
+    ViewData["Title"] = "Quản lý Voucher";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    
+    var currentPage = (int)(ViewData["CurrentPage"] ?? 1);
+    var totalPages = (int)(ViewData["TotalPages"] ?? 1);
+    var pageSize = (int)(ViewData["PageSize"] ?? 10);
+    var totalRecords = (int)(ViewData["TotalRecords"] ?? 0);
+    var currentSearch = ViewData["CurrentSearch"]?.ToString() ?? "";
+    var currentStatus = ViewData["CurrentStatus"]?.ToString() ?? "";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_vouchers.css" asp-append-version="true" />
+}
+
+<div class="vouchers-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="page-title">
+                    <i class="fas fa-ticket-alt"></i>
+                    Quản lý Voucher
+                </h1>
+                <p class="page-description">Quản lý mã giảm giá và khuyến mãi</p>
+            </div>
+            <div class="header-right">
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Tạo voucher mới
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card stat-total">
+            <div class="stat-icon">
+                <i class="fas fa-ticket-alt"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-value">@ViewData["TotalVouchers"]</span>
+                <span class="stat-label">Tổng voucher</span>
+            </div>
+        </div>
+
+        <div class="stat-card stat-active">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-value">@ViewData["ActiveVouchers"]</span>
+                <span class="stat-label">Đang hoạt động</span>
+            </div>
+        </div>
+
+        <div class="stat-card stat-expired">
+            <div class="stat-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-value">@ViewData["ExpiredVouchers"]</span>
+                <span class="stat-label">Đã hết hạn</span>
+            </div>
+        </div>
+
+        <div class="stat-card stat-upcoming">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-value">@ViewData["UpcomingVouchers"]</span>
+                <span class="stat-label">Sắp diễn ra</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filter and Search Section -->
+    <div class="content-card">
+        <div class="filter-section">
+            <form method="get" asp-action="Index" class="filter-form">
+                <div class="filter-group">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" 
+                               name="search" 
+                               value="@currentSearch" 
+                               placeholder="Tìm theo mã voucher..."
+                               class="form-control">
+                    </div>
+
+                    <div class="status-filter">
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="active" selected="@(currentStatus == "active")">Đang hoạt động</option>
+                            <option value="upcoming" selected="@(currentStatus == "upcoming")">Sắp diễn ra</option>
+                            <option value="expired" selected="@(currentStatus == "expired")">Đã hết hạn</option>
+                            <option value="inactive" selected="@(currentStatus == "inactive")">Ngưng hoạt động</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                        Tìm kiếm
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(currentSearch) || !string.IsNullOrEmpty(currentStatus))
+                    {
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i>
+                            Đặt lại
+                        </a>
+                    }
+                </div>
+            </form>
+        </div>
+
+        <!-- Vouchers Table -->
+        <div class="table-container">
+            @if (Model.Any())
+            {
+                <table class="vouchers-table">
+                    <thead>
+                        <tr>
+                            <th width="80">ID</th>
+                            <th width="150">Mã voucher</th>
+                            <th width="120">Loại giảm</th>
+                            <th width="120">Giá trị</th>
+                            <th width="150">Đơn hàng tối thiểu</th>
+                            <th width="180">Thời gian</th>
+                            <th width="120">Trạng thái</th>
+                            <th width="100">Đã dùng</th>
+                            <th width="200" class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var voucher in Model)
+                        {
+                            <tr>
+                                <td class="text-center">
+                                    <span class="voucher-id">#@voucher.VoucherID</span>
+                                </td>
+                                <td>
+                                    <div class="voucher-code">
+                                        <i class="fas fa-tag"></i>
+                                        <strong>@voucher.Code</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (voucher.DiscountType == "Percentage")
+                                    {
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-percent"></i> Phần trăm
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-dollar-sign"></i> Cố định
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <strong class="discount-value">@voucher.DiscountDisplay</strong>
+                                </td>
+                                <td>
+                                    @if (voucher.MinOrderAmount.HasValue)
+                                    {
+                                        <span class="min-order">@voucher.MinOrderAmount.Value.ToString("N0")đ</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không giới hạn</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="date-info">
+                                        <small class="text-muted">
+                                            <i class="far fa-calendar-alt"></i>
+                                            @voucher.StartDate.ToString("dd/MM/yyyy")
+                                        </small>
+                                        <i class="fas fa-arrow-right mx-1"></i>
+                                        <small class="text-muted">
+                                            @voucher.EndDate.ToString("dd/MM/yyyy")
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="@voucher.StatusClass">
+                                        @voucher.StatusDisplay
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="usage-badge">
+                                        <i class="fas fa-shopping-cart"></i>
+                                        @voucher.Orders.Count
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="@Url.Action("Details", new { id = voucher.VoucherID })" 
+                                           class="btn btn-sm btn-info" 
+                                           title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Edit", new { id = voucher.VoucherID })" 
+                                           class="btn btn-sm btn-warning" 
+                                           title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        <form method="post" 
+                                              asp-action="ToggleStatus" 
+                                              asp-route-id="@voucher.VoucherID" 
+                                              class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" 
+                                                    class="btn btn-sm @(voucher.IsActive ? "btn-secondary" : "btn-success")" 
+                                                    title="@(voucher.IsActive ? "Tắt" : "Kích hoạt")">
+                                                <i class="fas fa-@(voucher.IsActive ? "toggle-off" : "toggle-on")"></i>
+                                            </button>
+                                        </form>
+
+                                        <a href="@Url.Action("Delete", new { id = voucher.VoucherID })" 
+                                           class="btn btn-sm btn-danger" 
+                                           title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                @if (totalPages > 1)
+                {
+                    <div class="pagination-container">
+                        <div class="pagination-info">
+                            Hiển thị <strong>@((currentPage - 1) * pageSize + 1)</strong> 
+                            đến <strong>@Math.Min(currentPage * pageSize, totalRecords)</strong> 
+                            trong tổng số <strong>@totalRecords</strong> voucher
+                        </div>
+                        
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                    <a class="page-link" 
+                                       href="@Url.Action("Index", new { search = currentSearch, status = currentStatus, page = currentPage - 1, pageSize = pageSize })">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+
+                                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                                {
+                                    <li class="page-item @(i == currentPage ? "active" : "")">
+                                        <a class="page-link" 
+                                           href="@Url.Action("Index", new { search = currentSearch, status = currentStatus, page = i, pageSize = pageSize })">
+                                            @i
+                                        </a>
+                                    </li>
+                                }
+
+                                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                    <a class="page-link" 
+                                       href="@Url.Action("Index", new { search = currentSearch, status = currentStatus, page = currentPage + 1, pageSize = pageSize })">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h3>Không tìm thấy voucher nào</h3>
+                    <p>
+                        @if (!string.IsNullOrEmpty(currentSearch) || !string.IsNullOrEmpty(currentStatus))
+                        {
+                            <text>Thử thay đổi bộ lọc hoặc </text>
+                            <a href="@Url.Action("Index")">xóa bộ lọc</a>
+                        }
+                        else
+                        {
+                            <text>Bắt đầu bằng cách </text>
+                            <a href="@Url.Action("Create")">tạo voucher mới</a>
+                        }
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto dismiss alerts
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+}

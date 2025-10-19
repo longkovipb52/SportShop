@@ -84,6 +84,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Vouchers" ? "active" : "")" href="/Admin/Vouchers">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span>Voucher</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Contacts" ? "active" : "")" href="/Admin/Contacts">
                         <i class="fas fa-envelope"></i>
                         <span>Liên hệ</span>

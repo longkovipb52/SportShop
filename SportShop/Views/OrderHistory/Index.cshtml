@@ -260,12 +260,22 @@
                                    class="btn btn-outline-primary">
                                     <i class="fas fa-eye me-1"></i>Xem chi tiết
                                 </a>
-                                @if (order.Status == "Completed")
+                                @if (order.Status == "Completed" || order.Status == "Hoàn thành" || order.StatusDisplay == "Hoàn thành")
                                 {
                                     <a href="@Url.Action("Print", new { id = order.OrderID })" 
                                        class="btn btn-outline-secondary" target="_blank">
                                         <i class="fas fa-print me-1"></i>In hóa đơn
                                     </a>
+                                    @foreach (var item in order.Items)
+                                    {
+                                        <button type="button" 
+                                                class="btn btn-outline-success review-btn" 
+                                                data-order-id="@order.OrderID"
+                                                data-product-id="@item.ProductID"
+                                                data-product-name="@item.ProductName">
+                                            <i class="fas fa-star me-1"></i><span class="review-btn-text">Đánh giá</span>
+                                        </button>
+                                    }
                                 }
                             </div>
                         </div>
@@ -332,11 +342,411 @@
     </div>
 </section>
 
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content review-modal-content">
+            <div class="modal-header review-modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">
+                    <i class="fas fa-star-half-alt me-2"></i>Đánh giá sản phẩm
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body review-modal-body">
+                <form id="reviewForm">
+                    <input type="hidden" id="reviewOrderId" name="orderId">
+                    <input type="hidden" id="reviewProductId" name="productId">
+                    <input type="hidden" id="reviewId" name="reviewId" value="">
+                    <input type="hidden" id="isEditMode" value="false">
+                    
+                    <div class="product-review-info">
+                        <div class="product-icon">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                        <h6 class="product-name-review" id="productNameReview"></h6>
+                        <div id="editModeNotice" class="alert alert-info mt-3" style="display: none;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span id="editModeText"></span>
+                        </div>
+                    </div>
+
+                    <div class="rating-section mb-4">
+                        <label class="form-label">Đánh giá của bạn <span class="text-danger">*</span></label>
+                        <div class="star-rating">
+                            <input type="radio" name="rating" value="5" id="star5">
+                            <label for="star5" title="5 sao - Xuất sắc">
+                                <i class="fas fa-star"></i>
+                            </label>
+                            <input type="radio" name="rating" value="4" id="star4">
+                            <label for="star4" title="4 sao - Tốt">
+                                <i class="fas fa-star"></i>
+                            </label>
+                            <input type="radio" name="rating" value="3" id="star3">
+                            <label for="star3" title="3 sao - Bình thường">
+                                <i class="fas fa-star"></i>
+                            </label>
+                            <input type="radio" name="rating" value="2" id="star2">
+                            <label for="star2" title="2 sao - Kém">
+                                <i class="fas fa-star"></i>
+                            </label>
+                            <input type="radio" name="rating" value="1" id="star1">
+                            <label for="star1" title="1 sao - Rất kém">
+                                <i class="fas fa-star"></i>
+                            </label>
+                        </div>
+                        <div class="rating-text" id="ratingText">Chọn số sao để đánh giá</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="reviewComment" class="form-label">Nhận xét của bạn</label>
+                        <textarea class="form-control review-textarea" 
+                                  id="reviewComment" 
+                                  name="comment" 
+                                  rows="4" 
+                                  placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."></textarea>
+                        <small class="text-muted">Tối đa 500 ký tự</small>
+                    </div>
+
+                    <div class="review-actions">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Gửi đánh giá
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <link href="~/css/review-modal.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     
     <script>
+        // Review Modal Functions
+        async function openReviewModal(orderId, productName, productId, isEdit = false) {
+            document.getElementById('reviewOrderId').value = orderId;
+            document.getElementById('reviewProductId').value = productId;
+            document.getElementById('productNameReview').textContent = productName;
+            
+            // Reset form
+            document.getElementById('reviewForm').reset();
+            document.getElementById('reviewId').value = '';
+            document.getElementById('isEditMode').value = 'false';
+            
+            // Reset edit notice safely
+            const editNotice = document.getElementById('editModeNotice');
+            if (editNotice) {
+                editNotice.style.display = 'none';
+            }
+            
+            // Reset rating text
+            const ratingText = document.getElementById('ratingText');
+            if (ratingText) {
+                ratingText.textContent = 'Chọn số sao để đánh giá';
+            }
+            
+            // Reset star labels
+            document.querySelectorAll('.star-rating label').forEach(label => {
+                label.classList.remove('selected');
+            });
+            
+            // Re-enable all form elements (in case they were disabled)
+            document.getElementById('reviewForm').querySelectorAll('input, textarea, button[type="submit"]').forEach(el => {
+                el.disabled = false;
+            });
+            
+            // Check if product has been reviewed
+            if (isEdit) {
+                try {
+                    const response = await fetch(`@Url.Action("GetReview", "OrderHistory")?orderId=${orderId}&productId=${productId}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Set edit mode
+                        document.getElementById('isEditMode').value = 'true';
+                        document.getElementById('reviewId').value = result.reviewId;
+                        
+                        // Load existing review data
+                        if (result.rating) {
+                            const ratingInput = document.querySelector(`input[name="rating"][value="${result.rating}"]`);
+                            if (ratingInput) {
+                                ratingInput.checked = true;
+                                ratingInput.dispatchEvent(new Event('change'));
+                            }
+                        }
+                        
+                        if (result.comment) {
+                            document.getElementById('reviewComment').value = result.comment;
+                        }
+                        
+                        // Show edit notice
+                        const editNoticeEl = document.getElementById('editModeNotice');
+                        const editTextEl = document.getElementById('editModeText');
+                        
+                        if (editNoticeEl && editTextEl) {
+                            if (result.canEdit) {
+                                const hoursRemaining = Math.floor(result.hoursRemaining);
+                                const minutesRemaining = Math.floor((result.hoursRemaining - hoursRemaining) * 60);
+                                editTextEl.innerHTML = `Bạn đang chỉnh sửa đánh giá. Còn <strong>${hoursRemaining} giờ ${minutesRemaining} phút</strong> để chỉnh sửa.`;
+                                editNoticeEl.className = 'alert alert-info mt-3';
+                            } else {
+                                editTextEl.innerHTML = 'Đã hết thời gian chỉnh sửa đánh giá (24 giờ). Bạn chỉ có thể xem lại đánh giá.';
+                                editNoticeEl.className = 'alert alert-warning mt-3';
+                                // Disable form
+                                document.getElementById('reviewForm').querySelectorAll('input, textarea, button[type="submit"]').forEach(el => {
+                                    el.disabled = true;
+                                });
+                            }
+                            editNoticeEl.style.display = 'block';
+                        }
+                        
+                        // Update modal title
+                        const modalTitle = document.getElementById('reviewModalLabel');
+                        if (modalTitle) {
+                            modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Chỉnh sửa đánh giá';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading review:', error);
+                }
+            } else {
+                // New review mode
+                const modalTitle = document.getElementById('reviewModalLabel');
+                if (modalTitle) {
+                    modalTitle.innerHTML = '<i class="fas fa-star-half-alt me-2"></i>Đánh giá sản phẩm';
+                }
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+            modal.show();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize review buttons with check for existing reviews
+            document.querySelectorAll('.review-btn').forEach(btn => {
+                const orderId = btn.getAttribute('data-order-id');
+                const productId = btn.getAttribute('data-product-id');
+                const productName = btn.getAttribute('data-product-name');
+                
+                // Check if already reviewed
+                fetch(`@Url.Action("GetReview", "OrderHistory")?orderId=${orderId}&productId=${productId}`)
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            // Has review - change button
+                            const btnText = btn.querySelector('.review-btn-text');
+                            const btnIcon = btn.querySelector('i');
+                            
+                            if (result.canEdit) {
+                                btnText.textContent = 'Sửa đánh giá';
+                                btnIcon.className = 'fas fa-edit me-1';
+                                btn.classList.remove('btn-outline-success');
+                                btn.classList.add('btn-outline-warning');
+                            } else {
+                                btnText.textContent = 'Xem đánh giá';
+                                btnIcon.className = 'fas fa-eye me-1';
+                                btn.classList.remove('btn-outline-success');
+                                btn.classList.add('btn-outline-info');
+                            }
+                            
+                            // Add click handler for edit mode
+                            btn.addEventListener('click', () => {
+                                openReviewModal(orderId, productName, productId, true);
+                            });
+                        } else {
+                            // No review - normal click handler
+                            btn.addEventListener('click', () => {
+                                openReviewModal(orderId, productName, productId, false);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking review:', error);
+                        // Fallback to normal handler
+                        btn.addEventListener('click', () => {
+                            openReviewModal(orderId, productName, productId, false);
+                        });
+                    });
+            });
+
+            // Star rating interaction
+            const starInputs = document.querySelectorAll('.star-rating input');
+            const starLabels = document.querySelectorAll('.star-rating label');
+            const ratingText = document.getElementById('ratingText');
+
+            const ratingTexts = {
+                '5': 'Xuất sắc! ⭐⭐⭐⭐⭐',
+                '4': 'Tốt! ⭐⭐⭐⭐',
+                '3': 'Bình thường ⭐⭐⭐',
+                '2': 'Kém ⭐⭐',
+                '1': 'Rất kém ⭐'
+            };
+
+            starInputs.forEach((input, index) => {
+                input.addEventListener('change', function() {
+                    const rating = this.value;
+                    ratingText.textContent = ratingTexts[rating];
+                    
+                    // Update visual state
+                    starLabels.forEach((label, labelIndex) => {
+                        if (labelIndex >= starInputs.length - index) {
+                            label.classList.add('selected');
+                        } else {
+                            label.classList.remove('selected');
+                        }
+                    });
+                });
+            });
+
+            // Hover effect for stars
+            starLabels.forEach((label, index) => {
+                label.addEventListener('mouseenter', function() {
+                    starLabels.forEach((l, i) => {
+                        if (i >= starLabels.length - index - 1) {
+                            l.classList.add('hover');
+                        } else {
+                            l.classList.remove('hover');
+                        }
+                    });
+                });
+            });
+
+            document.querySelector('.star-rating').addEventListener('mouseleave', function() {
+                starLabels.forEach(l => l.classList.remove('hover'));
+            });
+
+            // Handle review form submission
+            document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const isEditMode = document.getElementById('isEditMode').value === 'true';
+                const reviewId = document.getElementById('reviewId').value;
+                const orderId = document.getElementById('reviewOrderId').value;
+                const productId = document.getElementById('reviewProductId').value;
+                const rating = document.querySelector('input[name="rating"]:checked')?.value;
+                const comment = document.getElementById('reviewComment').value;
+
+                if (!rating) {
+                    alert('Vui lòng chọn số sao đánh giá!');
+                    return;
+                }
+
+                // Show loading
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang gửi...';
+                submitBtn.disabled = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('rating', rating);
+                    formData.append('comment', comment);
+                    
+                    let url, actionText;
+                    if (isEditMode) {
+                        // Update existing review
+                        url = '@Url.Action("UpdateReview", "OrderHistory")';
+                        formData.append('reviewId', reviewId);
+                        actionText = 'Đang cập nhật...';
+                    } else {
+                        // Create new review
+                        url = '@Url.Action("SubmitReview", "OrderHistory")';
+                        formData.append('orderId', orderId);
+                        formData.append('productId', productId);
+                        actionText = 'Đang gửi...';
+                    }
+
+                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${actionText}`;
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Show success message
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+                        modal.hide();
+
+                        // Show success alert
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success alert-dismissible fade show animate__animated animate__bounceIn';
+                        alertDiv.innerHTML = `
+                            <i class="fas fa-check-circle me-2"></i>
+                            ${result.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        `;
+                        document.querySelector('.order-content .container').insertBefore(
+                            alertDiv, 
+                            document.querySelector('.order-content .container').firstChild
+                        );
+
+                        // Auto hide alert
+                        setTimeout(() => {
+                            alertDiv.classList.add('animate__fadeOut');
+                            setTimeout(() => alertDiv.remove(), 1000);
+                        }, 5000);
+
+                        // Reload page to update button status
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+
+                    } else {
+                        alert(result.message || 'Có lỗi xảy ra. Vui lòng thử lại!');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+
+            // Reset modal when closed
+            const reviewModal = document.getElementById('reviewModal');
+            if (reviewModal) {
+                reviewModal.addEventListener('hidden.bs.modal', function() {
+                    // Reset form
+                    document.getElementById('reviewForm').reset();
+                    document.getElementById('reviewId').value = '';
+                    document.getElementById('isEditMode').value = 'false';
+                    
+                    // Hide edit notice
+                    const editNotice = document.getElementById('editModeNotice');
+                    if (editNotice) {
+                        editNotice.style.display = 'none';
+                    }
+                    
+                    // Re-enable all form elements
+                    document.getElementById('reviewForm').querySelectorAll('input, textarea, button[type="submit"]').forEach(el => {
+                        el.disabled = false;
+                    });
+                    
+                    // Reset stars
+                    document.querySelectorAll('.star-rating label').forEach(label => {
+                        label.classList.remove('selected');
+                    });
+                    
+                    // Reset rating text
+                    const ratingText = document.getElementById('ratingText');
+                    if (ratingText) {
+                        ratingText.textContent = 'Chọn số sao để đánh giá';
+                    }
+                });
+            }
+
             // Auto-hide alerts
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {

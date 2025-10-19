@@ -1,0 +1,212 @@
+@model SportShop.Models.Voucher
+
+@{
+    ViewData["Title"] = "Chỉnh sửa Voucher";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_vouchers.css" asp-append-version="true" />
+}
+
+<div class="vouchers-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="@Url.Action("Index")" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-edit"></i>
+                        Chỉnh sửa voucher
+                    </h1>
+                    <p class="page-description">Cập nhật thông tin voucher <strong>@Model.Code</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <form asp-action="Edit" method="post" class="voucher-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="VoucherID" />
+            
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="form-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-info-circle"></i> Thông tin cơ bản</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Code" class="form-label required">
+                                    <i class="fas fa-tag"></i> Mã voucher
+                                </label>
+                                <input asp-for="Code" 
+                                       class="form-control" 
+                                       style="text-transform: uppercase;" />
+                                <span asp-validation-for="Code" class="text-danger"></span>
+                                <small class="form-text">Mã voucher phải là duy nhất</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="DiscountType" class="form-label required">
+                                    <i class="fas fa-percent"></i> Loại giảm giá
+                                </label>
+                                <select asp-for="DiscountType" class="form-select" id="discountTypeSelect">
+                                    <option value="Percentage">Phần trăm (%)</option>
+                                    <option value="FixedAmount">Số tiền cố định (VNĐ)</option>
+                                </select>
+                                <span asp-validation-for="DiscountType" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="DiscountValue" class="form-label required">
+                                    <i class="fas fa-dollar-sign"></i> Giá trị giảm
+                                </label>
+                                <input asp-for="DiscountValue" 
+                                       class="form-control" 
+                                       type="number" 
+                                       step="0.01" 
+                                       min="0.01" />
+                                <span asp-validation-for="DiscountValue" class="text-danger"></span>
+                                <small class="form-text" id="discountHelp">
+                                    @(Model.DiscountType == "Percentage" ? "Nhập giá trị từ 0-100 cho phần trăm" : "Nhập số tiền giảm giá cố định (VNĐ)")
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="MinOrderAmount" class="form-label">
+                                    <i class="fas fa-shopping-cart"></i> Giá trị đơn hàng tối thiểu
+                                </label>
+                                <input asp-for="MinOrderAmount" 
+                                       class="form-control" 
+                                       type="number" 
+                                       step="1000" 
+                                       min="0"
+                                       placeholder="Không giới hạn" />
+                                <span asp-validation-for="MinOrderAmount" class="text-danger"></span>
+                                <small class="form-text">Để trống nếu không giới hạn</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Thời gian áp dụng</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="StartDate" class="form-label required">
+                                    <i class="fas fa-calendar-check"></i> Ngày bắt đầu
+                                </label>
+                                <input asp-for="StartDate" 
+                                       class="form-control" 
+                                       type="datetime-local" />
+                                <span asp-validation-for="StartDate" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="EndDate" class="form-label required">
+                                    <i class="fas fa-calendar-times"></i> Ngày kết thúc
+                                </label>
+                                <input asp-for="EndDate" 
+                                       class="form-control" 
+                                       type="datetime-local" />
+                                <span asp-validation-for="EndDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-cog"></i> Cài đặt</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" 
+                                   class="form-check-input" 
+                                   type="checkbox" 
+                                   id="isActiveSwitch" />
+                            <label class="form-check-label" for="isActiveSwitch">
+                                <i class="fas fa-toggle-on"></i> Kích hoạt voucher
+                            </label>
+                        </div>
+                        <small class="form-text">Chỉ voucher được kích hoạt mới có thể sử dụng</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Lưu thay đổi
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Hủy bỏ
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Convert code to uppercase
+        $('input[name="Code"]').on('input', function() {
+            $(this).val($(this).val().toUpperCase());
+        });
+
+        // Update discount help text based on type
+        $('#discountTypeSelect').on('change', function() {
+            var helpText = $('#discountHelp');
+            if ($(this).val() === 'Percentage') {
+                helpText.text('Nhập giá trị từ 0-100 cho phần trăm');
+                $('input[name="DiscountValue"]').attr('max', '100');
+            } else {
+                helpText.text('Nhập số tiền giảm giá cố định (VNĐ)');
+                $('input[name="DiscountValue"]').removeAttr('max');
+            }
+        });
+
+        // Set initial max value
+        if ($('#discountTypeSelect').val() === 'Percentage') {
+            $('input[name="DiscountValue"]').attr('max', '100');
+        }
+
+        // Validate dates
+        $('input[name="EndDate"]').on('change', function() {
+            var startDate = new Date($('input[name="StartDate"]').val());
+            var endDate = new Date($(this).val());
+            
+            if (endDate <= startDate) {
+                alert('Ngày kết thúc phải sau ngày bắt đầu!');
+                $(this).val('');
+            }
+        });
+    </script>
+}

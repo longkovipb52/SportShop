@@ -82,6 +82,7 @@ namespace SportShop.Controllers
                     PaymentStatus = o.Payments.FirstOrDefault()?.Status ?? "Pending",
                     Items = o.OrderItems.Take(3).Select(oi => new OrderItemSummaryViewModel
                     {
+                        ProductID = oi.ProductID,
                         ProductName = oi.Product.Name,
                         ProductImage = oi.Product.ImageURL,
                         Quantity = oi.Quantity,
@@ -249,6 +250,179 @@ namespace SportShop.Controllers
             ViewBag.CustomerEmail = order.User.Email;
 
             return View(viewModel);
+        }
+
+        // POST: OrderHistory/SubmitReview - Submit review for product
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitReview(int orderId, int productId, int rating, string comment)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập để đánh giá" });
+            }
+
+            // Verify order belongs to user and is completed
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .FirstOrDefaultAsync(o => o.OrderID == orderId && o.UserID == userId.Value);
+
+            if (order == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
+            }
+
+            if (NormalizeStatus(order.Status) != "Completed")
+            {
+                return Json(new { success = false, message = "Chỉ có thể đánh giá đơn hàng đã hoàn thành" });
+            }
+
+            // Verify product in order
+            var orderItem = order.OrderItems.FirstOrDefault(oi => oi.ProductID == productId);
+            if (orderItem == null)
+            {
+                return Json(new { success = false, message = "Sản phẩm không có trong đơn hàng" });
+            }
+
+            // Check if already reviewed
+            var existingReview = await _context.Reviews
+                .FirstOrDefaultAsync(r => r.UserID == userId.Value && r.ProductID == productId && r.CreatedAt > order.OrderDate);
+
+            if (existingReview != null)
+            {
+                return Json(new { success = false, message = "Bạn đã đánh giá sản phẩm này rồi" });
+            }
+
+            // Validate rating
+            if (rating < 1 || rating > 5)
+            {
+                return Json(new { success = false, message = "Đánh giá phải từ 1 đến 5 sao" });
+            }
+
+            // Create review
+            var review = new Review
+            {
+                ProductID = productId,
+                UserID = userId.Value,
+                Rating = rating,
+                Comment = comment ?? "",
+                CreatedAt = DateTime.Now,
+                Status = "Pending"
+            };
+
+            _context.Reviews.Add(review);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Cảm ơn bạn đã đánh giá sản phẩm!" });
+        }
+
+        // GET: OrderHistory/CheckReviewed - Check if product has been reviewed
+        [HttpGet]
+        public async Task<IActionResult> CheckReviewed(int orderId, int productId)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return Json(new { reviewed = false });
+            }
+
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.OrderID == orderId && o.UserID == userId.Value);
+
+            if (order == null)
+            {
+                return Json(new { reviewed = false });
+            }
+
+            var hasReview = await _context.Reviews
+                .AnyAsync(r => r.UserID == userId.Value && r.ProductID == productId && r.CreatedAt > order.OrderDate);
+
+            return Json(new { reviewed = hasReview });
+        }
+
+        // GET: OrderHistory/GetReview - Get existing review details
+        [HttpGet]
+        public async Task<IActionResult> GetReview(int orderId, int productId)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập" });
+            }
+
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.OrderID == orderId && o.UserID == userId.Value);
+
+            if (order == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
+            }
+
+            var review = await _context.Reviews
+                .FirstOrDefaultAsync(r => r.UserID == userId.Value && r.ProductID == productId && r.CreatedAt > order.OrderDate);
+
+            if (review == null)
+            {
+                return Json(new { success = false, message = "Chưa có đánh giá" });
+            }
+
+            // Check if review can be edited (within 24 hours)
+            var reviewCreatedAt = review.CreatedAt ?? DateTime.Now;
+            var hoursSinceReview = (DateTime.Now - reviewCreatedAt).TotalHours;
+            var canEdit = hoursSinceReview <= 24;
+
+            return Json(new { 
+                success = true, 
+                reviewId = review.ReviewID,
+                rating = review.Rating, 
+                comment = review.Comment,
+                createdAt = review.CreatedAt,
+                canEdit = canEdit,
+                hoursRemaining = canEdit ? Math.Max(0, 24 - hoursSinceReview) : 0
+            });
+        }
+
+        // POST: OrderHistory/UpdateReview - Update existing review
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateReview(int reviewId, int rating, string comment)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập để cập nhật đánh giá" });
+            }
+
+            var review = await _context.Reviews
+                .FirstOrDefaultAsync(r => r.ReviewID == reviewId && r.UserID == userId.Value);
+
+            if (review == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy đánh giá" });
+            }
+
+            // Check if review can still be edited (within 24 hours)
+            var reviewCreatedAt = review.CreatedAt ?? DateTime.Now;
+            var hoursSinceReview = (DateTime.Now - reviewCreatedAt).TotalHours;
+            if (hoursSinceReview > 24)
+            {
+                return Json(new { success = false, message = "Đã hết thời gian chỉnh sửa đánh giá (24 giờ)" });
+            }
+
+            // Validate rating
+            if (rating < 1 || rating > 5)
+            {
+                return Json(new { success = false, message = "Đánh giá phải từ 1 đến 5 sao" });
+            }
+
+            // Update review
+            review.Rating = rating;
+            review.Comment = comment ?? "";
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Cập nhật đánh giá thành công!" });
         }
 
         private List<OrderTimelineViewModel> CreateOrderTimeline(string currentStatus, DateTime orderDate, DateTime? paymentDate)

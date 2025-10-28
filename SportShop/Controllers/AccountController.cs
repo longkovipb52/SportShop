@@ -109,16 +109,34 @@ namespace SportShop.Controllers
             {
                 try
                 {
-                    if (await _context.Users.AnyAsync(u => u.Username == model.Username))
+                    // Kiểm tra tên đăng nhập đã tồn tại
+                    var existingUsername = await _context.Users.AnyAsync(u => u.Username == model.Username);
+                    
+                    if (existingUsername)
                     {
-                        ModelState.AddModelError("Username", "Tên đăng nhập đã tồn tại.");
+                        ModelState.AddModelError("Username", "Tên đăng nhập đã tồn tại");
                         return View(model);
                     }
 
-                    if (await _context.Users.AnyAsync(u => u.Email == model.Email))
+                    // Kiểm tra email đã tồn tại
+                    var existingEmail = await _context.Users.AnyAsync(u => u.Email == model.Email);
+                    
+                    if (existingEmail)
                     {
-                        ModelState.AddModelError("Email", "Email đã được sử dụng.");
+                        ModelState.AddModelError("Email", "Email đã được sử dụng");
                         return View(model);
+                    }
+
+                    // Kiểm tra số điện thoại đã tồn tại
+                    if (!string.IsNullOrEmpty(model.Phone))
+                    {
+                        var existingPhone = await _context.Users.AnyAsync(u => u.Phone == model.Phone);
+                        
+                        if (existingPhone)
+                        {
+                            ModelState.AddModelError("Phone", "Số điện thoại đã được sử dụng");
+                            return View(model);
+                        }
                     }
 
                     // Lấy RoleID của Customer

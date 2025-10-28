@@ -4,6 +4,30 @@
     ViewData["CustomCSS"] = "account.css";
 }
 
+<!-- Hidden elements for toast notification system -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div data-tempdata-success="@TempData["SuccessMessage"]" style="display: none;"></div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div data-tempdata-error="@TempData["ErrorMessage"]" style="display: none;"></div>
+}
+
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+{
+    var errors = new List<string>();
+    foreach (var modelState in ViewData.ModelState.Values)
+    {
+        foreach (var error in modelState.Errors)
+        {
+            errors.Add(error.ErrorMessage);
+        }
+    }
+    <div data-modelstate-errors='@System.Text.Json.JsonSerializer.Serialize(errors)' style="display: none;"></div>
+}
+
 <div class="auth-container">
     <div class="auth-decoration auth-decoration-1"></div>
     <div class="auth-decoration auth-decoration-2"></div>
@@ -18,16 +42,7 @@
         </div>
         
         <div class="auth-body">
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success mb-3">
-                    @TempData["SuccessMessage"]
-                </div>
-            }
-            
             <form asp-controller="Account" asp-action="Login" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                
                 <div class="form-floating">
                     <input asp-for="Username" class="form-control" placeholder=" " autocomplete="username" />
                     <label asp-for="Username"></label>
@@ -48,7 +63,12 @@
                     <a href="#" class="text-decoration-none small">Quên mật khẩu?</a>
                 </div>
                 
-                <button type="submit" class="btn btn-auth mt-4">Đăng nhập</button>
+                <button type="submit" class="btn btn-auth mt-4" id="loginBtn">
+                    <span class="btn-text">Đăng nhập</span>
+                    <span class="btn-spinner d-none">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...
+                    </span>
+                </button>
             </form>
             
             <div class="auth-divider">
@@ -75,6 +95,7 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @* Tắt jQuery validation để sử dụng toast notification *@
+    @* <partial name="_ValidationScriptsPartial" /> *@
     <script src="~/js/account.js" asp-append-version="true"></script>
 }

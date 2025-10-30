@@ -1,8 +1,8 @@
 /* Product Form Styles */
 .product-form-container {
-    padding: 20px;
-    background-color: #f8f9fa;
-    min-height: 100vh;
+    padding: 0;
+    background-color: transparent !important;
+    min-height: auto;
 }
 
 /* Page Header */

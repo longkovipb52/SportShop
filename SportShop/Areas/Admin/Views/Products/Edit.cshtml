@@ -5,6 +5,7 @@
 }
 
 <link rel="stylesheet" href="~/css/products-form.css" />
+<link rel="stylesheet" href="~/css/product-attributes.css" />
 
 <div class="product-form-container">
     <div class="page-header">
@@ -175,6 +176,31 @@
                 <span asp-validation-for="ImageFile" class="validation-error"></span>
             </div>
 
+            <!-- Product Attributes Section -->
+            <div class="form-section full-width product-attributes-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-cogs"></i> Quản lý thuộc tính sản phẩm (Size, Color)</h3>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="openAttributeModal()">
+                        <i class="fas fa-plus"></i> Thêm thuộc tính
+                    </button>
+                </div>
+                
+                <div class="attributes-container" id="attributesContainer">
+                    <div class="attributes-loading" id="attributesLoading">
+                        <i class="fas fa-spinner fa-spin"></i> Đang tải...
+                    </div>
+                    
+                    <div class="attributes-list" id="attributesList" style="display: none;">
+                        <!-- Attributes will be loaded here dynamically -->
+                    </div>
+                    
+                    <div class="no-attributes" id="noAttributes" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <p>Chưa có thuộc tính nào. Nhấn "Thêm thuộc tính" để bắt đầu.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Form Actions -->
             <div class="form-actions">
                 <button type="submit" class="btn btn-success btn-large">
@@ -208,9 +234,81 @@
     </div>
 }
 
+<!-- Attribute Modal -->
+<div class="modal fade" id="attributeModal" tabindex="-1" aria-labelledby="attributeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attributeModalLabel">
+                    <i class="fas fa-cogs"></i> <span id="modalTitle">Thêm thuộc tính</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="attributeForm" enctype="multipart/form-data">
+                    <input type="hidden" id="attributeId" name="AttributeID" value="0" />
+                    <input type="hidden" id="productId" name="ProductID" value="@Model.ProductID" />
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="attributeSize" class="form-label">Kích thước <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="attributeSize" name="Size" required placeholder="Ví dụ: S, M, L, XL, 39, 40, 41...">
+                            <div class="invalid-feedback">Vui lòng nhập kích thước</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="attributeColor" class="form-label">Màu sắc <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="attributeColor" name="Color" required placeholder="Ví dụ: Đỏ, Xanh, Trắng...">
+                            <div class="invalid-feedback">Vui lòng nhập màu sắc</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="attributeStock" class="form-label">Số lượng tồn kho <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="attributeStock" name="Stock" required min="0" value="0">
+                            <div class="invalid-feedback">Vui lòng nhập số lượng tồn kho</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="attributePrice" class="form-label">Giá (tùy chọn)</label>
+                            <input type="number" class="form-control" id="attributePrice" name="Price" step="0.01" min="0" placeholder="Để trống nếu giống sản phẩm">
+                            <small class="text-muted">Để trống nếu giá giống với giá sản phẩm chính</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="attributeImage" class="form-label">Hình ảnh thuộc tính (tùy chọn)</label>
+                        <input type="file" class="form-control" id="attributeImage" name="ImageFile" accept="image/*">
+                        <small class="text-muted">Hình ảnh riêng cho thuộc tính này (ví dụ: ảnh màu sắc cụ thể)</small>
+                        
+                        <div class="attribute-image-preview mt-2" id="attributeImagePreview" style="display: none;">
+                            <img id="attributePreviewImg" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px;" />
+                            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeAttributeImage()">
+                                <i class="fas fa-trash"></i> Xóa ảnh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="currentImageURL" name="CurrentImageURL" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveAttribute()">
+                    <i class="fas fa-save"></i> Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script src="~/js/admin_products.js"></script>
+    <script src="~/js/product_attributes.js"></script>
     <script>
         // Store original form values for reset functionality
         const originalValues = {

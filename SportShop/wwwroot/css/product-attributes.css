@@ -1,0 +1,423 @@
+/* Product Attributes Management Styles */
+/* Scoped to avoid conflicts with products-form.css */
+
+/* ============== Attributes Container ============== */
+.product-attributes-section .attributes-container {
+    margin-top: 20px;
+    min-height: 200px;
+}
+
+.product-attributes-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.product-attributes-section .section-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.product-attributes-section .section-header h3 i {
+    margin-right: 10px;
+    color: #28a745;
+}
+
+/* Loading State */
+.product-attributes-section .attributes-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.product-attributes-section .attributes-loading i {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: #28a745;
+}
+
+/* No Attributes State */
+.product-attributes-section .no-attributes {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px dashed #dee2e6;
+}
+
+.product-attributes-section .no-attributes i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    color: #adb5bd;
+}
+
+.product-attributes-section .no-attributes p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* ============== Attributes Grid ============== */
+.product-attributes-section .attributes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Attribute Card */
+.product-attributes-section .attribute-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-attributes-section .attribute-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+.product-attributes-section .attribute-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.product-attributes-section .attribute-card:hover::before {
+    width: 6px;
+}
+
+/* Stock Status Colors */
+.product-attributes-section .attribute-card.in-stock::before {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.product-attributes-section .attribute-card.low-stock::before {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+}
+
+.product-attributes-section .attribute-card.out-of-stock::before {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+}
+
+/* Attribute Image */
+.product-attributes-section .attribute-image {
+    width: 100%;
+    height: 200px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-attributes-section .attribute-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-attributes-section .attribute-card:hover .attribute-image img {
+    transform: scale(1.05);
+}
+
+/* Attribute Info */
+.product-attributes-section .attribute-info {
+    margin-bottom: 15px;
+}
+
+.product-attributes-section .attribute-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.product-attributes-section .attribute-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.product-attributes-section .attribute-header .badge {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    font-weight: 600;
+}
+
+/* Attribute Details */
+.product-attributes-section .attribute-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.product-attributes-section .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.product-attributes-section .detail-item i {
+    width: 16px;
+    color: #28a745;
+}
+
+.product-attributes-section .detail-item strong {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Attribute Actions */
+.product-attributes-section .attribute-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.product-attributes-section .attribute-actions .btn {
+    flex: 1;
+    font-size: 0.875rem;
+    padding: 8px 12px;
+}
+
+.product-attributes-section .attribute-actions .btn i {
+    margin-right: 4px;
+}
+
+/* ============== Modal Styles ============== */
+/* Keep modal styles global as they're in a separate overlay */
+#attributeModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+#attributeModal .modal-header {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    padding: 20px 30px;
+}
+
+#attributeModal .modal-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+#attributeModal .modal-title i {
+    margin-right: 10px;
+}
+
+#attributeModal .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+#attributeModal .btn-close:hover {
+    opacity: 1;
+}
+
+#attributeModal .modal-body {
+    padding: 30px;
+}
+
+#attributeModal .modal-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Form Controls in Modal */
+#attributeModal .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+#attributeModal .form-control {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 10px 15px;
+    font-size: 0.95rem;
+}
+
+#attributeModal .form-control:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+#attributeModal .invalid-feedback {
+    font-size: 0.875rem;
+    margin-top: 5px;
+}
+
+#attributeModal small.text-muted {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.825rem;
+}
+
+/* Attribute Image Preview in Modal */
+#attributeModal .attribute-image-preview {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    text-align: center;
+}
+
+#attributeModal .attribute-image-preview img {
+    display: block;
+    margin: 0 auto 10px;
+    border: 2px solid #dee2e6;
+}
+
+/* ============== Responsive Design ============== */
+@media (max-width: 1200px) {
+    .product-attributes-section .attributes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+}
+
+@media (max-width: 992px) {
+    .product-attributes-section .attributes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    
+    .product-attributes-section .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .product-attributes-section .section-header .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .product-attributes-section .attributes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .product-attributes-section .attribute-card {
+        padding: 15px;
+    }
+    
+    .product-attributes-section .attribute-image {
+        height: 180px;
+    }
+    
+    #attributeModal .modal-body {
+        padding: 20px;
+    }
+    
+    #attributeModal .row {
+        margin: 0;
+    }
+    
+    #attributeModal .row > div {
+        padding-left: 0;
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+/* ============== Animations ============== */
+@keyframes fadeInAttribute {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.product-attributes-section .attribute-card {
+    animation: fadeInAttribute 0.3s ease-out;
+}
+
+/* Smooth transitions */
+.product-attributes-section .attributes-loading,
+.product-attributes-section .attributes-list,
+.product-attributes-section .no-attributes {
+    transition: opacity 0.3s ease;
+}
+
+/* Badge Styles - Scoped to avoid conflicts */
+.product-attributes-section .badge.bg-success {
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+}
+
+.product-attributes-section .badge.bg-warning {
+    background: linear-gradient(135deg, #ffc107, #ff9800) !important;
+}
+
+.product-attributes-section .badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545, #fd7e14) !important;
+}
+
+/* Button Hover Effects - Scoped */
+.product-attributes-section .attribute-actions .btn-primary:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.product-attributes-section .attribute-actions .btn-danger:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Loading Spinner */
+.product-attributes-section .fa-spinner {
+    animation: spinAttribute 1s linear infinite;
+}
+
+@keyframes spinAttribute {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Success/Error states - Scoped */
+.product-attributes-section .text-success {
+    color: #28a745 !important;
+}
+
+.product-attributes-section .text-danger {
+    color: #dc3545 !important;
+}
+
+.product-attributes-section .text-warning {
+    color: #ffc107 !important;
+}

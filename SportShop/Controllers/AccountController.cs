@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SportShop.Data;
 using SportShop.Models;
 using SportShop.Models.ViewModels;
+using SportShop.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,10 +15,12 @@ namespace SportShop.Controllers
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly VoucherService _voucherService;
 
-        public AccountController(ApplicationDbContext context)
+        public AccountController(ApplicationDbContext context, VoucherService voucherService)
         {
             _context = context;
+            _voucherService = voucherService;
         }
 
         [HttpGet]
@@ -164,7 +167,24 @@ namespace SportShop.Controllers
                     _context.Users.Add(user);
                     await _context.SaveChangesAsync();
 
-                    TempData["SuccessMessage"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập.";
+                    // ======== PHƯƠNG ÁN 1: TẶNG WELCOME VOUCHER ========
+                    try
+                    {
+                        var voucherAssigned = await _voucherService.AssignWelcomeVoucherAsync(user.UserID);
+                        if (voucherAssigned)
+                        {
+                            TempData["SuccessMessage"] = "Đăng ký thành công! Bạn đã nhận được voucher chào mừng WELCOME10. Vui lòng đăng nhập.";
+                        }
+                        else
+                        {
+                            TempData["SuccessMessage"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập.";
+                        }
+                    }
+                    catch
+                    {
+                        TempData["SuccessMessage"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập.";
+                    }
+
                     return RedirectToAction("Login");
                 }
                 catch (Exception ex)

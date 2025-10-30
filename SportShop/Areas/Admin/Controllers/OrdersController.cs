@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SportShop.Data;
 using SportShop.Models;
 using SportShop.Models.ViewModels;
+using SportShop.Services;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -12,10 +13,12 @@ namespace SportShop.Areas.Admin.Controllers
     public class OrdersController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly VoucherService _voucherService;
 
-        public OrdersController(ApplicationDbContext context)
+        public OrdersController(ApplicationDbContext context, VoucherService voucherService)
         {
             _context = context;
+            _voucherService = voucherService;
         }
 
         // GET: Admin/Orders
@@ -223,6 +226,24 @@ namespace SportShop.Areas.Admin.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+                
+                if (status == "Hoàn thành" && previousStatus != "Hoàn thành" && order.UserID > 0)
+                {
+                    try
+                    {
+                        // Tặng voucher sau đơn hàng đầu tiên
+                        await _voucherService.AssignFirstOrderVoucherAsync(order.UserID);
+                        
+                        // Kiểm tra và tặng voucher milestone (1M, 5M, 10M)
+                        await _voucherService.CheckAndAssignAllMilestonesAsync(order.UserID);
+                    }
+                    catch (Exception voucherEx)
+                    {
+                        // Log lỗi voucher nhưng không làm gián đoạn flow
+                        Console.WriteLine($"Lỗi khi tặng voucher: {voucherEx.Message}");
+                    }
+                }
+                
                 return Json(new { success = true, message = "Cập nhật trạng thái thành công" });
             }
             catch (Exception ex)

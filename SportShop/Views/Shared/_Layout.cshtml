@@ -171,6 +171,7 @@
                                                 <span class="badge bg-danger rounded-pill wishlist-count">@await Component.InvokeAsync("WishlistCount")</span>
                                             </a>
                                         </li>
+                                        <li><a class="dropdown-item" href="@Url.Action("MyVouchers", "Voucher")"><i class="fas fa-ticket-alt me-2"></i>Voucher của tôi</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
                                             <form asp-controller="Account" asp-action="Logout" method="post">

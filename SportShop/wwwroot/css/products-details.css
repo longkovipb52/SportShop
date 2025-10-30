@@ -351,31 +351,49 @@
 /* Attributes Grid */
 .attributes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
 }
 
 .attribute-card {
-    background: #f8f9fa;
+    background: white;
     border-radius: 12px;
     padding: 20px;
-    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.attribute-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, #17a2b8, #20c997);
+    transition: width 0.3s ease;
 }
 
 .attribute-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.attribute-card:hover::before {
+    width: 6px;
 }
 
 .attribute-image {
     width: 100%;
-    height: 120px;
+    height: 200px;
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 15px;
-    background: #e9ecef;
+    background: #f8f9fa;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -385,83 +403,111 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.attribute-card:hover .attribute-image img {
+    transform: scale(1.05);
 }
 
 .no-image {
     color: #adb5bd;
-    font-size: 24px;
+    font-size: 48px;
+}
+
+.attribute-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .attribute-variant {
     display: flex;
     gap: 8px;
     margin-bottom: 12px;
+    flex-wrap: wrap;
 }
 
 .size-tag,
 .color-tag {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .size-tag {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
 }
 
 .color-tag {
-    background: #f3e5f5;
-    color: #7b1fa2;
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    color: white;
 }
 
 .attribute-details {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
+    margin-bottom: 15px;
 }
 
 .attribute-stock,
 .attribute-price {
-    font-size: 13px;
+    font-size: 14px;
     color: #495057;
-}
-
-.attribute-actions {
-    position: absolute;
-    top: 15px;
-    right: 15px;
     display: flex;
+    align-items: center;
     gap: 6px;
 }
 
+.attribute-stock i,
+.attribute-price i {
+    color: #17a2b8;
+    width: 16px;
+}
+
+.attribute-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
 .btn-action {
-    width: 30px;
-    height: 30px;
+    flex: 1;
+    padding: 10px 16px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
     transition: all 0.3s ease;
 }
 
 .btn-edit {
-    background: #ffc107;
-    color: #212529;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
 }
 
 .btn-delete {
-    background: #dc3545;
+    background: linear-gradient(135deg, #f093fb, #f5576c);
     color: white;
 }
 
 .btn-action:hover {
-    transform: scale(1.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Reviews List */

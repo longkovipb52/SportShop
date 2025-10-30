@@ -1,0 +1,240 @@
+@model IEnumerable<SportShop.Models.UserVoucher>
+
+@{
+    ViewData["Title"] = "Voucher của tôi";
+    var availableVouchers = ViewBag.AvailableVouchers as List<SportShop.Models.UserVoucher>;
+    var usedVouchers = ViewBag.UsedVouchers as List<SportShop.Models.UserVoucher>;
+    var expiredVouchers = ViewBag.ExpiredVouchers as List<SportShop.Models.UserVoucher>;
+}
+
+<link rel="stylesheet" href="~/css/voucher.css" />
+
+<div class="container my-5">
+    <div class="voucher-header text-center mb-5">
+        <h1 class="display-4"><i class="fas fa-ticket-alt text-primary me-3"></i>Voucher của tôi</h1>
+        <p class="lead text-muted">Quản lý và sử dụng các voucher ưu đãi của bạn</p>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-5x text-muted mb-3"></i>
+            <h4 class="text-muted">Bạn chưa có voucher nào</h4>
+            <p class="text-muted">Voucher sẽ được tặng khi bạn đăng ký tài khoản, hoàn thành đơn hàng hoặc đạt mốc chi tiêu.</p>
+            <a href="@Url.Action("Index", "Product")" class="btn btn-primary mt-3">
+                <i class="fas fa-shopping-bag me-2"></i>Mua sắm ngay
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="available-tab" data-bs-toggle="tab" data-bs-target="#available" type="button">
+                    <i class="fas fa-check-circle me-2"></i>Có thể sử dụng 
+                    <span class="badge bg-success ms-2">@(availableVouchers?.Count ?? 0)</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="used-tab" data-bs-toggle="tab" data-bs-target="#used" type="button">
+                    <i class="fas fa-history me-2"></i>Đã sử dụng
+                    <span class="badge bg-secondary ms-2">@(usedVouchers?.Count ?? 0)</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="expired-tab" data-bs-toggle="tab" data-bs-target="#expired" type="button">
+                    <i class="fas fa-times-circle me-2"></i>Đã hết hạn
+                    <span class="badge bg-danger ms-2">@(expiredVouchers?.Count ?? 0)</span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Available Vouchers -->
+            <div class="tab-pane fade show active" id="available" role="tabpanel">
+                @if (availableVouchers != null && availableVouchers.Any())
+                {
+                    <div class="row">
+                        @foreach (var uv in availableVouchers)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="voucher-card available">
+                                    <div class="voucher-badge">
+                                        <span class="badge bg-success">Có thể sử dụng</span>
+                                    </div>
+                                    <div class="voucher-body">
+                                        <div class="voucher-code-box">
+                                            <span class="voucher-label">Mã giảm giá</span>
+                                            <div class="voucher-code">@uv.Voucher.Code</div>
+                                            <button class="btn btn-sm btn-outline-primary copy-btn" onclick="copyCode('@uv.Voucher.Code')">
+                                                <i class="fas fa-copy me-1"></i>Sao chép
+                                            </button>
+                                        </div>
+                                        <div class="voucher-discount">
+                                            @if (uv.Voucher.DiscountType == "Percentage")
+                                            {
+                                                <span class="discount-value">@uv.Voucher.DiscountValue%</span>
+                                                <span class="discount-label">Giảm giá</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="discount-value">@((uv.Voucher.DiscountValue).ToString("N0"))đ</span>
+                                                <span class="discount-label">Giảm giá</span>
+                                            }
+                                        </div>
+                                        <div class="voucher-details">
+                                            @if (uv.Voucher.MinOrderAmount.HasValue && uv.Voucher.MinOrderAmount.Value > 0)
+                                            {
+                                                <p><i class="fas fa-shopping-cart me-2 text-primary"></i>Đơn tối thiểu: <strong>@(uv.Voucher.MinOrderAmount.Value.ToString("N0"))đ</strong></p>
+                                            }
+                                            <p><i class="fas fa-calendar-alt me-2 text-primary"></i>Hết hạn: <strong>@uv.Voucher.EndDate.ToString("dd/MM/yyyy")</strong></p>
+                                            <p><i class="fas fa-gift me-2 text-primary"></i>Nhận ngày: <strong>@uv.AssignedDate.ToString("dd/MM/yyyy")</strong></p>
+                                        </div>
+                                        <a href="@Url.Action("Index", "Product")" class="btn btn-primary w-100 mt-3">
+                                            <i class="fas fa-shopping-bag me-2"></i>Mua sắm ngay
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-ticket-alt fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Không có voucher khả dụng</h5>
+                    </div>
+                }
+            </div>
+
+            <!-- Used Vouchers -->
+            <div class="tab-pane fade" id="used" role="tabpanel">
+                @if (usedVouchers != null && usedVouchers.Any())
+                {
+                    <div class="row">
+                        @foreach (var uv in usedVouchers)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="voucher-card used">
+                                    <div class="voucher-badge">
+                                        <span class="badge bg-secondary">Đã sử dụng</span>
+                                    </div>
+                                    <div class="voucher-body">
+                                        <div class="voucher-code-box">
+                                            <span class="voucher-label">Mã giảm giá</span>
+                                            <div class="voucher-code">@uv.Voucher.Code</div>
+                                        </div>
+                                        <div class="voucher-discount">
+                                            @if (uv.Voucher.DiscountType == "Percentage")
+                                            {
+                                                <span class="discount-value">@uv.Voucher.DiscountValue%</span>
+                                                <span class="discount-label">Đã giảm</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="discount-value">@((uv.Voucher.DiscountValue).ToString("N0"))đ</span>
+                                                <span class="discount-label">Đã giảm</span>
+                                            }
+                                        </div>
+                                        <div class="voucher-details">
+                                            <p><i class="fas fa-check-circle me-2 text-success"></i>Đã dùng ngày: <strong>@uv.UsedDate?.ToString("dd/MM/yyyy")</strong></p>
+                                            <p><i class="fas fa-gift me-2"></i>Nhận ngày: <strong>@uv.AssignedDate.ToString("dd/MM/yyyy")</strong></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Chưa có voucher đã sử dụng</h5>
+                    </div>
+                }
+            </div>
+
+            <!-- Expired Vouchers -->
+            <div class="tab-pane fade" id="expired" role="tabpanel">
+                @if (expiredVouchers != null && expiredVouchers.Any())
+                {
+                    <div class="row">
+                        @foreach (var uv in expiredVouchers)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="voucher-card expired">
+                                    <div class="voucher-badge">
+                                        <span class="badge bg-danger">Đã hết hạn</span>
+                                    </div>
+                                    <div class="voucher-body">
+                                        <div class="voucher-code-box">
+                                            <span class="voucher-label">Mã giảm giá</span>
+                                            <div class="voucher-code">@uv.Voucher.Code</div>
+                                        </div>
+                                        <div class="voucher-discount">
+                                            @if (uv.Voucher.DiscountType == "Percentage")
+                                            {
+                                                <span class="discount-value">@uv.Voucher.DiscountValue%</span>
+                                                <span class="discount-label">Giảm giá</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="discount-value">@((uv.Voucher.DiscountValue).ToString("N0"))đ</span>
+                                                <span class="discount-label">Giảm giá</span>
+                                            }
+                                        </div>
+                                        <div class="voucher-details">
+                                            <p><i class="fas fa-calendar-times me-2 text-danger"></i>Hết hạn: <strong>@uv.Voucher.EndDate.ToString("dd/MM/yyyy")</strong></p>
+                                            <p><i class="fas fa-gift me-2"></i>Nhận ngày: <strong>@uv.AssignedDate.ToString("dd/MM/yyyy")</strong></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-times-circle fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Không có voucher đã hết hạn</h5>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+    function copyCode(code) {
+        navigator.clipboard.writeText(code).then(function() {
+            // Show success message
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true
+            });
+            
+            Toast.fire({
+                icon: 'success',
+                title: 'Đã sao chép mã: ' + code
+            });
+        }).catch(function(err) {
+            alert('Không thể sao chép mã');
+        });
+    }
+</script>

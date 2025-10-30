@@ -204,7 +204,10 @@ namespace SportShop.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            var product = await _context.Products.FindAsync(id);
+            var product = await _context.Products
+                .Include(p => p.Attributes)
+                .FirstOrDefaultAsync(p => p.ProductID == id);
+                
             if (product == null)
             {
                 return NotFound();
@@ -222,7 +225,8 @@ namespace SportShop.Areas.Admin.Controllers
                 Stock = product.Stock,
                 CategoryID = product.CategoryID,
                 BrandID = product.BrandID ?? 0,
-                CurrentImageURL = product.ImageURL
+                CurrentImageURL = product.ImageURL,
+                Attributes = product.Attributes?.ToList() ?? new List<ProductAttribute>()
             };
 
             return View(viewModel);
@@ -422,6 +426,226 @@ namespace SportShop.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return Json(new { error = ex.Message });
+            }
+        }
+
+        // ==================== PRODUCT ATTRIBUTES MANAGEMENT ====================
+        
+        // API: Get all attributes for a product
+        [HttpGet]
+        public async Task<IActionResult> GetAttributes(int productId)
+        {
+            try
+            {
+                var attributes = await _context.ProductAttributes
+                    .Where(a => a.ProductID == productId)
+                    .OrderBy(a => a.Size)
+                    .ThenBy(a => a.Color)
+                    .ToListAsync();
+
+                return Json(new { success = true, data = attributes });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi khi tải thuộc tính: " + ex.Message });
+            }
+        }
+
+        // API: Get single attribute
+        [HttpGet]
+        public async Task<IActionResult> GetAttribute(int id)
+        {
+            try
+            {
+                var attribute = await _context.ProductAttributes.FindAsync(id);
+                if (attribute == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thuộc tính" });
+                }
+
+                return Json(new { success = true, data = attribute });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        // API: Create attribute
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAttribute([FromForm] ProductAttributeViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    return Json(new { success = false, message = string.Join(", ", errors) });
+                }
+
+                // Check if combination already exists
+                var exists = await _context.ProductAttributes
+                    .AnyAsync(a => a.ProductID == model.ProductID && 
+                                   a.Size == model.Size && 
+                                   a.Color == model.Color);
+
+                if (exists)
+                {
+                    return Json(new { success = false, message = "Thuộc tính với kích thước và màu sắc này đã tồn tại" });
+                }
+
+                var attribute = new ProductAttribute
+                {
+                    ProductID = model.ProductID,
+                    Size = model.Size,
+                    Color = model.Color,
+                    Stock = model.Stock,
+                    Price = model.Price
+                };
+
+                // Handle image upload
+                if (model.ImageFile != null && model.ImageFile.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(_environment.WebRootPath, "upload", "attributes");
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.ImageFile.CopyToAsync(fileStream);
+                    }
+
+                    attribute.ImageURL = "/upload/attributes/" + uniqueFileName;
+                }
+
+                _context.ProductAttributes.Add(attribute);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Thêm thuộc tính thành công", data = attribute });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        // API: Update attribute
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateAttribute([FromForm] ProductAttributeViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    return Json(new { success = false, message = string.Join(", ", errors) });
+                }
+
+                var attribute = await _context.ProductAttributes.FindAsync(model.AttributeID);
+                if (attribute == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thuộc tính" });
+                }
+
+                // Check if new combination already exists (excluding current record)
+                var exists = await _context.ProductAttributes
+                    .AnyAsync(a => a.ProductID == model.ProductID && 
+                                   a.Size == model.Size && 
+                                   a.Color == model.Color &&
+                                   a.AttributeID != model.AttributeID);
+
+                if (exists)
+                {
+                    return Json(new { success = false, message = "Thuộc tính với kích thước và màu sắc này đã tồn tại" });
+                }
+
+                attribute.Size = model.Size;
+                attribute.Color = model.Color;
+                attribute.Stock = model.Stock;
+                attribute.Price = model.Price;
+
+                // Handle image upload
+                if (model.ImageFile != null && model.ImageFile.Length > 0)
+                {
+                    // Delete old image if exists
+                    if (!string.IsNullOrEmpty(attribute.ImageURL))
+                    {
+                        var oldImagePath = Path.Combine(_environment.WebRootPath, attribute.ImageURL.TrimStart('/'));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    var uploadsFolder = Path.Combine(_environment.WebRootPath, "upload", "attributes");
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.ImageFile.CopyToAsync(fileStream);
+                    }
+
+                    attribute.ImageURL = "/upload/attributes/" + uniqueFileName;
+                }
+
+                _context.Update(attribute);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Cập nhật thuộc tính thành công", data = attribute });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        // API: Delete attribute
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAttribute(int id)
+        {
+            try
+            {
+                var attribute = await _context.ProductAttributes.FindAsync(id);
+                if (attribute == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thuộc tính" });
+                }
+
+                // Check if attribute is being used in cart or orders
+                var isInCart = await _context.Carts.AnyAsync(c => c.AttributeID == id);
+                var isInOrder = await _context.OrderItems.AnyAsync(o => o.AttributeID == id);
+
+                if (isInCart || isInOrder)
+                {
+                    return Json(new { success = false, message = "Không thể xóa thuộc tính đang được sử dụng trong giỏ hàng hoặc đơn hàng" });
+                }
+
+                // Delete image if exists
+                if (!string.IsNullOrEmpty(attribute.ImageURL))
+                {
+                    var imagePath = Path.Combine(_environment.WebRootPath, attribute.ImageURL.TrimStart('/'));
+                    if (System.IO.File.Exists(imagePath))
+                    {
+                        System.IO.File.Delete(imagePath);
+                    }
+                }
+
+                _context.ProductAttributes.Remove(attribute);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Xóa thuộc tính thành công" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
             }
         }
 

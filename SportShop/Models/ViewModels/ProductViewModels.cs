@@ -77,6 +77,36 @@ namespace SportShop.Models.ViewModels
 
         public string? CurrentImageURL { get; set; }
         public IFormFile? ImageFile { get; set; }
+        
+        // Danh sách thuộc tính của sản phẩm
+        public List<ProductAttribute> Attributes { get; set; } = new List<ProductAttribute>();
+    }
+
+    // ViewModel cho thêm/sửa thuộc tính sản phẩm
+    public class ProductAttributeViewModel
+    {
+        public int AttributeID { get; set; }
+        
+        [Required(ErrorMessage = "Vui lòng chọn sản phẩm")]
+        public int ProductID { get; set; }
+        
+        [Required(ErrorMessage = "Vui lòng nhập kích thước")]
+        [StringLength(10, ErrorMessage = "Kích thước không được vượt quá 10 ký tự")]
+        public string Size { get; set; } = string.Empty;
+        
+        [Required(ErrorMessage = "Vui lòng nhập màu sắc")]
+        [StringLength(50, ErrorMessage = "Màu sắc không được vượt quá 50 ký tự")]
+        public string Color { get; set; } = string.Empty;
+        
+        [Required(ErrorMessage = "Vui lòng nhập số lượng tồn kho")]
+        [Range(0, int.MaxValue, ErrorMessage = "Số lượng tồn kho không được âm")]
+        public int Stock { get; set; }
+        
+        [Range(0.01, double.MaxValue, ErrorMessage = "Giá phải lớn hơn 0")]
+        public decimal? Price { get; set; }
+        
+        public IFormFile? ImageFile { get; set; }
+        public string? CurrentImageURL { get; set; }
     }
 
     // ViewModel cho trang danh sách sản phẩm (Public)

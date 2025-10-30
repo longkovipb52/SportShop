@@ -24,41 +24,11 @@
 }
 
 .reports-container {
-    padding: 0;
-}
-
-/* Header Section */
-.reports-header {
     background: linear-gradient(135deg, var(--reports-primary) 0%, var(--reports-purple) 100%);
     padding: 2rem;
-    margin: -2rem -2rem 2rem -2rem;
-    color: var(--reports-white);
-    border-radius: 0 0 var(--reports-border-radius) var(--reports-border-radius);
-}
-
-.page-title-section {
     margin-bottom: 2rem;
-}
-
-.page-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.page-title i {
-    font-size: 2rem;
-    opacity: 0.9;
-}
-
-.page-subtitle {
-    font-size: 1.1rem;
-    margin: 0.5rem 0 0 0;
-    opacity: 0.9;
-    font-weight: 400;
+    border-radius: var(--reports-border-radius);
+    box-shadow: var(--reports-box-shadow);
 }
 
 /* Filter Section */
@@ -140,7 +110,6 @@
 .filter-actions {
     display: flex;
     gap: 0.75rem;
-    margin-left: auto;
 }
 
 .filter-actions .btn {
@@ -184,7 +153,7 @@
 /* Overview Cards */
 .overview-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -197,7 +166,8 @@
     border-left: 4px solid;
     transition: var(--reports-transition);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    min-height: 140px;
 }
 
 .overview-card:hover {
@@ -215,6 +185,7 @@
     background: linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.1) 100%);
     border-radius: 50%;
     transform: translateX(30px) translateY(-30px);
+    z-index: 1;
 }
 
 .revenue-card {
@@ -249,6 +220,8 @@
     font-size: 2rem;
     color: var(--reports-white);
     flex-shrink: 0;
+    position: relative;
+    z-index: 2;
 }
 
 .revenue-card .card-icon {
@@ -269,23 +242,40 @@
 
 .card-content {
     flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 2;
 }
 
 .card-value {
-    font-size: 2.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--reports-gray-700);
     margin: 0 0 0.5rem 0;
-    line-height: 1;
+    line-height: 1.2;
+    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Đặc biệt cho revenue card - cho phép xuống dòng */
+.revenue-card .card-value {
+    font-size: 1.5rem;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.3;
 }
 
 .card-label {
-    font-size: 1rem;
+    font-size: 0.875rem;
     color: var(--reports-gray-600);
     margin: 0 0 0.75rem 0;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    line-height: 1.4;
 }
 
 .card-change {
@@ -604,7 +594,7 @@
     }
     
     .overview-cards {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: 1fr;
     }
     
     .table-header {

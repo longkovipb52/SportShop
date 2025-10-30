@@ -8,76 +8,76 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 }
 
+<!-- Reports Header with Filters -->
 <div class="reports-container">
-        <!-- Filter Section -->
-        <div class="reports-filters">
-            <form id="reportsFilterForm" class="filter-form">
-                <div class="filter-group">
-                    <label for="dateRange">Khoảng thời gian:</label>
-                    <div class="date-range-wrapper">
-                        <input type="text" id="dateRange" name="dateRange" 
-                               value="@Model.Filter.StartDate?.ToString("dd/MM/yyyy") - @Model.Filter.EndDate?.ToString("dd/MM/yyyy")"
-                               class="form-control date-range-picker" readonly>
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
+    <div class="reports-filters">
+        <form id="reportsFilterForm" class="filter-form">
+            <div class="filter-group">
+                <label for="dateRange">Khoảng thời gian:</label>
+                <div class="date-range-wrapper">
+                    <input type="text" id="dateRange" name="dateRange" 
+                           value="@Model.Filter.StartDate?.ToString("dd/MM/yyyy") - @Model.Filter.EndDate?.ToString("dd/MM/yyyy")"
+                           class="form-control date-range-picker" readonly>
+                    <i class="fas fa-calendar-alt"></i>
                 </div>
+            </div>
 
-                <div class="filter-group">
-                    <label for="period">Chu kỳ:</label>
-                    <select id="period" name="period" class="form-select">
-                        <option value="day" selected="@(Model.Filter.Period == "day")">Theo ngày</option>
-                        <option value="week" selected="@(Model.Filter.Period == "week")">Theo tuần</option>
-                        <option value="month" selected="@(Model.Filter.Period == "month")">Theo tháng</option>
-                        <option value="quarter" selected="@(Model.Filter.Period == "quarter")">Theo quý</option>
-                        <option value="year" selected="@(Model.Filter.Period == "year")">Theo năm</option>
-                    </select>
-                </div>
+            <div class="filter-group">
+                <label for="period">Chu kỳ:</label>
+                <select id="period" name="period" class="form-select">
+                    <option value="day" selected="@(Model.Filter.Period == "day")">Theo ngày</option>
+                    <option value="week" selected="@(Model.Filter.Period == "week")">Theo tuần</option>
+                    <option value="month" selected="@(Model.Filter.Period == "month")">Theo tháng</option>
+                    <option value="quarter" selected="@(Model.Filter.Period == "quarter")">Theo quý</option>
+                    <option value="year" selected="@(Model.Filter.Period == "year")">Theo năm</option>
+                </select>
+            </div>
 
-                <div class="filter-group">
-                    <label for="categoryFilter">Danh mục:</label>
-                    <select id="categoryFilter" name="categoryID" class="form-select">
-                        <option value="">Tất cả danh mục</option>
-                        @foreach (var category in Model.Categories)
-                        {
-                            <option value="@category.CategoryID" selected="@(Model.Filter.CategoryID == category.CategoryID)">
-                                @category.Name
-                            </option>
-                        }
-                    </select>
-                </div>
+            <div class="filter-group">
+                <label for="categoryFilter">Danh mục:</label>
+                <select id="categoryFilter" name="categoryID" class="form-select">
+                    <option value="">Tất cả danh mục</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category.CategoryID" selected="@(Model.Filter.CategoryID == category.CategoryID)">
+                            @category.Name
+                        </option>
+                    }
+                </select>
+            </div>
 
-                <div class="filter-group">
-                    <label for="brandFilter">Thương hiệu:</label>
-                    <select id="brandFilter" name="brandID" class="form-select">
-                        <option value="">Tất cả thương hiệu</option>
-                        @foreach (var brand in Model.Brands)
-                        {
-                            <option value="@brand.BrandID" selected="@(Model.Filter.BrandID == brand.BrandID)">
-                                @brand.Name
-                            </option>
-                        }
-                    </select>
-                </div>
+            <div class="filter-group">
+                <label for="brandFilter">Thương hiệu:</label>
+                <select id="brandFilter" name="brandID" class="form-select">
+                    <option value="">Tất cả thương hiệu</option>
+                    @foreach (var brand in Model.Brands)
+                    {
+                        <option value="@brand.BrandID" selected="@(Model.Filter.BrandID == brand.BrandID)">
+                            @brand.Name
+                        </option>
+                    }
+                </select>
+            </div>
 
-                <div class="filter-actions">
-                    <button type="button" id="applyFilter" class="btn btn-primary">
-                        <i class="fas fa-filter"></i>
-                        Áp dụng
-                    </button>
-                    <button type="button" id="exportReport" class="btn btn-success">
-                        <i class="fas fa-download"></i>
-                        Xuất báo cáo
-                    </button>
-                    <button type="button" id="refreshData" class="btn btn-outline-secondary">
-                        <i class="fas fa-sync-alt"></i>
-                        Làm mới
-                    </button>
-                </div>
-            </form>
-        </div>
+            <div class="filter-actions">
+                <button type="button" id="applyFilter" class="btn btn-primary">
+                    <i class="fas fa-filter"></i>
+                    Áp dụng
+                </button>
+                <button type="button" id="exportReport" class="btn btn-success">
+                    <i class="fas fa-download"></i>
+                    Xuất báo cáo
+                </button>
+                <button type="button" id="refreshData" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync-alt"></i>
+                    Làm mới
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Overview Cards -->
+<!-- Overview Cards -->
     <div class="overview-cards">
         <div class="overview-card revenue-card">
             <div class="card-icon">
@@ -231,8 +231,19 @@
                                     <td>@(i + 1)</td>
                                     <td>
                                         <div class="product-info">
-                                            <img src="@(string.IsNullOrEmpty(product.ImageURL) ? "/image/product-placeholder.png" : "/upload/product/" + product.ImageURL)" 
-                                                 alt="@product.ProductName" class="product-image">
+                                            @{
+                                                var imageUrl = "/upload/product/no-image.svg";
+                                                if (!string.IsNullOrEmpty(product.ImageURL))
+                                                {
+                                                    imageUrl = product.ImageURL.StartsWith("/") || product.ImageURL.StartsWith("~") 
+                                                        ? product.ImageURL 
+                                                        : $"/upload/product/{product.ImageURL}";
+                                                }
+                                            }
+                                            <img src="@imageUrl" 
+                                                 alt="@product.ProductName" 
+                                                 class="product-image"
+                                                 onerror="this.src='/upload/product/no-image.svg'">
                                             <div class="product-details">
                                                 <strong>@product.ProductName</strong>
                                                 <small class="text-muted">@product.Price.ToString("#,##0") VNĐ</small>

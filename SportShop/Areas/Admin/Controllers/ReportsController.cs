@@ -315,11 +315,11 @@ namespace SportShop.Areas.Admin.Controllers
                 .Select(g => new ProductSalesReportDTO
                 {
                     ProductID = g.Key.ProductID,
-                    ProductName = g.Key.ProductName,
-                    CategoryName = g.Key.CategoryName,
-                    BrandName = g.Key.BrandName,
+                    ProductName = g.Key.ProductName ?? "Không xác định",
+                    CategoryName = g.Key.CategoryName ?? "Không xác định",
+                    BrandName = g.Key.BrandName ?? "Không xác định",
                     Price = g.Key.Price,
-                    ImageURL = g.Key.ImageURL,
+                    ImageURL = !string.IsNullOrEmpty(g.Key.ImageURL) ? g.Key.ImageURL : "/upload/product/no-image.svg",
                     QuantitySold = g.Sum(x => x.oi.Quantity),
                     Revenue = g.Sum(x => x.oi.Quantity * x.oi.UnitPrice),
                     OrderCount = g.Count()
@@ -332,7 +332,7 @@ namespace SportShop.Areas.Admin.Controllers
             foreach (var product in productSales)
             {
                 var reviews = await _context.Reviews
-                    .Where(r => r.ProductID == product.ProductID && r.Status == "Approved")
+                    .Where(r => r.ProductID == product.ProductID && r.Status == "Đã duyệt")
                     .Select(r => r.Rating)
                     .ToListAsync();
 
@@ -340,6 +340,11 @@ namespace SportShop.Areas.Admin.Controllers
                 {
                     product.AverageRating = (decimal)reviews.Average()!;
                     product.ReviewCount = reviews.Count;
+                }
+                else
+                {
+                    product.AverageRating = 0;
+                    product.ReviewCount = 0;
                 }
             }
 

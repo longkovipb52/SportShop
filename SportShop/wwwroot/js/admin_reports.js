@@ -602,22 +602,32 @@ class ReportsManager {
 
     createProductRow(product, index) {
         const stars = this.generateStars(product.averageRating);
-        const imageUrl = product.imageURL ? `/upload/${product.imageURL}` : '/image/default-product.png';
+        
+        // Smart image URL handling
+        let imageUrl = '/upload/product/no-image.svg';
+        if (product.imageURL) {
+            imageUrl = product.imageURL.startsWith('/') || product.imageURL.startsWith('~') 
+                ? product.imageURL 
+                : `/upload/product/${product.imageURL}`;
+        }
         
         return `
             <tr class="fade-in-up">
                 <td>${index}</td>
                 <td>
                     <div class="product-info">
-                        <img src="${imageUrl}" alt="${product.productName}" class="product-image">
+                        <img src="${imageUrl}" 
+                             alt="${product.productName}" 
+                             class="product-image"
+                             onerror="this.src='/upload/product/no-image.svg'">
                         <div class="product-details">
-                            <strong>${product.productName}</strong>
+                            <strong>${product.productName || 'Không xác định'}</strong>
                             <small class="text-muted">${this.formatCurrency(product.price)}</small>
                         </div>
                     </div>
                 </td>
-                <td>${product.categoryName}</td>
-                <td>${product.brandName}</td>
+                <td>${product.categoryName || 'Không xác định'}</td>
+                <td>${product.brandName || 'Không xác định'}</td>
                 <td><span class="badge bg-primary">${product.quantitySold}</span></td>
                 <td><strong class="text-success">${this.formatCurrency(product.revenue)}</strong></td>
                 <td>

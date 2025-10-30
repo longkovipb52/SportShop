@@ -1,4 +1,3 @@
-
 /* Admin Brands CSS */
 :root {
     --brands-primary: #667eea;
@@ -566,7 +565,7 @@
 }
 
 .brand-name {
-    font-size: 2.5rem;
+    font-size: 1.75rem; /* Giảm từ 2.5rem xuống 1.75rem */
     font-weight: 700;
     color: #2c3e50;
     margin: 0 0 1rem 0;

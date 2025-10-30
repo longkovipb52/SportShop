@@ -1,4 +1,3 @@
-
 .categories-container,
 .category-form-container,
 .category-details-container {
@@ -506,10 +505,11 @@
 }
 
 .category-name {
-    font-size: 2.5rem;
+    font-size: 1.75rem; /* Giảm từ 2.5rem xuống 1.75rem */
     font-weight: 700;
-    color: #2d3748;
-    margin-bottom: 0.75rem;
+    color: #2c3e50;
+    margin: 0 0 1rem 0;
+    line-height: 1.2;
 }
 
 .category-meta {

@@ -473,7 +473,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/toast-notification.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/script.js" asp-append-version="true"></script>
+    <script src="~/js/chatbot-ai.js" asp-append-version="true"></script>
     <script src="~/js/voucher.js" asp-append-version="true"></script>
     <script src="~/js/voice-search.js" asp-append-version="true"></script>
     
@@ -483,19 +483,28 @@
             const form = button.closest('form');
             const input = form.querySelector('.search-input');
             const clearBtn = form.querySelector('.btn-clear');
+            const suggestionsContainer = form.querySelector('.search-suggestions');
             
             input.value = '';
             clearBtn.classList.add('d-none');
+            if (suggestionsContainer) {
+                suggestionsContainer.classList.add('d-none');
+            }
             input.focus();
         }
         
         // Show/hide clear button based on input content
         document.addEventListener('DOMContentLoaded', function() {
             const searchInputs = document.querySelectorAll('.search-input');
+            let searchTimeout;
             
             searchInputs.forEach(input => {
                 const form = input.closest('form');
                 const clearBtn = form.querySelector('.btn-clear');
+                const suggestionsContainer = form.querySelector('.search-suggestions');
+                const suggestionsList = form.querySelector('.suggestions-list');
+                const suggestionsLoading = form.querySelector('.suggestions-loading');
+                const suggestionsEmpty = form.querySelector('.suggestions-empty');
                 
                 if (clearBtn) {
                     // Show/hide clear button based on input value
@@ -513,6 +522,91 @@
                     // Check on input
                     input.addEventListener('input', toggleClearButton);
                     input.addEventListener('keyup', toggleClearButton);
+                }
+                
+                // Search suggestions functionality
+                if (suggestionsContainer && suggestionsList) {
+                    input.addEventListener('input', function() {
+                        const searchTerm = input.value.trim();
+                        
+                        // Clear previous timeout
+                        clearTimeout(searchTimeout);
+                        
+                        // Hide suggestions if search term is less than 2 characters
+                        if (searchTerm.length < 2) {
+                            suggestionsContainer.classList.add('d-none');
+                            return;
+                        }
+                        
+                        // Show loading state
+                        suggestionsContainer.classList.remove('d-none');
+                        suggestionsList.innerHTML = '';
+                        suggestionsLoading.classList.remove('d-none');
+                        suggestionsEmpty.classList.add('d-none');
+                        
+                        // Debounce search (wait 300ms after user stops typing)
+                        searchTimeout = setTimeout(async () => {
+                            try {
+                                const response = await fetch(`/Product/SearchSuggestions?term=${encodeURIComponent(searchTerm)}&limit=5`);
+                                const data = await response.json();
+                                
+                                // Hide loading
+                                suggestionsLoading.classList.add('d-none');
+                                
+                                if (data.success && data.suggestions && data.suggestions.length > 0) {
+                                    // Display suggestions
+                                    suggestionsList.innerHTML = data.suggestions.map(product => `
+                                        <a href="/Product?openModal=${product.id}" class="suggestion-item" data-product-id="${product.id}">
+                                            <div class="d-flex align-items-center">
+                                                <img src="${product.imageUrl}" alt="${product.name}" class="suggestion-img">
+                                                <div class="flex-grow-1 ms-2">
+                                                    <div class="suggestion-name">${product.name}</div>
+                                                    <div class="suggestion-meta">
+                                                        <small class="text-muted">${product.categoryName} - ${product.brandName}</small>
+                                                    </div>
+                                                    <div class="suggestion-price text-danger fw-bold">
+                                                        ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    `).join('');
+                                    suggestionsEmpty.classList.add('d-none');
+                                } else {
+                                    // Show empty state
+                                    suggestionsList.innerHTML = '';
+                                    suggestionsEmpty.classList.remove('d-none');
+                                }
+                            } catch (error) {
+                                console.error('Error fetching search suggestions:', error);
+                                suggestionsLoading.classList.add('d-none');
+                                suggestionsList.innerHTML = '';
+                                suggestionsEmpty.classList.remove('d-none');
+                            }
+                        }, 300);
+                    });
+                    
+                    // Hide suggestions when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (!form.contains(e.target)) {
+                            suggestionsContainer.classList.add('d-none');
+                        }
+                    });
+                    
+                    // Show suggestions again when clicking on input (if it has value)
+                    input.addEventListener('focus', function() {
+                        if (input.value.trim().length >= 2 && suggestionsList.innerHTML.trim() !== '') {
+                            suggestionsContainer.classList.remove('d-none');
+                        }
+                    });
+                    
+                    // Prevent form submission when clicking on suggestions
+                    suggestionsContainer.addEventListener('click', function(e) {
+                        if (e.target.closest('.suggestion-item')) {
+                            // Let the link navigate normally
+                            return;
+                        }
+                    });
                 }
             });
         });

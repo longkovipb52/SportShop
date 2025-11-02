@@ -500,11 +500,28 @@
             const urlParams = new URLSearchParams(window.location.search);
             const openModalProductId = urlParams.get('openModal');
             
-            if (openModalProductId && typeof openQuickViewModal === 'function') {
-                console.log('Auto-opening modal for product:', openModalProductId);
+            if (openModalProductId) {
+                console.log('Found openModal parameter:', openModalProductId);
+                
+                // Wait for modal to be ready, then open it
+                const waitForModal = setInterval(function() {
+                    const modalElement = document.getElementById('quickViewModal');
+                    if (modalElement && typeof window.openQuickViewModal === 'function') {
+                        console.log('Modal is ready, opening for product:', openModalProductId);
+                        clearInterval(waitForModal);
+                        
+                        // Small delay to ensure Bootstrap is initialized
+                        setTimeout(() => {
+                            window.openQuickViewModal(openModalProductId);
+                        }, 300);
+                    }
+                }, 100); // Check every 100ms
+                
+                // Timeout after 5 seconds
                 setTimeout(() => {
-                    openQuickViewModal(openModalProductId);
-                }, 500); // Small delay to ensure page is fully loaded
+                    clearInterval(waitForModal);
+                    console.log('Timeout waiting for modal');
+                }, 5000);
             }
             
             // Test when modal is shown

@@ -52,6 +52,9 @@ builder.Services.AddScoped<VnPayServiceNew>();
 // Thêm Voucher Service
 builder.Services.AddScoped<VoucherService>();
 
+// Thêm Chatbot Service
+builder.Services.AddScoped<ChatbotService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

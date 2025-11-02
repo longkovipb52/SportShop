@@ -3,7 +3,7 @@
     ViewData["Title"] = "Giỏ hàng của bạn";
     ViewData["CustomCSS"] = "cart.css";
     decimal subtotal = Model.Sum(item => item.TotalPrice);
-    decimal shippingFee = subtotal > 0 ? 15000M : 0;
+    decimal shippingFee = 0; // Miễn phí vận chuyển
     decimal total = subtotal + shippingFee;
 }
 
@@ -126,7 +126,7 @@
                             </div>
                             <div class="d-flex justify-content-between mb-3">
                                 <span>Phí vận chuyển</span>
-                                <span class="fw-medium shipping-fee">@string.Format("{0:N0}đ", shippingFee)</span>
+                                <span class="fw-medium shipping-fee text-success">Miễn phí</span>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between mb-4">
@@ -453,11 +453,11 @@
         function updateCartTotals(subtotal) {
             const subtotalElement = document.querySelector('.cart-subtotal');
             const totalElement = document.querySelector('.cart-total');
-            const shippingFee = subtotal > 0 ? 15000 : 0;
+            const shippingFee = 0; // Miễn phí vận chuyển
             const total = subtotal + shippingFee;
             
             subtotalElement.textContent = formatCurrency(subtotal);
-            document.querySelector('.shipping-fee').textContent = formatCurrency(shippingFee);
+            document.querySelector('.shipping-fee').textContent = 'Miễn phí';
             totalElement.textContent = formatCurrency(total);
         }
 

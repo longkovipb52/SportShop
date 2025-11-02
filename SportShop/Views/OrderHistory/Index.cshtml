@@ -260,22 +260,29 @@
                                    class="btn btn-outline-primary">
                                     <i class="fas fa-eye me-1"></i>Xem chi tiết
                                 </a>
+                                
+                                @* Cancel button - Only show for Pending orders *@
+                                @if (order.Status == "Pending" || order.Status == "Chờ xử lý" || order.StatusDisplay == "Chờ xử lý")
+                                {
+                                    <button type="button" 
+                                            class="btn btn-outline-danger cancel-order-btn" 
+                                            data-order-id="@order.OrderID">
+                                        <i class="fas fa-times-circle me-1"></i>Hủy đơn hàng
+                                    </button>
+                                }
+                                
                                 @if (order.Status == "Completed" || order.Status == "Hoàn thành" || order.StatusDisplay == "Hoàn thành")
                                 {
                                     <a href="@Url.Action("Print", new { id = order.OrderID })" 
                                        class="btn btn-outline-secondary" target="_blank">
                                         <i class="fas fa-print me-1"></i>In hóa đơn
                                     </a>
-                                    @foreach (var item in order.Items)
-                                    {
-                                        <button type="button" 
-                                                class="btn btn-outline-success review-btn" 
-                                                data-order-id="@order.OrderID"
-                                                data-product-id="@item.ProductID"
-                                                data-product-name="@item.ProductName">
-                                            <i class="fas fa-star me-1"></i><span class="review-btn-text">Đánh giá</span>
-                                        </button>
-                                    }
+                                    <button type="button" 
+                                            class="btn btn-outline-success review-order-btn" 
+                                            data-order-id="@order.OrderID"
+                                            data-order-items='@System.Text.Json.JsonSerializer.Serialize(order.Items.Select(i => new { i.ProductID, i.ProductName, i.ProductImage }).ToList())'>
+                                        <i class="fas fa-star me-1"></i>Đánh giá đơn hàng
+                                    </button>
                                 }
                             </div>
                         </div>
@@ -341,6 +348,73 @@
         }
     </div>
 </section>
+
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelOrderModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Xác nhận hủy đơn hàng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelOrderForm">
+                    <input type="hidden" id="cancelOrderId" name="orderId">
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Lưu ý:</strong> Bạn sắp hủy đơn hàng này. Hành động này không thể hoàn tác.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cancelReason" class="form-label">
+                            Lý do hủy đơn hàng <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" 
+                                  id="cancelReason" 
+                                  name="cancelReason" 
+                                  rows="4" 
+                                  placeholder="Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn hàng..."
+                                  required
+                                  maxlength="500"></textarea>
+                        <small class="text-muted">Tối đa 500 ký tự</small>
+                    </div>
+                    
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Đóng
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-check me-1"></i>Xác nhận hủy
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Product Selection Modal -->
+<div class="modal fade" id="productSelectionModal" tabindex="-1" aria-labelledby="productSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content product-selection-modal-content">
+            <div class="modal-header product-selection-modal-header">
+                <h5 class="modal-title" id="productSelectionModalLabel">
+                    <i class="fas fa-star me-2"></i>Chọn sản phẩm để đánh giá
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body product-selection-modal-body">
+                <p class="text-muted mb-3">Vui lòng chọn sản phẩm bạn muốn đánh giá:</p>
+                <div id="productSelectionList" class="product-selection-list">
+                    <!-- Products will be loaded here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Review Modal -->
 <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
@@ -426,6 +500,85 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     
     <script>
+        // Show product selection modal
+        async function showProductSelectionModal(orderId, products) {
+            const productList = document.getElementById('productSelectionList');
+            productList.innerHTML = '';
+            
+            // Load review status for each product
+            for (const product of products) {
+                try {
+                    const response = await fetch(`@Url.Action("GetReview", "OrderHistory")?orderId=${orderId}&productId=${product.ProductID}`);
+                    const result = await response.json();
+                    
+                    const productItem = document.createElement('div');
+                    productItem.className = 'product-selection-item';
+                    
+                    const hasReview = result.success;
+                    const canEdit = hasReview && result.canEdit;
+                    
+                    productItem.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <img src="/upload/product/${product.ProductImage}" 
+                                 alt="${product.ProductName}" 
+                                 class="product-thumb me-3"
+                                 onerror="this.src='/image/loading-placeholder.png'">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${product.ProductName}</h6>
+                                ${hasReview ? `
+                                    <small class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Đã đánh giá ${result.rating} <i class="fas fa-star text-warning"></i>
+                                        ${canEdit ? ' - Có thể chỉnh sửa' : ' - Không thể chỉnh sửa'}
+                                    </small>
+                                ` : `
+                                    <small class="text-muted">
+                                        <i class="far fa-star me-1"></i>Chưa đánh giá
+                                    </small>
+                                `}
+                            </div>
+                            <button class="btn ${hasReview ? (canEdit ? 'btn-outline-primary' : 'btn-outline-secondary') : 'btn-primary'} btn-sm select-product-btn"
+                                    data-order-id="${orderId}"
+                                    data-product-id="${product.ProductID}"
+                                    data-product-name="${product.ProductName}"
+                                    data-has-review="${hasReview}"
+                                    ${!hasReview || canEdit ? '' : 'disabled'}>
+                                <i class="fas ${hasReview ? 'fa-edit' : 'fa-star'} me-1"></i>
+                                ${hasReview ? (canEdit ? 'Chỉnh sửa' : 'Đã đánh giá') : 'Đánh giá'}
+                            </button>
+                        </div>
+                    `;
+                    
+                    productList.appendChild(productItem);
+                } catch (error) {
+                    console.error('Error loading review status:', error);
+                }
+            }
+            
+            // Add click handlers to select buttons
+            document.querySelectorAll('.select-product-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const orderId = this.getAttribute('data-order-id');
+                    const productId = this.getAttribute('data-product-id');
+                    const productName = this.getAttribute('data-product-name');
+                    const hasReview = this.getAttribute('data-has-review') === 'true';
+                    
+                    // Close selection modal
+                    const selectionModal = bootstrap.Modal.getInstance(document.getElementById('productSelectionModal'));
+                    selectionModal.hide();
+                    
+                    // Open review modal
+                    setTimeout(() => {
+                        openReviewModal(orderId, productName, productId, hasReview);
+                    }, 300);
+                });
+            });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('productSelectionModal'));
+            modal.show();
+        }
+
         // Review Modal Functions
         async function openReviewModal(orderId, productName, productId, isEdit = false) {
             document.getElementById('reviewOrderId').value = orderId;
@@ -527,7 +680,102 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize review buttons with check for existing reviews
+            // Handle cancel order button
+            document.querySelectorAll('.cancel-order-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const orderId = this.getAttribute('data-order-id');
+                    document.getElementById('cancelOrderId').value = orderId;
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+                    modal.show();
+                });
+            });
+
+            // Handle cancel order form submission
+            document.getElementById('cancelOrderForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const orderId = document.getElementById('cancelOrderId').value;
+                const cancelReason = document.getElementById('cancelReason').value.trim();
+                
+                if (!cancelReason) {
+                    alert('Vui lòng nhập lý do hủy đơn hàng!');
+                    return;
+                }
+                
+                // Show loading
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xử lý...';
+                submitBtn.disabled = true;
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('orderId', orderId);
+                    formData.append('cancelReason', cancelReason);
+                    
+                    const response = await fetch('@Url.Action("CancelOrder", "OrderHistory")', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal'));
+                        modal.hide();
+                        
+                        // Show success message
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success alert-dismissible fade show animate__animated animate__bounceIn';
+                        alertDiv.innerHTML = `
+                            <i class="fas fa-check-circle me-2"></i>${result.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        `;
+                        document.querySelector('.order-content .container').insertBefore(
+                            alertDiv, 
+                            document.querySelector('.order-content .container').firstChild
+                        );
+                        
+                        // Reload page after 2 seconds
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        alert(result.message || 'Có lỗi xảy ra. Vui lòng thử lại!');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+
+            // Reset cancel modal when closed
+            const cancelModal = document.getElementById('cancelOrderModal');
+            if (cancelModal) {
+                cancelModal.addEventListener('hidden.bs.modal', function() {
+                    document.getElementById('cancelOrderForm').reset();
+                });
+            }
+
+            // Handle review order button (new approach - single button)
+            document.querySelectorAll('.review-order-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const orderId = this.getAttribute('data-order-id');
+                    const orderItems = JSON.parse(this.getAttribute('data-order-items'));
+                    
+                    showProductSelectionModal(orderId, orderItems);
+                });
+            });
+
+            // Initialize review buttons with check for existing reviews (legacy support)
             document.querySelectorAll('.review-btn').forEach(btn => {
                 const orderId = btn.getAttribute('data-order-id');
                 const productId = btn.getAttribute('data-product-id');

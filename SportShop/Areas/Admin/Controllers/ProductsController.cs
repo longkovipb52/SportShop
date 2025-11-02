@@ -484,6 +484,27 @@ namespace SportShop.Areas.Admin.Controllers
                     return Json(new { success = false, message = string.Join(", ", errors) });
                 }
 
+                // Get product to check stock limit
+                var product = await _context.Products.FindAsync(model.ProductID);
+                if (product == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy sản phẩm" });
+                }
+
+                // Check total stock of existing attributes
+                var existingAttributesStock = await _context.ProductAttributes
+                    .Where(a => a.ProductID == model.ProductID)
+                    .SumAsync(a => a.Stock);
+
+                // Check if new stock would exceed product stock
+                if (existingAttributesStock + model.Stock > product.Stock)
+                {
+                    return Json(new { 
+                        success = false, 
+                        message = $"Tổng tồn kho thuộc tính ({existingAttributesStock + model.Stock}) không được vượt quá tồn kho sản phẩm ({product.Stock}). Hiện tại đã phân bổ {existingAttributesStock}, còn lại {product.Stock - existingAttributesStock}" 
+                    });
+                }
+
                 // Check if combination already exists
                 var exists = await _context.ProductAttributes
                     .AnyAsync(a => a.ProductID == model.ProductID && 
@@ -549,6 +570,27 @@ namespace SportShop.Areas.Admin.Controllers
                 if (attribute == null)
                 {
                     return Json(new { success = false, message = "Không tìm thấy thuộc tính" });
+                }
+
+                // Get product to check stock limit
+                var product = await _context.Products.FindAsync(model.ProductID);
+                if (product == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy sản phẩm" });
+                }
+
+                // Check total stock of existing attributes (excluding current one being updated)
+                var existingAttributesStock = await _context.ProductAttributes
+                    .Where(a => a.ProductID == model.ProductID && a.AttributeID != model.AttributeID)
+                    .SumAsync(a => a.Stock);
+
+                // Check if new stock would exceed product stock
+                if (existingAttributesStock + model.Stock > product.Stock)
+                {
+                    return Json(new { 
+                        success = false, 
+                        message = $"Tổng tồn kho thuộc tính ({existingAttributesStock + model.Stock}) không được vượt quá tồn kho sản phẩm ({product.Stock}). Các thuộc tính khác đã phân bổ {existingAttributesStock}, còn lại {product.Stock - existingAttributesStock}" 
+                    });
                 }
 
                 // Check if new combination already exists (excluding current record)

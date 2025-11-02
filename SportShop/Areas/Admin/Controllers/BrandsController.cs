@@ -86,50 +86,55 @@ namespace SportShop.Areas.Admin.Controllers
             // Remove Products from validation since it's not required for creation
             ModelState.Remove("Products");
             
-            if (ModelState.IsValid)
+            // Debug: Log ModelState errors
+            if (!ModelState.IsValid)
             {
-                try
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                TempData["ErrorMessage"] = "Dữ liệu không hợp lệ: " + string.Join(", ", errors);
+                ViewData["Title"] = "Thêm thương hiệu mới";
+                return View(brand);
+            }
+            
+            try
+            {
+                // Xử lý upload logo
+                if (logoFile != null && logoFile.Length > 0)
                 {
-                    // Xử lý upload logo
-                    if (logoFile != null && logoFile.Length > 0)
+                    // Validate file type and size
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var fileExtension = Path.GetExtension(logoFile.FileName).ToLowerInvariant();
+                    
+                    if (!allowedExtensions.Contains(fileExtension))
                     {
-                        // Validate file type and size
-                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-                        var fileExtension = Path.GetExtension(logoFile.FileName).ToLowerInvariant();
-                        
-                        if (!allowedExtensions.Contains(fileExtension))
-                        {
-                            TempData["ErrorMessage"] = "Chỉ chấp nhận file hình ảnh (JPG, PNG, GIF)";
-                            ViewData["Title"] = "Thêm thương hiệu mới";
-                            return View(brand);
-                        }
-                        
-                        if (logoFile.Length > 5 * 1024 * 1024) // 5MB
-                        {
-                            TempData["ErrorMessage"] = "Kích thước file không được vượt quá 5MB";
-                            ViewData["Title"] = "Thêm thương hiệu mới";
-                            return View(brand);
-                        }
-
-                        var fileName = await SaveLogoAsync(logoFile);
-                        brand.Logo = fileName;
+                        TempData["ErrorMessage"] = "Chỉ chấp nhận file hình ảnh (JPG, PNG, GIF)";
+                        ViewData["Title"] = "Thêm thương hiệu mới";
+                        return View(brand);
+                    }
+                    
+                    if (logoFile.Length > 5 * 1024 * 1024) // 5MB
+                    {
+                        TempData["ErrorMessage"] = "Kích thước file không được vượt quá 5MB";
+                        ViewData["Title"] = "Thêm thương hiệu mới";
+                        return View(brand);
                     }
 
-                    brand.CreatedAt = DateTime.Now;
-                    _context.Add(brand);
-                    await _context.SaveChangesAsync();
-                    
-                    TempData["SuccessMessage"] = "Thêm thương hiệu thành công!";
-                    return RedirectToAction(nameof(Index));
+                    var fileName = await SaveLogoAsync(logoFile);
+                    brand.Logo = fileName;
                 }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = $"Có lỗi xảy ra: {ex.Message}";
-                }
-            }
 
-            ViewData["Title"] = "Thêm thương hiệu mới";
-            return View(brand);
+                brand.CreatedAt = DateTime.Now;
+                _context.Add(brand);
+                await _context.SaveChangesAsync();
+                
+                TempData["SuccessMessage"] = "Thêm thương hiệu thành công!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Có lỗi xảy ra: {ex.Message}";
+                ViewData["Title"] = "Thêm thương hiệu mới";
+                return View(brand);
+            }
         }
 
         // GET: Admin/Brands/Edit/5

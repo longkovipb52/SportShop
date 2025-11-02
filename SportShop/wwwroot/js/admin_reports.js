@@ -66,14 +66,26 @@ class ReportsManager {
 
     getFilterValues() {
         const dateRange = $('#dateRange').val().split(' - ');
-        return {
+        const filters = {
             startDate: moment(dateRange[0], 'DD/MM/YYYY').format('YYYY-MM-DD'),
             endDate: moment(dateRange[1], 'DD/MM/YYYY').format('YYYY-MM-DD'),
             period: $('#period').val(),
-            categoryID: $('#categoryFilter').val() || null,
-            brandID: $('#brandFilter').val() || null,
             pageSize: 10
         };
+        
+        // Only add categoryID and brandID if they have values
+        const categoryID = $('#categoryFilter').val();
+        const brandID = $('#brandFilter').val();
+        
+        if (categoryID) {
+            filters.categoryID = categoryID;
+        }
+        
+        if (brandID) {
+            filters.brandID = brandID;
+        }
+        
+        return filters;
     }
 
     // Charts Initialization
@@ -435,6 +447,7 @@ class ReportsManager {
     // Apply Filters
     applyFilters() {
         this.filters = this.getFilterValues();
+        console.log('Applying filters:', this.filters);
         this.loadReportsData(true); // Pass true to indicate this is from filter apply
     }
 
@@ -454,6 +467,8 @@ class ReportsManager {
         this.showLoadingState();
 
         try {
+            console.log('Loading reports data with filters:', this.filters);
+            
             // Load all data in parallel
             const [revenueData, productData, customerData, paymentData, overviewData] = await Promise.all([
                 this.loadRevenueData(),
@@ -462,6 +477,8 @@ class ReportsManager {
                 this.loadPaymentData(),
                 this.loadOverviewData()
             ]);
+
+            console.log('Received data:', { revenueData, productData, customerData, paymentData, overviewData });
 
             // Update charts
             this.updateRevenueChart(revenueData.data);
@@ -497,7 +514,11 @@ class ReportsManager {
     // Load Revenue Data
     async loadRevenueData() {
         const response = await fetch('/Admin/Reports/GetRevenueData?' + new URLSearchParams(this.filters));
-        return await response.json();
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error('Failed to load revenue data');
+        }
+        return result;
     }
 
     // Load Product Data
@@ -505,25 +526,41 @@ class ReportsManager {
         const limit = $('#productChartLimit').val();
         const params = { ...this.filters, pageSize: limit };
         const response = await fetch('/Admin/Reports/GetProductData?' + new URLSearchParams(params));
-        return await response.json();
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error('Failed to load product data');
+        }
+        return result;
     }
 
     // Load Customer Data
     async loadCustomerData() {
         const response = await fetch('/Admin/Reports/GetCustomerData?' + new URLSearchParams(this.filters));
-        return await response.json();
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error('Failed to load customer data');
+        }
+        return result;
     }
 
     // Load Payment Data
     async loadPaymentData() {
         const response = await fetch('/Admin/Reports/GetPaymentData?' + new URLSearchParams(this.filters));
-        return await response.json();
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error('Failed to load payment data');
+        }
+        return result;
     }
 
     // Load Overview Data
     async loadOverviewData() {
-        const response = await fetch('/Admin/Reports/GetOverviewData');
-        return await response.json();
+        const response = await fetch('/Admin/Reports/GetOverviewData?' + new URLSearchParams(this.filters));
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error('Failed to load overview data');
+        }
+        return result;
     }
 
     // Update Charts
@@ -758,43 +795,150 @@ class ReportsManager {
 
     // Export Functions
     exportReport() {
-        this.showToast('Đang xuất báo cáo...', 'info');
+        this.showToast('Đang xuất báo cáo Excel...', 'info');
         
-        // Create export data
-        const exportData = {
-            filters: this.filters,
-            timestamp: new Date().toISOString(),
-            data: {
-                revenue: this.charts.revenue?.data,
-                products: this.charts.product?.data,
-                payments: this.charts.payment?.data
+        try {
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Thông tin báo cáo
+            const infoData = [
+                ['BÁO CÁO THỐNG KÊ KINH DOANH'],
+                [''],
+                ['Thời gian:', `${moment(this.filters.startDate).format('DD/MM/YYYY')} - ${moment(this.filters.endDate).format('DD/MM/YYYY')}`],
+                ['Chu kỳ:', this.filters.period === 'day' ? 'Theo ngày' : this.filters.period === 'week' ? 'Theo tuần' : this.filters.period === 'month' ? 'Theo tháng' : this.filters.period === 'quarter' ? 'Theo quý' : 'Theo năm'],
+                ['Xuất lúc:', moment().format('DD/MM/YYYY HH:mm:ss')],
+                [''],
+                ['TỔNG QUAN'],
+                ['Doanh thu tháng:', $('#monthRevenue').text().replace(' VNĐ', '')],
+                ['Đơn hàng tháng:', $('#monthOrders').text()],
+                ['Tổng khách hàng:', $('#totalCustomers').text()],
+                ['Tỷ lệ chuyển đổi:', $('#conversionRate').text()]
+            ];
+            const wsInfo = XLSX.utils.aoa_to_sheet(infoData);
+            XLSX.utils.book_append_sheet(wb, wsInfo, 'Tổng quan');
+            
+            // Sheet 2: Doanh thu (from chart data)
+            if (this.charts.revenue && this.charts.revenue.data) {
+                const revenueData = [['Thời gian', 'Doanh thu (VNĐ)']];
+                const labels = this.charts.revenue.data.labels;
+                const data = this.charts.revenue.data.datasets[0].data;
+                for (let i = 0; i < labels.length; i++) {
+                    revenueData.push([labels[i], data[i]]);
+                }
+                const wsRevenue = XLSX.utils.aoa_to_sheet(revenueData);
+                XLSX.utils.book_append_sheet(wb, wsRevenue, 'Doanh thu');
             }
-        };
-
-        // Download as JSON (you can implement Excel export later)
-        this.downloadJSON(exportData, `bao-cao-${moment().format('YYYY-MM-DD')}.json`);
-        this.showToast('Đã xuất báo cáo thành công', 'success');
+            
+            // Sheet 3: Sản phẩm bán chạy
+            const productData = [['STT', 'Sản phẩm', 'Danh mục', 'Thương hiệu', 'Đơn giá', 'Số lượng bán', 'Doanh thu', 'Đánh giá']];
+            $('#productsTable tbody tr').each(function() {
+                const cells = $(this).find('td');
+                if (cells.length === 1) return; // Skip "no data" row
+                const row = [];
+                row.push(cells.eq(0).text().trim()); // STT
+                row.push(cells.eq(1).find('.product-details strong').text().trim()); // Tên SP
+                row.push(cells.eq(1).find('.text-muted').first().text().replace('Danh mục:', '').trim()); // Danh mục
+                row.push(cells.eq(1).find('.text-muted').last().text().replace('Thương hiệu:', '').trim()); // Thương hiệu
+                row.push(cells.eq(2).text().trim()); // Giá
+                row.push(cells.eq(3).text().trim()); // Số lượng
+                row.push(cells.eq(4).text().trim()); // Doanh thu
+                row.push(cells.eq(5).text().trim()); // Đánh giá
+                productData.push(row);
+            });
+            const wsProducts = XLSX.utils.aoa_to_sheet(productData);
+            XLSX.utils.book_append_sheet(wb, wsProducts, 'Sản phẩm bán chạy');
+            
+            // Sheet 4: Khách hàng thân thiết
+            const customerData = [['STT', 'Họ tên', 'Email', 'Số ĐT', 'Tổng đơn', 'Tổng chi tiêu', 'TB/Đơn', 'Loại KH', 'Trạng thái']];
+            $('#customersTable tbody tr').each(function() {
+                const cells = $(this).find('td');
+                if (cells.length === 1) return;
+                const row = [];
+                cells.each(function(index) {
+                    if (index === 8) return; // Skip action column
+                    row.push($(this).text().trim());
+                });
+                customerData.push(row);
+            });
+            const wsCustomers = XLSX.utils.aoa_to_sheet(customerData);
+            XLSX.utils.book_append_sheet(wb, wsCustomers, 'Khách hàng');
+            
+            // Sheet 5: Phương thức thanh toán
+            const paymentData = [['Phương thức', 'Tổng GD', 'GD thành công', 'GD thất bại', 'Tỷ lệ TC', 'Tổng tiền', 'TB/GD']];
+            $('#paymentTable tbody tr').each(function() {
+                const cells = $(this).find('td');
+                if (cells.length === 1) return;
+                const row = [];
+                cells.each(function() {
+                    row.push($(this).text().trim());
+                });
+                paymentData.push(row);
+            });
+            const wsPayments = XLSX.utils.aoa_to_sheet(paymentData);
+            XLSX.utils.book_append_sheet(wb, wsPayments, 'Thanh toán');
+            
+            // Export file
+            const fileName = `bao-cao-${moment().format('YYYY-MM-DD-HHmmss')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            this.showToast('Đã xuất báo cáo Excel thành công!', 'success');
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showToast('Có lỗi xảy ra khi xuất báo cáo', 'error');
+        }
     }
 
     exportTableData(tableType) {
-        this.showToast(`Đang xuất dữ liệu ${tableType}...`, 'info');
+        this.showToast(`Đang xuất dữ liệu ${tableType} sang Excel...`, 'info');
         
-        // Get table data
-        let data = [];
-        const table = tableType === 'products' ? '#productsTable' : '#customersTable';
-        
-        $(table + ' tbody tr').each(function() {
-            const row = [];
-            $(this).find('td').each(function() {
-                row.push($(this).text().trim());
-            });
-            data.push(row);
-        });
-
-        // Convert to CSV
-        const csv = this.arrayToCSV(data);
-        this.downloadCSV(csv, `${tableType}-${moment().format('YYYY-MM-DD')}.csv`);
-        this.showToast(`Đã xuất dữ liệu ${tableType} thành công`, 'success');
+        try {
+            const wb = XLSX.utils.book_new();
+            
+            if (tableType === 'products') {
+                // Export products table
+                const data = [['STT', 'Sản phẩm', 'Danh mục', 'Thương hiệu', 'Đơn giá', 'Số lượng bán', 'Doanh thu', 'Đánh giá']];
+                $('#productsTable tbody tr').each(function() {
+                    const cells = $(this).find('td');
+                    if (cells.length === 1) return;
+                    const row = [];
+                    row.push(cells.eq(0).text().trim());
+                    row.push(cells.eq(1).find('.product-details strong').text().trim());
+                    row.push(cells.eq(1).find('.text-muted').first().text().replace('Danh mục:', '').trim());
+                    row.push(cells.eq(1).find('.text-muted').last().text().replace('Thương hiệu:', '').trim());
+                    row.push(cells.eq(2).text().trim());
+                    row.push(cells.eq(3).text().trim());
+                    row.push(cells.eq(4).text().trim());
+                    row.push(cells.eq(5).text().trim());
+                    data.push(row);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, 'Sản phẩm bán chạy');
+            } else if (tableType === 'customers') {
+                // Export customers table
+                const data = [['STT', 'Họ tên', 'Email', 'Số ĐT', 'Tổng đơn', 'Tổng chi tiêu', 'TB/Đơn', 'Loại KH', 'Trạng thái']];
+                $('#customersTable tbody tr').each(function() {
+                    const cells = $(this).find('td');
+                    if (cells.length === 1) return;
+                    const row = [];
+                    cells.each(function(index) {
+                        if (index === 8) return; // Skip action column
+                        row.push($(this).text().trim());
+                    });
+                    data.push(row);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, 'Khách hàng thân thiết');
+            }
+            
+            const fileName = `${tableType}-${moment().format('YYYY-MM-DD-HHmmss')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            this.showToast(`Đã xuất dữ liệu ${tableType} thành công!`, 'success');
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showToast('Có lỗi xảy ra khi xuất dữ liệu', 'error');
+        }
     }
 
     // Utility Functions

@@ -1131,3 +1131,54 @@ function updateWishlistCount() {
             console.error('Error updating wishlist count:', error);
         });
 }
+
+// Global function to open quick view modal (can be called from anywhere, including from search suggestions)
+window.openQuickViewModal = function(productId) {
+    console.log('Opening quick view modal for product:', productId);
+    
+    // Check if we're on the product page (modal exists)
+    const modalElement = document.getElementById('quickViewModal');
+    if (!modalElement) {
+        console.log('Modal not found, redirecting to product page...');
+        // If modal doesn't exist, redirect to product page with openModal parameter
+        window.location.href = `/Product?openModal=${productId}`;
+        return;
+    }
+    
+    // Hide search suggestions if any
+    const suggestionsContainers = document.querySelectorAll('.search-suggestions');
+    suggestionsContainers.forEach(container => {
+        container.classList.add('d-none');
+    });
+    
+    // Show loading state
+    if (typeof showQuickViewLoading === 'function') {
+        showQuickViewLoading();
+    }
+    
+    // Show modal immediately
+    const quickViewModal = new bootstrap.Modal(modalElement);
+    quickViewModal.show();
+    
+    // Fetch product data
+    fetch(`/Product/GetProductJson?id=${productId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Product data:", data);
+            if (typeof populateQuickView === 'function') {
+                populateQuickView(data);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching product data:', error);
+            quickViewModal.hide();
+            if (typeof showNotification === 'function') {
+                showNotification('Không thể tải thông tin sản phẩm. Vui lòng thử lại sau.', 'error');
+            }
+        });
+}

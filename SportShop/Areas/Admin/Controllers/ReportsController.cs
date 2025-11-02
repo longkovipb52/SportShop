@@ -112,6 +112,67 @@ namespace SportShop.Areas.Admin.Controllers
 
             return overview;
         }
+
+        private async Task<DashboardOverviewDTO> GetDashboardOverviewFiltered(ReportFilterDTO filter)
+        {
+            var overview = new DashboardOverviewDTO();
+
+            // Base query with filters
+            var ordersQuery = _context.Orders
+                .Where(o => o.OrderDate >= filter.StartDate && o.OrderDate <= filter.EndDate);
+
+            if (filter.CategoryID.HasValue || filter.BrandID.HasValue)
+            {
+                ordersQuery = ordersQuery.Where(o => o.OrderItems.Any(oi =>
+                    (!filter.CategoryID.HasValue || oi.Product.CategoryID == filter.CategoryID.Value) &&
+                    (!filter.BrandID.HasValue || oi.Product.BrandID == filter.BrandID.Value)
+                ));
+            }
+
+            // Revenue calculations for filtered data
+            overview.MonthRevenue = await ordersQuery
+                .Where(o => o.Status == "Hoàn thành")
+                .SumAsync(o => o.TotalAmount);
+
+            // Order counts for filtered data
+            overview.MonthOrders = await ordersQuery.CountAsync();
+
+            // Calculate average order value
+            if (overview.MonthOrders > 0)
+            {
+                overview.AverageOrderValue = overview.MonthRevenue / overview.MonthOrders;
+            }
+
+            // Get static data (not affected by filters)
+            overview.TotalCustomers = await _context.Users
+                .Where(u => u.RoleID == 2)
+                .CountAsync();
+
+            overview.NewCustomersThisMonth = await _context.Users
+                .Where(u => u.RoleID == 2 && u.CreatedAt.HasValue && 
+                       u.CreatedAt.Value >= filter.StartDate && u.CreatedAt.Value <= filter.EndDate)
+                .CountAsync();
+
+            overview.TotalProducts = await _context.Products.CountAsync();
+            overview.LowStockProducts = await _context.Products
+                .Where(p => p.Stock < 10)
+                .CountAsync();
+
+            // Calculate conversion rate (simplified)
+            var totalVisits = overview.TotalCustomers * 5; // Estimate
+            if (totalVisits > 0)
+            {
+                overview.ConversionRate = (decimal)overview.MonthOrders / totalVisits * 100;
+            }
+
+            // Set today and year values to 0 when filtering
+            overview.TodayRevenue = 0;
+            overview.TodayOrders = 0;
+            overview.YearRevenue = 0;
+            overview.YearOrders = 0;
+
+            return overview;
+        }
         #endregion
 
         #region Revenue Report
@@ -121,6 +182,15 @@ namespace SportShop.Areas.Admin.Controllers
                 .Where(o => o.Status == "Hoàn thành" && 
                            o.OrderDate >= filter.StartDate && 
                            o.OrderDate <= filter.EndDate);
+
+            // Apply category/brand filters if specified
+            if (filter.CategoryID.HasValue || filter.BrandID.HasValue)
+            {
+                query = query.Where(o => o.OrderItems.Any(oi =>
+                    (!filter.CategoryID.HasValue || oi.Product.CategoryID == filter.CategoryID.Value) &&
+                    (!filter.BrandID.HasValue || oi.Product.BrandID == filter.BrandID.Value)
+                ));
+            }
 
             var revenueData = new List<RevenueReportDTO>();
 
@@ -355,28 +425,39 @@ namespace SportShop.Areas.Admin.Controllers
         #region Customer Report
         private async Task<List<CustomerReportDTO>> GetTopCustomersReport(ReportFilterDTO filter)
         {
-            var customerData = await (from u in _context.Users
-                                     join o in _context.Orders on u.UserID equals o.UserID into orders
-                                     where u.RoleID == 2 // Customer role
-                                     select new CustomerReportDTO
-                                     {
-                                         UserID = u.UserID,
-                                         UserName = u.FullName,
-                                         Email = u.Email,
-                                         Phone = u.Phone,
-                                         JoinDate = u.CreatedAt ?? DateTime.Now,
-                                         TotalOrders = orders.Count(o => o.OrderDate >= filter.StartDate && 
-                                                                    o.OrderDate <= filter.EndDate),
-                                         TotalSpent = orders.Where(o => o.OrderDate >= filter.StartDate && 
-                                                                   o.OrderDate <= filter.EndDate && 
-                                                                   o.Status == "Hoàn thành")
-                                                           .Sum(o => o.TotalAmount),
-                                         LastOrderDate = orders.Any() ? orders.Max(o => o.OrderDate) : DateTime.MinValue
-                                     })
-                                     .Where(c => c.TotalOrders > 0)
-                                     .OrderByDescending(c => c.TotalSpent)
-                                     .Take(filter.PageSize)
-                                     .ToListAsync();
+            // Build base query for orders with date filter
+            var ordersQuery = _context.Orders
+                .Where(o => o.OrderDate >= filter.StartDate && o.OrderDate <= filter.EndDate);
+
+            // Apply category/brand filters if specified
+            if (filter.CategoryID.HasValue || filter.BrandID.HasValue)
+            {
+                ordersQuery = ordersQuery.Where(o => o.OrderItems.Any(oi =>
+                    (!filter.CategoryID.HasValue || oi.Product.CategoryID == filter.CategoryID.Value) &&
+                    (!filter.BrandID.HasValue || oi.Product.BrandID == filter.BrandID.Value)
+                ));
+            }
+
+            var filteredOrders = await ordersQuery
+                .Include(o => o.User)
+                .ToListAsync();
+
+            var customerData = filteredOrders
+                .GroupBy(o => o.User)
+                .Select(g => new CustomerReportDTO
+                {
+                    UserID = g.Key.UserID,
+                    UserName = g.Key.FullName,
+                    Email = g.Key.Email,
+                    Phone = g.Key.Phone,
+                    JoinDate = g.Key.CreatedAt ?? DateTime.Now,
+                    TotalOrders = g.Count(),
+                    TotalSpent = g.Where(o => o.Status == "Hoàn thành").Sum(o => o.TotalAmount),
+                    LastOrderDate = g.Max(o => o.OrderDate)
+                })
+                .OrderByDescending(c => c.TotalSpent)
+                .Take(filter.PageSize)
+                .ToList();
 
             // Calculate additional metrics
             foreach (var customer in customerData)
@@ -424,14 +505,29 @@ namespace SportShop.Areas.Admin.Controllers
         #region Payment Method Report
         private async Task<List<PaymentMethodReportDTO>> GetPaymentMethodReport(ReportFilterDTO filter)
         {
-            // Get all orders in date range
-            var orders = await _context.Orders
-                .Where(o => o.OrderDate >= filter.StartDate && o.OrderDate <= filter.EndDate)
-                .ToListAsync();
+            // Build base query for orders with date filter and include Payments
+            var ordersQuery = _context.Orders
+                .Include(o => o.Payments)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Where(o => o.OrderDate >= filter.StartDate && o.OrderDate <= filter.EndDate);
 
-            // Group by payment method (extracted from Note field or status)
+            // Apply category/brand filters if specified
+            if (filter.CategoryID.HasValue || filter.BrandID.HasValue)
+            {
+                ordersQuery = ordersQuery.Where(o => o.OrderItems.Any(oi =>
+                    (!filter.CategoryID.HasValue || oi.Product.CategoryID == filter.CategoryID.Value) &&
+                    (!filter.BrandID.HasValue || oi.Product.BrandID == filter.BrandID.Value)
+                ));
+            }
+
+            // Get filtered orders
+            var orders = await ordersQuery.ToListAsync();
+
+            // Group by payment method from Payment table
             var paymentGroups = orders
-                .GroupBy(o => GetPaymentMethod(o))
+                .Where(o => o.Payments.Any()) // Only orders with payment records
+                .GroupBy(o => o.Payments.FirstOrDefault()?.Method ?? "COD")
                 .Select(g => new PaymentMethodReportDTO
                 {
                     PaymentMethod = g.Key,
@@ -442,6 +538,40 @@ namespace SportShop.Areas.Admin.Controllers
                     LastTransaction = g.Max(o => o.OrderDate)
                 })
                 .ToList();
+
+            // Add orders without payment records as COD
+            var ordersWithoutPayment = orders.Where(o => !o.Payments.Any()).ToList();
+            if (ordersWithoutPayment.Any())
+            {
+                var codGroup = paymentGroups.FirstOrDefault(p => p.PaymentMethod == "COD");
+                if (codGroup != null)
+                {
+                    // Merge with existing COD group
+                    codGroup.TotalTransactions += ordersWithoutPayment.Count;
+                    codGroup.SuccessfulTransactions += ordersWithoutPayment.Count(o => o.Status == "Hoàn thành");
+                    codGroup.FailedTransactions += ordersWithoutPayment.Count(o => o.Status == "Đã hủy" || o.Status == "Thất bại");
+                    codGroup.TotalAmount += ordersWithoutPayment.Where(o => o.Status == "Hoàn thành").Sum(o => o.TotalAmount);
+                    if (ordersWithoutPayment.Any())
+                    {
+                        var maxDate = ordersWithoutPayment.Max(o => o.OrderDate);
+                        if (maxDate > codGroup.LastTransaction)
+                            codGroup.LastTransaction = maxDate;
+                    }
+                }
+                else
+                {
+                    // Create new COD group
+                    paymentGroups.Add(new PaymentMethodReportDTO
+                    {
+                        PaymentMethod = "COD",
+                        TotalTransactions = ordersWithoutPayment.Count,
+                        SuccessfulTransactions = ordersWithoutPayment.Count(o => o.Status == "Hoàn thành"),
+                        FailedTransactions = ordersWithoutPayment.Count(o => o.Status == "Đã hủy" || o.Status == "Thất bại"),
+                        TotalAmount = ordersWithoutPayment.Where(o => o.Status == "Hoàn thành").Sum(o => o.TotalAmount),
+                        LastTransaction = ordersWithoutPayment.Max(o => o.OrderDate)
+                    });
+                }
+            }
 
             // Calculate success rates and average amounts
             foreach (var payment in paymentGroups)
@@ -458,20 +588,6 @@ namespace SportShop.Areas.Admin.Controllers
             }
 
             return paymentGroups.OrderByDescending(p => p.TotalAmount).ToList();
-        }
-
-        private string GetPaymentMethod(Order order)
-        {
-            if (string.IsNullOrEmpty(order.Note))
-                return "COD";
-
-            var note = order.Note.ToLower();
-            if (note.Contains("momo"))
-                return "MoMo";
-            else if (note.Contains("vnpay") || note.Contains("vn pay"))
-                return "VNPay";
-            else
-                return "COD";
         }
         #endregion
 
@@ -547,9 +663,9 @@ namespace SportShop.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public async Task<JsonResult> GetOverviewData()
+        public async Task<JsonResult> GetOverviewData(ReportFilterDTO filter)
         {
-            var data = await GetDashboardOverview();
+            var data = await GetDashboardOverviewFiltered(filter);
             return Json(new { success = true, data = data });
         }
         #endregion

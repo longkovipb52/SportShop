@@ -425,6 +425,53 @@ namespace SportShop.Controllers
             return Json(new { success = true, message = "Cập nhật đánh giá thành công!" });
         }
 
+        // POST: OrderHistory/CancelOrder - Cancel order
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelOrder(int orderId, string cancelReason)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập để hủy đơn hàng" });
+            }
+
+            var order = await _context.Orders
+                .Include(o => o.Payments)
+                .FirstOrDefaultAsync(o => o.OrderID == orderId && o.UserID == userId.Value);
+
+            if (order == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
+            }
+
+            // Normalize status for comparison
+            var normalizedStatus = NormalizeStatus(order.Status);
+
+            // Only allow cancellation for Pending orders
+            if (normalizedStatus != "Pending")
+            {
+                return Json(new { success = false, message = "Chỉ có thể hủy đơn hàng đang ở trạng thái 'Chờ xử lý'" });
+            }
+
+            // Check if payment has been made (online payment)
+            var payment = order.Payments.FirstOrDefault();
+            if (payment != null && payment.Status == "Completed")
+            {
+                return Json(new { success = false, message = "Không thể hủy đơn hàng đã thanh toán online. Vui lòng liên hệ hỗ trợ để được hoàn tiền." });
+            }
+
+            // Update order status to Cancelled
+            order.Status = "Cancelled";
+            order.Note = string.IsNullOrEmpty(order.Note) 
+                ? $"Đã hủy bởi khách hàng. Lý do: {cancelReason}" 
+                : $"{order.Note}\nĐã hủy bởi khách hàng. Lý do: {cancelReason}";
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Hủy đơn hàng thành công!" });
+        }
+
         private List<OrderTimelineViewModel> CreateOrderTimeline(string currentStatus, DateTime orderDate, DateTime? paymentDate)
         {
             var timeline = new List<OrderTimelineViewModel>();

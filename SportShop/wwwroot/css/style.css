@@ -866,6 +866,11 @@ footer {
   justify-content: center;
 }
 
+.scroll-to-top.show {
+  opacity: 1;
+  visibility: visible;
+}
+
 .scroll-to-top:hover {
   transform: translateY(-5px);
 }
@@ -1244,6 +1249,31 @@ footer {
 
 .chatbot-typing small {
   color: #6c757d;
+  font-size: 11px;
+}
+
+/* AI Chatbot Product Links */
+.message-bubble .product-link {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--primary-pink), var(--primary-yellow));
+  color: white;
+  text-decoration: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.message-bubble .product-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3);
+  color: white;
+}
+
+.message-bubble .product-link i {
+  margin-left: 5px;
   font-size: 11px;
 }
 
@@ -2194,4 +2224,181 @@ footer img:hover {
         --bs-gutter-x: 0.5rem;
         --bs-gutter-y: 0.75rem;
     }
+}
+
+.voucher-banner-section {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.voucher-banner-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(255, 105, 180, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.voucher-slider-wrapper {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    padding: 20px 0;
+    mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 10%,
+        black 90%,
+        transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 10%,
+        black 90%,
+        transparent 100%
+    );
+}
+
+.voucher-slider {
+    display: flex;
+    gap: 30px;
+    animation: scroll-left 30s linear infinite;
+    width: fit-content;
+}
+
+.voucher-slider:hover {
+    animation-play-state: paused;
+}
+
+@keyframes scroll-left {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.voucher-slide {
+    flex-shrink: 0;
+    width: 600px;
+    height: 300px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.voucher-slide::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 105, 180, 0.1) 0%, rgba(255, 215, 0, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.voucher-slide:hover {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.voucher-slide:hover::before {
+    opacity: 1;
+}
+
+.voucher-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.voucher-slide:hover .voucher-img {
+    transform: scale(1.1);
+}
+
+/* Responsive cho voucher banner */
+@media (max-width: 1200px) {
+    .voucher-slide {
+        width: 500px;
+        height: 250px;
+    }
+}
+
+@media (max-width: 992px) {
+    .voucher-slide {
+        width: 450px;
+        height: 225px;
+    }
+    
+    .voucher-slider {
+        gap: 20px;
+        animation: scroll-left 25s linear infinite;
+    }
+}
+
+@media (max-width: 768px) {
+    .voucher-slide {
+        width: 350px;
+        height: 175px;
+    }
+    
+    .voucher-slider {
+        gap: 15px;
+        animation: scroll-left 20s linear infinite;
+    }
+}
+
+@media (max-width: 576px) {
+    .voucher-slide {
+        width: 280px;
+        height: 140px;
+    }
+    
+    .voucher-slider {
+        gap: 10px;
+        animation: scroll-left 15s linear infinite;
+    }
+    
+    .voucher-banner-section {
+        padding: 30px 0 !important;
+    }
+}
+
+/* Animation variants for different effects */
+@keyframes float-soft {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.voucher-slide:nth-child(odd) {
+    animation: float-soft 3s ease-in-out infinite;
+}
+
+.voucher-slide:nth-child(even) {
+    animation: float-soft 3s ease-in-out infinite 1.5s;
+}
+
+/* Pause animation on hover for all slides */
+.voucher-slider-wrapper:hover .voucher-slide {
+    animation-play-state: paused;
 }

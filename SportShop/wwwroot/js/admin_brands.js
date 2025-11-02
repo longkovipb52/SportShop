@@ -154,82 +154,96 @@ function previewLogo(input) {
 }
 
 /**
- * Initialize logo action buttons
+ * Change logo - trigger file input click
  */
-function initializeLogoActions() {
-    // These functions are called from HTML onclick handlers
-    window.changeLogo = function() {
-        const logoInput = document.getElementById('logoFile');
-        if (logoInput) {
-            logoInput.click();
-        }
-    };
+function changeLogo() {
+    const logoInput = document.getElementById('logoFile');
+    if (logoInput) {
+        logoInput.click();
+    }
+}
 
-    window.confirmLogo = function() {
-        const actions = document.getElementById('logoActions');
-        if (actions) {
-            actions.style.display = 'none';
-        }
-        showAlert('info', 'Logo sẽ được lưu khi bạn submit form.');
-    };
+/**
+ * Confirm logo selection
+ */
+function confirmLogo() {
+    const actions = document.getElementById('logoActions');
+    if (actions) {
+        actions.style.display = 'none';
+    }
+    showAlert('info', 'Logo sẽ được lưu khi bạn submit form.');
+}
 
-    window.cancelLogo = function() {
-        const preview = document.getElementById('logoPreview');
-        const actions = document.getElementById('logoActions');
-        const logoInput = document.getElementById('logoFile');
-        
-        // Reset preview to original state or placeholder
-        const currentLogoSrc = preview.querySelector('.current-logo')?.src;
-        if (currentLogoSrc && !currentLogoSrc.startsWith('data:')) {
-            // Has original logo, restore it
-            preview.innerHTML = `
-                <img src="${currentLogoSrc}" alt="Current Logo" class="current-logo">
-                <div class="logo-overlay">
-                    <button type="button" class="btn btn-sm btn-outline-light" onclick="changeLogo()">
-                        <i class="fas fa-camera"></i>
-                        Thay đổi
-                    </button>
-                </div>
-            `;
-        } else {
-            // No original logo, show placeholder
-            preview.innerHTML = `
-                <div class="preview-placeholder">
-                    <i class="fas fa-image"></i>
-                    <p>Chưa có logo</p>
-                </div>
-            `;
-        }
-        
-        if (actions) {
-            actions.style.display = 'none';
-        }
-        
-        if (logoInput) {
-            logoInput.value = '';
-        }
-    };
-
-    window.removeLogo = function() {
-        const preview = document.getElementById('logoPreview');
-        const actions = document.getElementById('logoActions');
-        const logoInput = document.getElementById('logoFile');
-        
+/**
+ * Cancel logo selection
+ */
+function cancelLogo() {
+    const preview = document.getElementById('logoPreview');
+    const actions = document.getElementById('logoActions');
+    const logoInput = document.getElementById('logoFile');
+    
+    // Reset preview to original state or placeholder
+    const currentLogoSrc = preview.querySelector('.current-logo')?.src;
+    if (currentLogoSrc && !currentLogoSrc.startsWith('data:')) {
+        // Has original logo, restore it
+        preview.innerHTML = `
+            <img src="${currentLogoSrc}" alt="Current Logo" class="current-logo">
+            <div class="logo-overlay">
+                <button type="button" class="btn btn-sm btn-outline-light" onclick="changeLogo()">
+                    <i class="fas fa-camera"></i>
+                    Thay đổi
+                </button>
+            </div>
+        `;
+    } else {
+        // No original logo, show placeholder
         preview.innerHTML = `
             <div class="preview-placeholder">
                 <i class="fas fa-image"></i>
                 <p>Chưa có logo</p>
             </div>
         `;
-        
-        if (actions) {
-            actions.style.display = 'none';
-        }
-        
-        if (logoInput) {
-            logoInput.value = '';
-        }
-    };
+    }
+    
+    if (actions) {
+        actions.style.display = 'none';
+    }
+    
+    if (logoInput) {
+        logoInput.value = '';
+    }
+}
+
+/**
+ * Remove logo
+ */
+function removeLogo() {
+    const preview = document.getElementById('logoPreview');
+    const actions = document.getElementById('logoActions');
+    const logoInput = document.getElementById('logoFile');
+    
+    preview.innerHTML = `
+        <div class="preview-placeholder">
+            <i class="fas fa-image"></i>
+            <p>Chưa có logo</p>
+        </div>
+    `;
+    
+    if (actions) {
+        actions.style.display = 'none';
+    }
+    
+    if (logoInput) {
+        logoInput.value = '';
+    }
+}
+
+/**
+ * Initialize logo action buttons
+ */
+function initializeLogoActions() {
+    // Functions are now defined globally above
+    // No need to assign to window object
 }
 
 /**
@@ -304,7 +318,7 @@ function updateStatElement(elementId, value) {
  * Initialize form validation
  */
 function initializeFormValidation() {
-    const forms = document.querySelectorAll('form[asp-action]');
+    const forms = document.querySelectorAll('form[action*="/Admin/Brands/"]');
     
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
@@ -529,3 +543,10 @@ window.BrandManager = {
     removeLogo,
     deleteBrand
 };
+
+// Make functions available globally for onclick handlers
+window.changeLogo = changeLogo;
+window.confirmLogo = confirmLogo;
+window.cancelLogo = cancelLogo;
+window.removeLogo = removeLogo;
+window.previewLogo = previewLogo;

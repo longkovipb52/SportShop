@@ -504,6 +504,56 @@
     border-color: var(--primary-pink);
 }
 
+/* Brand List Toggle Styles */
+.brand-item-hidden {
+    display: none;
+}
+
+.brand-toggle-btn {
+    color: var(--primary-pink);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.brand-toggle-btn:hover {
+    color: var(--primary-yellow);
+    transform: translateX(5px);
+}
+
+.brand-toggle-btn i {
+    transition: transform 0.3s ease;
+}
+
+/* Price Filter Section Enhanced Visibility */
+.price-filter-section {
+    margin-top: 20px;
+    padding-top: 15px;
+}
+
+.price-filter-section .price-filter {
+    position: relative;
+    z-index: 1;
+}
+
+.price-filter {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.price-filter:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.price-filter .badge {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+}
+
+.price-filter .range-slider {
+    padding: 15px 10px;
+}
+
 .filter-sidebar-wrapper {
     position: sticky;
     top: 80px; /* Điều chỉnh khoảng cách từ top tùy theo header của bạn */

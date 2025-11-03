@@ -83,9 +83,15 @@
                                         Tất cả thương hiệu
                                     </label>
                                 </div>
-                                @foreach (var brand in Model.Brands)
+                                @{
+                                    var brandList = Model.Brands.ToList();
+                                    var initialBrandCount = 8;
+                                }
+                                @for (int i = 0; i < brandList.Count; i++)
                                 {
-                                    <div class="form-check mb-2">
+                                    var brand = brandList[i];
+                                    var isHidden = i >= initialBrandCount;
+                                    <div class="form-check mb-2 brand-item @(isHidden ? "brand-item-hidden" : "")">
                                         <input class="form-check-input brand-checkbox" type="radio" name="brand" 
                                                id="brand-@brand.BrandID" value="@brand.BrandID"
                                                @(ViewData["CurrentBrand"] != null && (int)ViewData["CurrentBrand"] == brand.BrandID ? "checked" : "")>
@@ -94,27 +100,34 @@
                                         </label>
                                     </div>
                                 }
+                                @if (brandList.Count > initialBrandCount)
+                                {
+                                    <button type="button" class="btn btn-link btn-sm p-0 mt-2 text-decoration-none brand-toggle-btn">
+                                        <i class="bi bi-chevron-down me-1"></i>
+                                        <span class="brand-toggle-text">Xem thêm (@(brandList.Count - initialBrandCount))</span>
+                                    </button>
+                                }
                             </div>
                         </div>
                         
-                        <div class="mb-4">
+                        <div class="mb-4 price-filter-section">
                             <h5 class="fw-bold border-start border-primary border-4 ps-3">Giá</h5>
-                            <div class="price-filter mt-3">
-                                <div class="range-slider">
-                                    <input type="range" class="form-range" id="price-range" min="0" max="5000000" step="100000">
+                            <div class="price-filter mt-3 p-3 bg-light rounded">
+                                <div class="range-slider mb-3">
+                                    <input type="range" class="form-range" id="price-range" min="0" max="100000000" step="1000000">
                                 </div>
-                                <div class="d-flex justify-content-between mt-2">
-                                    <span id="price-min">0đ</span>
-                                    <span id="price-max">5.000.000đ</span>
+                                <div class="d-flex justify-content-between mt-2 mb-3">
+                                    <span id="price-min" class="badge bg-secondary">0đ</span>
+                                    <span id="price-max" class="badge bg-secondary">100.000.000đ</span>
                                 </div>
-                                <div class="price-inputs mt-3 d-flex justify-content-between">
+                                <div class="price-inputs d-flex gap-2">
                                     <div class="input-group">
                                         <span class="input-group-text">Từ</span>
                                         <input type="text" id="min-price-input" class="form-control" placeholder="0">
                                     </div>
                                     <div class="input-group">
                                         <span class="input-group-text">Đến</span>
-                                        <input type="text" id="max-price-input" class="form-control" placeholder="5.000.000">
+                                        <input type="text" id="max-price-input" class="form-control" placeholder="100.000.000">
                                     </div>
                                 </div>
                                 <button id="apply-price-filter" class="btn btn-primary w-100 mt-3">Áp dụng</button>

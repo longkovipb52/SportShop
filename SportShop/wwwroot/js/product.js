@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize price range slider
     initPriceRange();
     
+    // Initialize brand toggle
+    initBrandToggle();
+    
     // Initialize sidebar scroll
     initSidebarScroll();
     
@@ -853,7 +856,7 @@ function initPriceRange() {
     if (priceRange && minPriceInput && maxPriceInput && priceMinLabel && priceMaxLabel) {
         // Hiển thị giá trị mặc định
         if (!minPriceInput.value) minPriceInput.value = "0";
-        if (!maxPriceInput.value) maxPriceInput.value = "5000000";
+        if (!maxPriceInput.value) maxPriceInput.value = "100000000";
         
         priceMinLabel.textContent = formatCurrency(minPriceInput.value);
         priceMaxLabel.textContent = formatCurrency(maxPriceInput.value);
@@ -863,13 +866,13 @@ function initPriceRange() {
             noUiSlider.create(priceRange, {
                 start: [
                     parseInt(minPriceInput.value) || 0, 
-                    parseInt(maxPriceInput.value) || 5000000
+                    parseInt(maxPriceInput.value) || 100000000
                 ],
                 connect: true,
-                step: 100000,
+                step: 1000000,
                 range: {
                     'min': 0,
-                    'max': 5000000
+                    'max': 100000000
                 },
                 format: {
                     to: value => Math.round(value),
@@ -920,6 +923,40 @@ function initPriceRange() {
                 applyFilters();
             });
         }
+    }
+}
+
+// Initialize brand list toggle functionality
+function initBrandToggle() {
+    const toggleBtn = document.querySelector('.brand-toggle-btn');
+    const toggleText = document.querySelector('.brand-toggle-text');
+    const toggleIcon = document.querySelector('.brand-toggle-btn i');
+    const hiddenBrands = document.querySelectorAll('.brand-item-hidden');
+    
+    if (toggleBtn && hiddenBrands.length > 0) {
+        let isExpanded = false;
+        
+        toggleBtn.addEventListener('click', function() {
+            isExpanded = !isExpanded;
+            
+            // Toggle visibility of hidden brands
+            hiddenBrands.forEach(item => {
+                if (isExpanded) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Update button text and icon
+            if (isExpanded) {
+                toggleText.textContent = 'Thu gọn';
+                toggleIcon.className = 'bi bi-chevron-up me-1';
+            } else {
+                toggleText.textContent = `Xem thêm (${hiddenBrands.length})`;
+                toggleIcon.className = 'bi bi-chevron-down me-1';
+            }
+        });
     }
 }
 

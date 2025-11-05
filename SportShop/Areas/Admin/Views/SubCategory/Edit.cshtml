@@ -1,0 +1,135 @@
+@model SportShop.Models.SubCategory
+@{
+    ViewData["Title"] = "Chỉnh sửa Danh mục con";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/admin_categories.css" asp-append-version="true" />
+
+<div class="container-fluid subcategory-form-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h2 class="page-title"><i class="fas fa-edit"></i>Chỉnh sửa Danh mục con</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/Admin/Dashboard">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">Danh mục con</a></li>
+                        <li class="breadcrumb-item active">Chỉnh sửa</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="btn btn-light btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-info-circle"></i>
+                    Thông tin danh mục con
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" asp-action="Edit" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="SubCategoryID" />
+                    <input type="hidden" asp-for="ImageURL" id="currentImageUrl" />
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Name" class="form-label required">Tên danh mục con</label>
+                            <input asp-for="Name" class="form-control" required 
+                                   placeholder="VD: Áo thun, Giày chạy bộ..." maxlength="100" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="CategoryID" class="form-label required">Danh mục cha</label>
+                            <select asp-for="CategoryID" class="form-select" required>
+                                <option value="">-- Chọn danh mục cha --</option>
+                                @foreach (var item in (SelectList)ViewData["Categories"]!)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                            <span asp-validation-for="CategoryID" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Description" class="form-label">Mô tả</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" 
+                                      placeholder="Mô tả về danh mục con..." maxlength="500"></textarea>
+                            <small class="form-text">Mô tả chi tiết về danh mục con</small>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DisplayOrder" class="form-label">Thứ tự hiển thị</label>
+                            <input asp-for="DisplayOrder" class="form-control" type="number" min="0" />
+                            <small class="form-text">Số thứ tự càng nhỏ càng hiển thị trước</small>
+                            <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Hình ảnh</label>
+                            
+                            @if (!string.IsNullOrEmpty(Model.ImageURL))
+                            {
+                                <div class="mb-2">
+                                    <img src="@Model.ImageURL" alt="@Model.Name" 
+                                         class="subcategory-current-image img-thumbnail" 
+                                         id="currentImage">
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="removeImage" 
+                                           id="removeImage" value="true">
+                                    <label class="form-check-label text-danger" for="removeImage">
+                                        <i class="fas fa-trash me-1"></i>Xóa hình ảnh hiện tại
+                                    </label>
+                                </div>
+                            }
+                            
+                            <input type="file" class="form-control" name="imageFile" 
+                                   id="imageFile" accept="image/*">
+                            <small class="form-text">Định dạng: JPG, PNG, GIF (Max: 2MB)</small>
+                            
+                            <div id="imagePreview" class="mt-2" style="display: none;">
+                                <img id="preview" class="img-thumbnail" style="max-height: 150px;">
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label">
+                                    Trạng thái hoạt động
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Cập nhật
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/admin_subcategories.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,274 @@
+@model IEnumerable<SportShop.Models.SubCategory>
+@{
+    ViewData["Title"] = "Quản lý Danh mục con";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/admin_categories.css" asp-append-version="true" />
+
+<div class="container-fluid subcategory-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-right">
+                <button type="button" class="btn btn-light btn-lg" data-bs-toggle="modal" data-bs-target="#createModal">
+                    <i class="fas fa-plus me-2"></i>Thêm danh mục con
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Search and Filter Card -->
+    <div class="search-filter-section">
+        <form method="get" asp-action="Index" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">
+                    <i class="fas fa-search"></i> Tìm kiếm
+                </label>
+                <input type="text" class="form-control" name="searchString" 
+                       value="@ViewData["CurrentFilter"]" 
+                       placeholder="Nhập tên danh mục con...">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">
+                    <i class="fas fa-filter"></i> Danh mục cha
+                </label>
+                <select class="form-select" name="categoryId">
+                    <option value="">-- Tất cả danh mục --</option>
+                    @foreach (var item in (SelectList)ViewData["Categories"]!)
+                    {
+                        <option value="@item.Value" selected="@(item.Value == ViewData["CategoryFilter"]?.ToString())">
+                            @item.Text
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Tìm kiếm
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> Đặt lại
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table Card -->
+    <div class="categories-table-section">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table categories-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%">STT</th>
+                            <th style="width: 10%">Hình ảnh</th>
+                            <th style="width: 20%">Tên danh mục con</th>
+                            <th style="width: 15%">Danh mục cha</th>
+                            <th style="width: 25%">Mô tả</th>
+                            <th style="width: 8%">Thứ tự</th>
+                            <th style="width: 10%">Trạng thái</th>
+                            <th style="width: 7%">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int index = ((int)ViewData["CurrentPage"] - 1) * (int)ViewData["PageSize"] + 1; }
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="id-badge" data-subcategory-id="@item.SubCategoryID">@index</span>
+                                </td>
+                                <td class="category-image">
+                                    @if (!string.IsNullOrEmpty(item.ImageURL))
+                                    {
+                                        <img src="@item.ImageURL" alt="@item.Name" class="subcategory-image">
+                                    }
+                                    else
+                                    {
+                                        <div class="subcategory-no-image">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    }
+                                </td>
+                                <td class="category-name">
+                                    <strong>@item.Name</strong>
+                                </td>
+                                <td>
+                                    <span class="subcategory-parent-badge">
+                                        <i class="fas fa-folder"></i>@item.Category?.Name
+                                    </span>
+                                </td>
+                                <td class="category-description">
+                                    @if (!string.IsNullOrEmpty(item.Description))
+                                    {
+                                        <span class="description-text">@item.Description</span>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted fst-italic">Chưa có mô tả</small>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <span class="display-order-badge">@item.DisplayOrder</span>
+                                </td>
+                                <td>
+                                    <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")" 
+                                          id="status-badge-@item.SubCategoryID">
+                                        @(item.IsActive ? "Hoạt động" : "Tạm ngưng")
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="@Url.Action("Edit", new { id = item.SubCategoryID })" 
+                                           class="btn btn-warning" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-info status-toggle-btn" 
+                                                data-action="toggle-status"
+                                                title="@(item.IsActive ? "Vô hiệu hóa" : "Kích hoạt")">
+                                            <i class="fas fa-power-off"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-danger" 
+                                                data-action="delete"
+                                                title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if ((int)ViewData["TotalPages"] > 1)
+            {
+                <nav aria-label="Page navigation" class="pagination-nav">
+                    <ul class="pagination justify-content-center">
+                        @for (int i = 1; i <= (int)ViewData["TotalPages"]; i++)
+                        {
+                            <li class="page-item @(i == (int)ViewData["CurrentPage"] ? "active" : "")">
+                                <a class="page-link" 
+                                   href="@Url.Action("Index", new { 
+                                       page = i, 
+                                       searchString = ViewData["CurrentFilter"],
+                                       categoryId = ViewData["CategoryFilter"]
+                                   })">
+                                    @i
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-sitemap"></i>
+                </div>
+                @if (!string.IsNullOrEmpty((string?)ViewData["CurrentFilter"]) || ViewData["CategoryFilter"] != null)
+                {
+                    <h5>Không tìm thấy danh mục con</h5>
+                    <p>Không tìm thấy danh mục con phù hợp với tiêu chí tìm kiếm.</p>
+                    <a href="@Url.Action("Index")" class="btn btn-primary">
+                        <i class="fas fa-redo me-2"></i>Xem tất cả
+                    </a>
+                }
+                else
+                {
+                    <h5>Chưa có danh mục con</h5>
+                    <p>Hãy thêm danh mục con đầu tiên cho hệ thống.</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+                        <i class="fas fa-plus me-2"></i>Thêm danh mục con
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-action="Create" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle"></i>Thêm danh mục con mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">Tên danh mục con</label>
+                            <input type="text" class="form-control" name="Name" required 
+                                   placeholder="VD: Áo thun, Giày chạy bộ..." maxlength="100">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">Danh mục cha</label>
+                            <select class="form-select" name="CategoryID" required>
+                                <option value="">-- Chọn danh mục cha --</option>
+                                @foreach (var item in (SelectList)ViewData["Categories"]!)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" name="Description" rows="3" 
+                                      placeholder="Mô tả về danh mục con..." maxlength="500"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Thứ tự hiển thị</label>
+                            <input type="number" class="form-control" name="DisplayOrder" value="0" min="0">
+                            <small class="form-text">Số thứ tự càng nhỏ càng hiển thị trước</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Hình ảnh</label>
+                            <input type="file" class="form-control" name="imageFile" accept="image/*">
+                            <small class="form-text">Định dạng: JPG, PNG, GIF (Max: 2MB)</small>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="IsActive" 
+                                       id="createIsActive" checked value="true">
+                                <label class="form-check-label" for="createIsActive">
+                                    Kích hoạt ngay
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Hủy
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_subcategories.js" asp-append-version="true"></script>
+}

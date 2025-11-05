@@ -872,3 +872,188 @@
     font-size: 0.85rem;
     margin-top: 0.25rem;
 }
+.subcategory-container,
+.subcategory-form-container {
+    padding: 0;
+    background-color: var(--bg-light);
+    min-height: calc(100vh - 140px);
+}
+
+/* SubCategory Image Styles */
+.subcategory-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.subcategory-image:hover {
+    transform: scale(1.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border-color: #667eea;
+}
+
+.subcategory-no-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    color: #adb5bd;
+}
+
+.subcategory-no-image i {
+    font-size: 24px;
+}
+
+/* SubCategory Table Specific Styles */
+.subcategory-container .categories-table tbody td {
+    padding: 1rem;
+}
+
+.subcategory-parent-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+}
+
+.subcategory-parent-badge i {
+    font-size: 0.9rem;
+}
+
+/* SubCategory Display Order Badge */
+.display-order-badge {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #495057;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 2px solid #e9ecef;
+}
+
+/* SubCategory Form Specific Styles */
+.subcategory-form-container .form-control:focus,
+.subcategory-form-container .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Image Preview for SubCategory Edit */
+.subcategory-current-image {
+    max-height: 150px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.subcategory-current-image:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+/* SubCategory Filter Section */
+.subcategory-container .search-filter-section .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.subcategory-container .search-filter-section .form-label i {
+    color: #667eea;
+}
+
+/* Active State for SubCategory Rows */
+.subcategory-container .categories-table tbody tr.active {
+    background-color: rgba(102, 126, 234, 0.05);
+    border-left: 3px solid #667eea;
+}
+
+/* SubCategory Modal Styles - Same gradient as Categories */
+.subcategory-container .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px 20px 0 0;
+    padding: 1.5rem;
+}
+
+.subcategory-container .modal-title {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.subcategory-container .modal-title i {
+    font-size: 1.3rem;
+}
+
+/* SubCategory Status Toggle Styles */
+.status-toggle-btn {
+    transition: all 0.3s ease;
+}
+
+.status-toggle-btn:hover {
+    transform: scale(1.1);
+}
+
+/* SubCategory Empty State */
+.subcategory-container .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.subcategory-container .empty-state .empty-icon {
+    font-size: 4rem;
+    color: #cbd5e0;
+    margin-bottom: 1.5rem;
+}
+
+.subcategory-container .empty-state h5 {
+    color: #4a5568;
+    margin-bottom: 1rem;
+}
+
+.subcategory-container .empty-state p {
+    color: #718096;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+/* Responsive adjustments for SubCategory */
+@media (max-width: 768px) {
+    .subcategory-image {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .subcategory-no-image {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .subcategory-no-image i {
+        font-size: 20px;
+    }
+    
+    .subcategory-parent-badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+    }
+}

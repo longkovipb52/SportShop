@@ -151,10 +151,25 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Categories" ? "active" : "")" href="/Admin/Categories">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Categories" || ViewContext.RouteData.Values["Controller"]?.ToString() == "SubCategory" ? "active" : "")" href="#" onclick="event.preventDefault(); toggleCategorySubmenu(this)">
                         <i class="fas fa-tags"></i>
-                        <span>Danh mục</span>
+                        <span>Quản lý danh mục</span>
+                        <i class="fas fa-chevron-down submenu-toggle"></i>
                     </a>
+                    <ul class="submenu" style="display: none;">
+                        <li>
+                            <a href="/Admin/Categories" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Categories" ? "active" : "")">
+                                <i class="fas fa-folder"></i>
+                                Danh mục cha
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/Admin/SubCategory" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "SubCategory" ? "active" : "")">
+                                <i class="fas fa-sitemap"></i>
+                                Danh mục con
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Brands" ? "active" : "")" href="/Admin/Brands">
@@ -318,9 +333,26 @@
             }
         }
 
-        // Auto-expand if on AttributeManagement page
+        function toggleCategorySubmenu(element) {
+            const submenu = element.nextElementSibling;
+            const toggle = element.querySelector('.submenu-toggle');
+            
+            if (submenu.style.display === 'none') {
+                submenu.style.display = 'block';
+                toggle.style.transform = 'rotate(180deg)';
+                element.classList.add('active');
+            } else {
+                submenu.style.display = 'none';
+                toggle.style.transform = 'rotate(0deg)';
+                element.classList.remove('active');
+            }
+        }
+
+        // Auto-expand submenus based on current page
         document.addEventListener('DOMContentLoaded', function() {
             const controller = '@(ViewContext.RouteData.Values["Controller"]?.ToString() ?? "")';
+            
+            // Auto-expand Attribute Management submenu
             if (controller === 'AttributeManagement') {
                 const attrLink = document.querySelector('a[onclick*="toggleAttributeSubmenu"]');
                 if (attrLink) {
@@ -329,6 +361,18 @@
                     submenu.style.display = 'block';
                     toggle.style.transform = 'rotate(180deg)';
                     attrLink.classList.add('active');
+                }
+            }
+            
+            // Auto-expand Category submenu
+            if (controller === 'Categories' || controller === 'SubCategory') {
+                const catLink = document.querySelector('a[onclick*="toggleCategorySubmenu"]');
+                if (catLink) {
+                    const submenu = catLink.nextElementSibling;
+                    const toggle = catLink.querySelector('.submenu-toggle');
+                    submenu.style.display = 'block';
+                    toggle.style.transform = 'rotate(180deg)';
+                    catLink.classList.add('active');
                 }
             }
         });

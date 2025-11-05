@@ -329,8 +329,121 @@ function showQuickViewLoading() {
     document.getElementById('quick-view-brand').textContent = '';
 }
 
+// Hàm cập nhật thuộc tính được chọn và thay đổi ảnh
+function updateSelectedAttribute() {
+    const selectedColor = document.querySelector('.color-option.active');
+    const selectedSize = document.querySelector('.size-option.active');
+    
+    const color = selectedColor ? selectedColor.getAttribute('data-color') : null;
+    const size = selectedSize ? selectedSize.getAttribute('data-size') : null;
+    
+    console.log("=== updateSelectedAttribute called ===");
+    console.log("Selected color:", color);
+    console.log("Selected size:", size);
+    console.log("Available attributes:", window.productAttributes);
+    
+    // Tìm thuộc tính phù hợp
+    let attribute = null;
+    
+    if (window.productAttributes && window.productAttributes.length > 0) {
+        if (color && size) {
+            // Tìm thuộc tính khớp cả màu và kích thước
+            attribute = window.productAttributes.find(attr => 
+                attr.color === color && attr.size === size
+            );
+        } else if (color) {
+            // Chỉ tìm theo màu
+            attribute = window.productAttributes.find(attr => 
+                attr.color === color
+            );
+        } else if (size) {
+            // Chỉ tìm theo kích thước
+            attribute = window.productAttributes.find(attr => 
+                attr.size === size
+            );
+        }
+    }
+    
+    console.log("Found attribute:", attribute);
+    
+    // Cập nhật ảnh
+    const imageElement = document.getElementById('quick-view-image');
+    if (!imageElement) {
+        console.error("Image element not found!");
+        return;
+    }
+    
+    // Nếu tìm thấy thuộc tính và có ảnh
+    if (attribute && attribute.imageURL && attribute.imageURL.trim() !== '') {
+        let imagePath = attribute.imageURL;
+        
+        // Xử lý đường dẫn ảnh
+        if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+            imagePath = '/upload/' + imagePath;
+        }
+        
+        console.log("✓ Updating to attribute image:", imagePath);
+        
+        // Thêm hiệu ứng fade
+        imageElement.style.opacity = '0.5';
+        imageElement.src = imagePath;
+        
+        imageElement.onload = function() {
+            imageElement.style.transition = 'opacity 0.3s ease';
+            imageElement.style.opacity = '1';
+            imageElement.classList.add('quick-view-image-loaded');
+            console.log("✓ Attribute image loaded successfully");
+        };
+        
+        imageElement.onerror = function() {
+            console.warn("✗ Error loading attribute image, fallback to product image");
+            // Fallback về ảnh sản phẩm
+            if (window.currentProduct && window.currentProduct.imageURL) {
+                let defaultPath = window.currentProduct.imageURL;
+                if (!defaultPath.startsWith('http') && !defaultPath.startsWith('/')) {
+                    defaultPath = '/upload/product/' + defaultPath;
+                }
+                imageElement.src = defaultPath;
+            }
+            imageElement.style.opacity = '1';
+        };
+    } else {
+        // Không có attribute hoặc attribute không có ảnh -> dùng ảnh sản phẩm mặc định
+        if (window.currentProduct && window.currentProduct.imageURL) {
+            let defaultPath = window.currentProduct.imageURL;
+            if (!defaultPath.startsWith('http') && !defaultPath.startsWith('/')) {
+                defaultPath = '/upload/product/' + defaultPath;
+            }
+            console.log("→ Using default product image:", defaultPath);
+            imageElement.style.opacity = '0.5';
+            imageElement.src = defaultPath;
+            imageElement.onload = function() {
+                imageElement.style.transition = 'opacity 0.3s ease';
+                imageElement.style.opacity = '1';
+            };
+        }
+    }
+    
+    // Cập nhật attribute ID cho nút thêm vào giỏ hàng
+    const addToCartButton = document.getElementById('quick-view-add-to-cart');
+    if (addToCartButton) {
+        if (attribute) {
+            addToCartButton.setAttribute('data-attribute-id', attribute.attributeID);
+            console.log("Set attribute ID:", attribute.attributeID);
+        } else {
+            addToCartButton.removeAttribute('data-attribute-id');
+            console.log("Removed attribute ID (no attribute selected)");
+        }
+    }
+    
+    console.log("=== End updateSelectedAttribute ===\n");
+}
 
 function populateQuickView(product) {
+    // Lưu trữ thông tin sản phẩm ở phạm vi toàn cục để updateSelectedAttribute có thể truy cập
+    window.currentProduct = product;
+    window.productAttributes = product.attributes || [];
+    
     // Product image - Sử dụng đường dẫn đúng
     const imageElement = document.getElementById('quick-view-image');
     if (imageElement) {
@@ -347,6 +460,8 @@ function populateQuickView(product) {
         }
         
         imageElement.src = imagePath;
+        // Reset opacity cho lần load mới
+        imageElement.style.opacity = '1';
     }
     
     // Product title
@@ -415,9 +530,6 @@ function populateQuickView(product) {
         }
     }
     
-    // Lưu trữ map của thuộc tính vào một biến toàn cục để có thể tham chiếu sau này
-    window.productAttributes = product.attributes || [];
-    
     // Colors and sizes are populated if product has attributes
     const colorsContainer = document.getElementById('quick-view-colors');
     const sizesContainer = document.getElementById('quick-view-sizes');
@@ -436,18 +548,24 @@ function populateQuickView(product) {
             .map(attr => attr.size))];
         
         // Populate colors
-        if (colorsContainer) {
-            uniqueColors.forEach(color => {
+        if (colorsContainer && uniqueColors.length > 0) {
+            uniqueColors.forEach((color, index) => {
                 const colorBtn = document.createElement('button');
                 colorBtn.type = 'button';
                 colorBtn.className = 'btn btn-outline-secondary color-option me-2 mb-2';
                 colorBtn.textContent = color;
                 colorBtn.setAttribute('data-color', color);
+                
+                // Chọn màu đầu tiên mặc định
+                if (index === 0) {
+                    colorBtn.classList.add('active');
+                }
+                
                 colorBtn.addEventListener('click', function() {
                     document.querySelectorAll('.color-option').forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Khi màu thay đổi, cập nhật attributeId
+                    // Khi màu thay đổi, cập nhật attributeId và ảnh
                     updateSelectedAttribute();
                 });
                 colorsContainer.appendChild(colorBtn);
@@ -455,75 +573,40 @@ function populateQuickView(product) {
         }
         
         // Populate sizes
-        if (sizesContainer) {
-            uniqueSizes.forEach(size => {
+        if (sizesContainer && uniqueSizes.length > 0) {
+            uniqueSizes.forEach((size, index) => {
                 const sizeBtn = document.createElement('button');
                 sizeBtn.type = 'button';
                 sizeBtn.className = 'btn btn-outline-secondary size-option me-2 mb-2';
                 sizeBtn.textContent = size;
                 sizeBtn.setAttribute('data-size', size);
+                
+                // Chọn size đầu tiên mặc định
+                if (index === 0) {
+                    sizeBtn.classList.add('active');
+                }
+                
                 sizeBtn.addEventListener('click', function() {
                     document.querySelectorAll('.size-option').forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Khi kích thước thay đổi, cập nhật attributeId
+                    // Khi kích thước thay đổi, cập nhật attributeId và ảnh
                     updateSelectedAttribute();
                 });
                 sizesContainer.appendChild(sizeBtn);
             });
         }
+        
+        // Cập nhật ảnh và attributeId ban đầu nếu có thuộc tính được chọn mặc định
+        setTimeout(() => {
+            updateSelectedAttribute();
+        }, 100);
     }
     
     // Set product ID for add to cart button
     const quickViewAddToCartBtn = document.getElementById('quick-view-add-to-cart');
     if (quickViewAddToCartBtn) {
         quickViewAddToCartBtn.setAttribute('data-product-id', product.productID);
-    }
-    
-    // Thêm hàm updateSelectedAttribute để cập nhật attributeId khi chọn màu và kích thước
-    function updateSelectedAttribute() {
-        const selectedColor = document.querySelector('.color-option.active');
-        const selectedSize = document.querySelector('.size-option.active');
-        
-        const color = selectedColor ? selectedColor.getAttribute('data-color') : null;
-        const size = selectedSize ? selectedSize.getAttribute('data-size') : null;
-        
-        console.log("Selected color:", color);
-        console.log("Selected size:", size);
-        
-        // Tìm thuộc tính phù hợp
-        let attribute = null;
-        
-        if (color && size) {
-            // Tìm thuộc tính khớp cả màu và kích thước
-            attribute = window.productAttributes.find(attr => 
-                attr.color === color && attr.size === size
-            );
-        } else if (color) {
-            // Chỉ tìm theo màu
-            attribute = window.productAttributes.find(attr => 
-                attr.color === color
-            );
-        } else if (size) {
-            // Chỉ tìm theo kích thước
-            attribute = window.productAttributes.find(attr => 
-                attr.size === size
-            );
-        }
-        
-        console.log("Found attribute:", attribute);
-        
-        // Cập nhật attribute ID cho nút thêm vào giỏ hàng
-        const addToCartButton = document.getElementById('quick-view-add-to-cart');
-        if (addToCartButton) {
-            if (attribute) {
-                addToCartButton.setAttribute('data-attribute-id', attribute.attributeID);
-                console.log("Set attribute ID:", attribute.attributeID);
-            } else {
-                addToCartButton.removeAttribute('data-attribute-id');
-                console.log("Removed attribute ID");
-            }
-        }
     }
 }
 

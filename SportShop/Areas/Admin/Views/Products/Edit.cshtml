@@ -180,9 +180,11 @@
             <div class="form-section full-width product-attributes-section">
                 <div class="section-header">
                     <h3><i class="fas fa-cogs"></i> Quản lý thuộc tính sản phẩm (Size, Color)</h3>
-                    <button type="button" class="btn btn-sm btn-primary" onclick="openAttributeModal()">
-                        <i class="fas fa-plus"></i> Thêm thuộc tính
-                    </button>
+                    <div class="header-actions">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="openAttributeModal()">
+                            <i class="fas fa-plus"></i> Thêm thuộc tính
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="attributes-container" id="attributesContainer">
@@ -245,21 +247,63 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <!-- Stock Summary Alert -->
+                <div class="alert alert-info d-flex align-items-center mb-3" id="stockSummary" style="display: none !important;">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <div>
+                        <strong>Tồn kho sản phẩm:</strong> <span id="productTotalStock">@Model.Stock</span> sản phẩm
+                        <span class="ms-3">|</span>
+                        <span class="ms-3"><strong>Đã phân bổ:</strong> <span id="allocatedStock">0</span> sản phẩm</span>
+                        <span class="ms-3">|</span>
+                        <span class="ms-3 text-success"><strong>Còn lại:</strong> <span id="remainingStock">@Model.Stock</span> sản phẩm</span>
+                    </div>
+                </div>
+                
                 <form id="attributeForm" enctype="multipart/form-data">
                     <input type="hidden" id="attributeId" name="AttributeID" value="0" />
                     <input type="hidden" id="productId" name="ProductID" value="@Model.ProductID" />
+                    <input type="hidden" id="sizeOptionId" name="SizeOptionID" value="" />
+                    <input type="hidden" id="colorOptionId" name="ColorOptionID" value="" />
+                    <input type="hidden" id="productTotalStockValue" value="@Model.Stock" />
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="attributeSize" class="form-label">Kích thước <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="attributeSize" name="Size" required placeholder="Ví dụ: S, M, L, XL, 39, 40, 41...">
-                            <div class="invalid-feedback">Vui lòng nhập kích thước</div>
+                            <label for="attributeSize" class="form-label">
+                                Kích thước <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <select class="form-select" id="attributeSizeSelect" onchange="handleSizeChange(this)">
+                                    <option value="">-- Chọn kích thước --</option>
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" onclick="toggleSizeInput()" title="Nhập tự do">
+                                    <i class="fas fa-keyboard"></i>
+                                </button>
+                            </div>
+                            <input type="text" class="form-control mt-2" id="attributeSize" name="Size" 
+                                   style="display: none;" placeholder="Nhập kích thước khác...">
+                            <small class="text-muted">Chọn từ danh sách hoặc nhập tự do</small>
+                            <div class="invalid-feedback">Vui lòng chọn hoặc nhập kích thước</div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label for="attributeColor" class="form-label">Màu sắc <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="attributeColor" name="Color" required placeholder="Ví dụ: Đỏ, Xanh, Trắng...">
-                            <div class="invalid-feedback">Vui lòng nhập màu sắc</div>
+                            <label for="attributeColor" class="form-label">
+                                Màu sắc <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <select class="form-select" id="attributeColorSelect" onchange="handleColorChange(this)">
+                                    <option value="">-- Chọn màu sắc --</option>
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" onclick="toggleColorInput()" title="Nhập tự do">
+                                    <i class="fas fa-keyboard"></i>
+                                </button>
+                            </div>
+                            <input type="text" class="form-control mt-2" id="attributeColor" name="Color" 
+                                   style="display: none;" placeholder="Nhập màu sắc khác...">
+                            <div id="colorPreview" class="mt-2" style="display: none;">
+                                <div style="width: 40px; height: 40px; border: 2px solid #ddd; border-radius: 4px;" id="colorBox"></div>
+                            </div>
+                            <small class="text-muted">Chọn từ danh sách hoặc nhập tự do</small>
+                            <div class="invalid-feedback">Vui lòng chọn hoặc nhập màu sắc</div>
                         </div>
                     </div>
                     

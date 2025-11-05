@@ -1219,6 +1219,60 @@
     transform: scale(1.05);
 }
 
+/* Quick View Modal Enhancements */
+#quick-view-image {
+    transition: opacity 0.3s ease;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.color-option, .size-option {
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid #dee2e6;
+    padding: 8px 16px;
+    font-weight: 500;
+}
+
+.color-option:hover, .size-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-pink);
+}
+
+.color-option.active, .size-option.active {
+    background: linear-gradient(45deg, var(--primary-pink), var(--primary-yellow));
+    color: white;
+    border-color: var(--primary-pink);
+    box-shadow: 0 4px 12px rgba(255, 105, 180, 0.4);
+}
+
+.color-option.active::after, .size-option.active::after {
+    content: '✓';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: bold;
+}
+
+/* Animation cho modal image */
+@keyframes fadeInImage {
+    from {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.quick-view-image-loaded {
+    animation: fadeInImage 0.3s ease;
+}
+
 /* Hiệu ứng hover cho rating */
 .form-check:hover .form-check-label[for^="rating-"] {
     color: var(--primary-pink);

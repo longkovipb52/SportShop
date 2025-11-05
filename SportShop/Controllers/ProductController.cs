@@ -333,9 +333,11 @@ namespace SportShop.Controllers
                         attributesList.Add(new
                         {
                             attributeID = attr.AttributeID,
-                            color = attr.Color,
-                            size = attr.Size,
-                            stock = attr.Stock
+                            color = attr.Color ?? "",
+                            size = attr.Size ?? "",
+                            stock = attr.Stock,
+                            price = attr.Price,
+                            imageURL = attr.ImageURL ?? ""
                         });
                     }
                 }

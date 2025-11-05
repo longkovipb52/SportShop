@@ -25,6 +25,12 @@ namespace SportShop.Data
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Voucher> Vouchers { get; set; }
         public DbSet<UserVoucher> UserVouchers { get; set; }
+        
+        // New master data tables for Option 3 (Hybrid Approach)
+        public DbSet<SizeOption> SizeOptions { get; set; }
+        public DbSet<ColorOption> ColorOptions { get; set; }
+        public DbSet<AttributeType> AttributeTypes { get; set; }
+        public DbSet<CategoryAttributeType> CategoryAttributeTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -113,6 +119,25 @@ namespace SportShop.Data
             modelBuilder.Entity<UserVoucher>()
                 .HasIndex(uv => new { uv.UserID, uv.VoucherID })
                 .IsUnique();
-        }
+
+            // Cấu hình quan hệ cho SizeOption
+            modelBuilder.Entity<SizeOption>()
+                .HasOne(s => s.Category)
+                .WithMany()
+                .HasForeignKey(s => s.CategoryID)
+                .IsRequired(false);
+
+            // Cấu hình quan hệ cho CategoryAttributeType
+            modelBuilder.Entity<CategoryAttributeType>()
+                .HasOne(cat => cat.Category)
+                .WithMany()
+                .HasForeignKey(cat => cat.CategoryID);
+
+            modelBuilder.Entity<CategoryAttributeType>()
+                .HasOne(cat => cat.AttributeType)
+                .WithMany()
+                .HasForeignKey(cat => cat.AttributeTypeID);
+
+            }
     }
 }

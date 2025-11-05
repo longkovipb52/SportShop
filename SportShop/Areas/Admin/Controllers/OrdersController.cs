@@ -175,6 +175,8 @@ namespace SportShop.Areas.Admin.Controllers
             var order = await _context.Orders
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Attribute)
                 .FirstOrDefaultAsync(o => o.OrderID == orderId);
 
             if (order == null)
@@ -195,7 +197,7 @@ namespace SportShop.Areas.Admin.Controllers
                         var product = orderItem.Product;
                         if (product != null)
                         {
-                            // Check if there's enough stock
+                            // Check if there's enough stock in PRODUCT
                             if (product.Stock < orderItem.Quantity)
                             {
                                 return Json(new { 
@@ -204,7 +206,23 @@ namespace SportShop.Areas.Admin.Controllers
                                 });
                             }
                             
-                            // Reduce stock
+                            // Check if there's enough stock in ATTRIBUTE (if exists)
+                            if (orderItem.AttributeID.HasValue && orderItem.Attribute != null)
+                            {
+                                if (orderItem.Attribute.Stock < orderItem.Quantity)
+                                {
+                                    return Json(new { 
+                                        success = false, 
+                                        message = $"Không đủ hàng tồn kho cho thuộc tính (Size: {orderItem.Attribute.Size}, Color: {orderItem.Attribute.Color}). Còn lại: {orderItem.Attribute.Stock}, cần: {orderItem.Quantity}" 
+                                    });
+                                }
+                                
+                                // Reduce ATTRIBUTE stock
+                                orderItem.Attribute.Stock -= orderItem.Quantity;
+                                _context.ProductAttributes.Update(orderItem.Attribute);
+                            }
+                            
+                            // Reduce PRODUCT stock (total)
                             product.Stock -= orderItem.Quantity;
                             _context.Products.Update(product);
                         }
@@ -218,7 +236,14 @@ namespace SportShop.Areas.Admin.Controllers
                         var product = orderItem.Product;
                         if (product != null)
                         {
-                            // Restore stock
+                            // Restore ATTRIBUTE stock (if exists)
+                            if (orderItem.AttributeID.HasValue && orderItem.Attribute != null)
+                            {
+                                orderItem.Attribute.Stock += orderItem.Quantity;
+                                _context.ProductAttributes.Update(orderItem.Attribute);
+                            }
+                            
+                            // Restore PRODUCT stock (total)
                             product.Stock += orderItem.Quantity;
                             _context.Products.Update(product);
                         }

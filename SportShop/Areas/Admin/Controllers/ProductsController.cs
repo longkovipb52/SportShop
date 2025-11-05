@@ -429,9 +429,6 @@ namespace SportShop.Areas.Admin.Controllers
             }
         }
 
-        // ==================== PRODUCT ATTRIBUTES MANAGEMENT ====================
-        
-        // API: Get all attributes for a product
         [HttpGet]
         public async Task<IActionResult> GetAttributes(int productId)
         {
@@ -439,6 +436,16 @@ namespace SportShop.Areas.Admin.Controllers
             {
                 var attributes = await _context.ProductAttributes
                     .Where(a => a.ProductID == productId)
+                    .Select(a => new
+                    {
+                        a.AttributeID,
+                        a.ProductID,
+                        Size = a.Size ?? "",
+                        Color = a.Color ?? "",
+                        a.Stock,
+                        a.Price,
+                        ImageURL = a.ImageURL ?? ""
+                    })
                     .OrderBy(a => a.Size)
                     .ThenBy(a => a.Color)
                     .ToListAsync();
@@ -463,7 +470,19 @@ namespace SportShop.Areas.Admin.Controllers
                     return Json(new { success = false, message = "Không tìm thấy thuộc tính" });
                 }
 
-                return Json(new { success = true, data = attribute });
+                // Return only the data we need (no navigation properties)
+                var result = new
+                {
+                    attribute.AttributeID,
+                    attribute.ProductID,
+                    Size = attribute.Size ?? "",
+                    Color = attribute.Color ?? "",
+                    attribute.Stock,
+                    attribute.Price,
+                    ImageURL = attribute.ImageURL ?? ""
+                };
+
+                return Json(new { success = true, data = result });
             }
             catch (Exception ex)
             {
@@ -545,7 +564,19 @@ namespace SportShop.Areas.Admin.Controllers
                 _context.ProductAttributes.Add(attribute);
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Thêm thuộc tính thành công", data = attribute });
+                // Return only the data we need (no navigation properties)
+                var result = new
+                {
+                    attribute.AttributeID,
+                    attribute.ProductID,
+                    Size = attribute.Size ?? "",
+                    Color = attribute.Color ?? "",
+                    attribute.Stock,
+                    attribute.Price,
+                    ImageURL = attribute.ImageURL ?? ""
+                };
+
+                return Json(new { success = true, message = "Thêm thuộc tính thành công", data = result });
             }
             catch (Exception ex)
             {
@@ -640,7 +671,19 @@ namespace SportShop.Areas.Admin.Controllers
                 _context.Update(attribute);
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Cập nhật thuộc tính thành công", data = attribute });
+                // Return only the data we need (no navigation properties)
+                var result = new
+                {
+                    attribute.AttributeID,
+                    attribute.ProductID,
+                    Size = attribute.Size ?? "",
+                    Color = attribute.Color ?? "",
+                    attribute.Stock,
+                    attribute.Price,
+                    ImageURL = attribute.ImageURL ?? ""
+                };
+
+                return Json(new { success = true, message = "Cập nhật thuộc tính thành công", data = result });
             }
             catch (Exception ex)
             {

@@ -15,13 +15,7 @@ namespace SportShop.Models
         public decimal? Price { get; set; }
         public string? ImageURL { get; set; }
         
-        // New fields for Option 3 (Hybrid Approach)
-        [StringLength(100)]
-        public string? SKU { get; set; }
-        
-        [StringLength(100)]
-        public string? Barcode { get; set; }
-        
+        // Foreign keys to master data
         public int? SizeOptionID { get; set; }
         public int? ColorOptionID { get; set; }
         

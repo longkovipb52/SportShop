@@ -11,6 +11,7 @@ namespace SportShop.Data
         }
 
         public DbSet<Category> Categories { get; set; }
+        public DbSet<SubCategory> SubCategories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductAttribute> ProductAttributes { get; set; }
         public DbSet<User> Users { get; set; }
@@ -46,6 +47,20 @@ namespace SportShop.Data
                 .HasOne(p => p.Category)
                 .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CategoryID);
+            
+            // Quan hệ Product - SubCategory
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.SubCategory)
+                .WithMany(sc => sc.Products)
+                .HasForeignKey(p => p.SubCategoryID)
+                .IsRequired(false);
+            
+            // Quan hệ SubCategory - Category
+            modelBuilder.Entity<SubCategory>()
+                .HasOne(sc => sc.Category)
+                .WithMany(c => c.SubCategories)
+                .HasForeignKey(sc => sc.CategoryID)
+                .OnDelete(DeleteBehavior.Restrict); // Ngăn xóa Category khi còn SubCategory
                 
             // Quan hệ Product - Brand
             modelBuilder.Entity<Product>()
@@ -120,11 +135,11 @@ namespace SportShop.Data
                 .HasIndex(uv => new { uv.UserID, uv.VoucherID })
                 .IsUnique();
 
-            // Cấu hình quan hệ cho SizeOption
+            // Cấu hình quan hệ cho SizeOption - liên kết với SubCategory
             modelBuilder.Entity<SizeOption>()
-                .HasOne(s => s.Category)
+                .HasOne(s => s.SubCategory)
                 .WithMany()
-                .HasForeignKey(s => s.CategoryID)
+                .HasForeignKey(s => s.SubCategoryID)
                 .IsRequired(false);
 
             // Cấu hình quan hệ cho CategoryAttributeType

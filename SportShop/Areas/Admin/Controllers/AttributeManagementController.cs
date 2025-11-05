@@ -15,6 +15,84 @@ namespace SportShop.Areas.Admin.Controllers
             _context = context;
         }
 
+        #region View Actions
+
+        // GET: Admin/AttributeManagement/Sizes
+        public async Task<IActionResult> Sizes(int? subCategoryId, int page = 1, int pageSize = 20)
+        {
+            ViewData["Title"] = "Quản lý Kích thước";
+            
+            var query = _context.SizeOptions
+                .Include(s => s.SubCategory)
+                    .ThenInclude(sc => sc!.Category)
+                .AsQueryable();
+
+            // Filter by SubCategory
+            if (subCategoryId.HasValue && subCategoryId > 0)
+            {
+                query = query.Where(s => s.SubCategoryID == subCategoryId);
+                ViewData["CurrentSubCategory"] = subCategoryId;
+            }
+
+            var totalRecords = await query.CountAsync();
+            
+            var sizes = await query
+                .OrderBy(s => s.SubCategory!.Category!.Name)
+                .ThenBy(s => s.SubCategory!.Name)
+                .ThenBy(s => s.DisplayOrder)
+                .ThenBy(s => s.SizeName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Load SubCategories for filter
+            ViewBag.SubCategories = await _context.SubCategories
+                .Include(sc => sc.Category)
+                .Where(sc => sc.IsActive)
+                .OrderBy(sc => sc.Category!.Name)
+                .ThenBy(sc => sc.Name)
+                .ToListAsync();
+
+            ViewData["CurrentPage"] = page;
+            ViewData["PageSize"] = pageSize;
+            ViewData["TotalPages"] = (int)Math.Ceiling((double)totalRecords / pageSize);
+            ViewData["TotalRecords"] = totalRecords;
+
+            return View(sizes);
+        }
+
+        // GET: Admin/AttributeManagement/Colors
+        public async Task<IActionResult> Colors(string search = "", int page = 1, int pageSize = 20)
+        {
+            ViewData["Title"] = "Quản lý Màu sắc";
+            
+            var query = _context.ColorOptions.AsQueryable();
+
+            // Search
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(c => c.ColorName.Contains(search));
+                ViewData["CurrentSearch"] = search;
+            }
+
+            var totalRecords = await query.CountAsync();
+            
+            var colors = await query
+                .OrderBy(c => c.ColorName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewData["CurrentPage"] = page;
+            ViewData["PageSize"] = pageSize;
+            ViewData["TotalPages"] = (int)Math.Ceiling((double)totalRecords / pageSize);
+            ViewData["TotalRecords"] = totalRecords;
+
+            return View(colors);
+        }
+
+        #endregion
+
         #region Size Options API
 
         // GET: Admin/AttributeManagement/GetSizes?categoryId=1
@@ -27,7 +105,7 @@ namespace SportShop.Areas.Admin.Controllers
 
                 if (categoryId.HasValue)
                 {
-                    query = query.Where(s => s.CategoryID == categoryId && s.IsActive);
+                    query = query.Where(s => s.SubCategoryID == categoryId && s.IsActive);
                 }
                 else
                 {
@@ -41,7 +119,7 @@ namespace SportShop.Areas.Admin.Controllers
                     {
                         sizeOptionID = s.SizeOptionID,
                         sizeName = s.SizeName,
-                        categoryID = s.CategoryID,
+                        subCategoryID = s.SubCategoryID,
                         displayOrder = s.DisplayOrder
                     })
                     .ToListAsync();
@@ -68,7 +146,7 @@ namespace SportShop.Areas.Admin.Controllers
                 // Check duplicate
                 var exists = await _context.SizeOptions
                     .AnyAsync(s => s.SizeName == model.SizeName && 
-                                  s.CategoryID == model.CategoryID && 
+                                  s.SubCategoryID == model.SubCategoryID && 
                                   s.IsActive);
                 
                 if (exists)
@@ -87,7 +165,7 @@ namespace SportShop.Areas.Admin.Controllers
                     {
                         sizeOptionID = model.SizeOptionID,
                         sizeName = model.SizeName,
-                        categoryID = model.CategoryID,
+                        subCategoryID = model.SubCategoryID,
                         displayOrder = model.DisplayOrder
                     }
                 });
@@ -119,6 +197,45 @@ namespace SportShop.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = "Lỗi khi xóa kích thước: " + ex.Message });
+            }
+        }
+
+        // POST: Admin/AttributeManagement/UpdateSize
+        [HttpPost]
+        public async Task<IActionResult> UpdateSize([FromBody] SizeOption model)
+        {
+            try
+            {
+                var size = await _context.SizeOptions.FindAsync(model.SizeOptionID);
+                if (size == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy kích thước" });
+                }
+
+                // Check duplicate
+                var exists = await _context.SizeOptions
+                    .AnyAsync(s => s.SizeName == model.SizeName && 
+                                  s.SubCategoryID == model.SubCategoryID && 
+                                  s.SizeOptionID != model.SizeOptionID &&
+                                  s.IsActive);
+                
+                if (exists)
+                {
+                    return Json(new { success = false, message = "Kích thước này đã tồn tại cho danh mục này" });
+                }
+
+                size.SizeName = model.SizeName;
+                size.SubCategoryID = model.SubCategoryID;
+                size.DisplayOrder = model.DisplayOrder;
+                size.IsActive = model.IsActive;
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Cập nhật kích thước thành công" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi khi cập nhật: " + ex.Message });
             }
         }
 
@@ -212,6 +329,43 @@ namespace SportShop.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = "Lỗi khi xóa màu: " + ex.Message });
+            }
+        }
+
+        // POST: Admin/AttributeManagement/UpdateColor
+        [HttpPost]
+        public async Task<IActionResult> UpdateColor([FromBody] ColorOption model)
+        {
+            try
+            {
+                var color = await _context.ColorOptions.FindAsync(model.ColorOptionID);
+                if (color == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy màu" });
+                }
+
+                // Check duplicate
+                var exists = await _context.ColorOptions
+                    .AnyAsync(c => c.ColorName == model.ColorName && 
+                                  c.ColorOptionID != model.ColorOptionID &&
+                                  c.IsActive);
+                
+                if (exists)
+                {
+                    return Json(new { success = false, message = "Màu này đã tồn tại" });
+                }
+
+                color.ColorName = model.ColorName;
+                color.HexCode = model.HexCode;
+                color.IsActive = model.IsActive;
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Cập nhật màu thành công" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi khi cập nhật: " + ex.Message });
             }
         }
 

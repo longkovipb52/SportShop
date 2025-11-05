@@ -1,0 +1,297 @@
+@model IEnumerable<SportShop.Models.SizeOption>
+@{
+    ViewData["Title"] = "Quản lý Kích thước";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/admin-table.css" />
+<link rel="stylesheet" href="~/css/attribute-management.css" asp-append-version="true" />
+
+<div class="container-fluid sizes-page">
+    <!-- Header -->
+    <div class="page-header sizes-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Thêm kích thước mới
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Lọc theo Danh mục con</label>
+                    <select name="subCategoryId" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Tất cả danh mục con --</option>
+                        @foreach (var subCat in ViewBag.SubCategories as List<SportShop.Models.SubCategory>)
+                        {
+                            <option value="@subCat.SubCategoryID" 
+                                    selected="@(ViewData["CurrentSubCategory"]?.ToString() == subCat.SubCategoryID.ToString())">
+                                @subCat.Category?.Name - @subCat.Name
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    @if (ViewData["CurrentSubCategory"] != null)
+                    {
+                        <a href="@Url.Action("Sizes")" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Xóa bộ lọc
+                        </a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Danh mục chính</th>
+                                <th>Danh mục con</th>
+                                <th>Kích thước</th>
+                                <th>Thứ tự hiển thị</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int index = ((int)ViewData["CurrentPage"] - 1) * (int)ViewData["PageSize"] + 1; }
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@index</td>
+                                    <td>
+                                        @if (item.SubCategory?.Category != null)
+                                        {
+                                            <span class="badge bg-info">@item.SubCategory.Category.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.SubCategory != null)
+                                        {
+                                            @item.SubCategory.Name
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Chưa gán</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">@item.SizeName</strong>
+                                    </td>
+                                    <td>@item.DisplayOrder</td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Ngưng</span>
+                                        }
+                                    </td>
+                                    <td>@item.CreatedAt?.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-warning" 
+                                                onclick='editSize(@item.SizeOptionID, "@item.SizeName", @item.SubCategoryID, @item.DisplayOrder, @item.IsActive.ToString().ToLower())'>
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                onclick="deleteSize(@item.SizeOptionID, '@item.SizeName')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if ((int)ViewData["TotalPages"] > 1)
+                {
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            @for (int i = 1; i <= (int)ViewData["TotalPages"]; i++)
+                            {
+                                <li class="page-item @(i == (int)ViewData["CurrentPage"] ? "active" : "")">
+                                    <a class="page-link" href="?page=@i&subCategoryId=@ViewData["CurrentSubCategory"]">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    Chưa có kích thước nào. Hãy thêm kích thước mới!
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="sizeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Thêm kích thước mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="sizeForm">
+                    <input type="hidden" id="sizeOptionId" value="0" />
+                    
+                    <div class="mb-3">
+                        <label for="subCategoryId" class="form-label">Danh mục con <span class="text-danger">*</span></label>
+                        <select id="subCategoryId" class="form-select" required>
+                            <option value="">-- Chọn danh mục con --</option>
+                            @foreach (var subCat in ViewBag.SubCategories as List<SportShop.Models.SubCategory>)
+                            {
+                                <option value="@subCat.SubCategoryID">
+                                    @subCat.Category?.Name - @subCat.Name
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="sizeName" class="form-label">Tên kích thước <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="sizeName" required 
+                               placeholder="Ví dụ: 38, S, M, L, XL...">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="displayOrder" class="form-label">Thứ tự hiển thị</label>
+                        <input type="number" class="form-control" id="displayOrder" value="0">
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="isActive" checked>
+                            <label class="form-check-label" for="isActive">Hoạt động</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveSize()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let sizeModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            sizeModal = new bootstrap.Modal(document.getElementById('sizeModal'));
+        });
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Thêm kích thước mới';
+            document.getElementById('sizeForm').reset();
+            document.getElementById('sizeOptionId').value = '0';
+            document.getElementById('isActive').checked = true;
+            sizeModal.show();
+        }
+
+        function editSize(id, name, subCategoryId, displayOrder, isActive) {
+            document.getElementById('modalTitle').textContent = 'Chỉnh sửa kích thước';
+            document.getElementById('sizeOptionId').value = id;
+            document.getElementById('sizeName').value = name;
+            document.getElementById('subCategoryId').value = subCategoryId || '';
+            document.getElementById('displayOrder').value = displayOrder;
+            document.getElementById('isActive').checked = isActive;
+            sizeModal.show();
+        }
+
+        async function saveSize() {
+            const id = parseInt(document.getElementById('sizeOptionId').value);
+            const data = {
+                SizeOptionID: id,
+                SizeName: document.getElementById('sizeName').value.trim(),
+                SubCategoryID: parseInt(document.getElementById('subCategoryId').value) || null,
+                DisplayOrder: parseInt(document.getElementById('displayOrder').value) || 0,
+                IsActive: document.getElementById('isActive').checked
+            };
+
+            if (!data.SizeName) {
+                alert('Vui lòng nhập tên kích thước!');
+                return;
+            }
+
+            try {
+                const url = id === 0 ? '/Admin/AttributeManagement/CreateSize' : '/Admin/AttributeManagement/UpdateSize';
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    alert(result.message || 'Có lỗi xảy ra!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi lưu dữ liệu!');
+            }
+        }
+
+        async function deleteSize(id, name) {
+            if (!confirm(`Bạn có chắc muốn xóa kích thước "${name}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Admin/AttributeManagement/DeleteSize/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    alert(result.message || 'Có lỗi xảy ra!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi xóa!');
+            }
+        }
+    </script>
+}

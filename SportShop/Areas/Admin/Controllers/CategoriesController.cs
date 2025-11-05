@@ -346,5 +346,30 @@ namespace SportShop.Areas.Admin.Controllers
         }
 
         #endregion
+        
+        // API: Get SubCategories by CategoryID
+        [HttpGet]
+        public async Task<IActionResult> GetSubCategories(int categoryId)
+        {
+            try
+            {
+                var subCategories = await _context.SubCategories
+                    .Where(sc => sc.CategoryID == categoryId && sc.IsActive)
+                    .OrderBy(sc => sc.DisplayOrder)
+                    .ThenBy(sc => sc.Name)
+                    .Select(sc => new
+                    {
+                        subCategoryID = sc.SubCategoryID,
+                        name = sc.Name
+                    })
+                    .ToListAsync();
+
+                return Json(new { success = true, data = subCategories });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
     }
 }

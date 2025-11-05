@@ -11,10 +11,18 @@ namespace SportShop.Models
         [Key]
         public int ProductID { get; set; }
         
+        [Required]
+        [Display(Name = "Danh mục chính")]
         public int CategoryID { get; set; }
+        
+        [Display(Name = "Danh mục con")]
+        public int? SubCategoryID { get; set; }
         
         [ForeignKey("CategoryID")]
         public virtual Category Category { get; set; }
+        
+        [ForeignKey("SubCategoryID")]
+        public virtual SubCategory? SubCategory { get; set; }
         
         public int? BrandID { get; set; }  // Thêm BrandID, nullable
         

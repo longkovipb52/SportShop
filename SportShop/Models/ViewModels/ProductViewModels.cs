@@ -71,6 +71,9 @@ namespace SportShop.Models.ViewModels
 
         [Required(ErrorMessage = "Vui lòng chọn danh mục")]
         public int CategoryID { get; set; }
+        
+        [Display(Name = "Danh mục con")]
+        public int? SubCategoryID { get; set; }
 
         [Required(ErrorMessage = "Vui lòng chọn thương hiệu")]
         public int BrandID { get; set; }
@@ -90,13 +93,13 @@ namespace SportShop.Models.ViewModels
         [Required(ErrorMessage = "Vui lòng chọn sản phẩm")]
         public int ProductID { get; set; }
         
-        [Required(ErrorMessage = "Vui lòng nhập kích thước")]
-        [StringLength(10, ErrorMessage = "Kích thước không được vượt quá 10 ký tự")]
-        public string Size { get; set; } = string.Empty;
+        // Size: Có thể null nếu chọn từ SizeOption, hoặc nhập tự do
+        [StringLength(50, ErrorMessage = "Kích thước không được vượt quá 50 ký tự")]
+        public string? Size { get; set; }
         
-        [Required(ErrorMessage = "Vui lòng nhập màu sắc")]
+        // Color: Có thể null nếu chọn từ ColorOption, hoặc nhập tự do
         [StringLength(50, ErrorMessage = "Màu sắc không được vượt quá 50 ký tự")]
-        public string Color { get; set; } = string.Empty;
+        public string? Color { get; set; }
         
         [Required(ErrorMessage = "Vui lòng nhập số lượng tồn kho")]
         [Range(0, int.MaxValue, ErrorMessage = "Số lượng tồn kho không được âm")]
@@ -104,6 +107,11 @@ namespace SportShop.Models.ViewModels
         
         [Range(0.01, double.MaxValue, ErrorMessage = "Giá phải lớn hơn 0")]
         public decimal? Price { get; set; }
+        
+        // Foreign keys to master data - Ưu tiên sử dụng nếu có
+        // Nếu chọn từ dropdown, sẽ tự động điền Size/Color từ master data
+        public int? SizeOptionID { get; set; }
+        public int? ColorOptionID { get; set; }
         
         public IFormFile? ImageFile { get; set; }
         public string? CurrentImageURL { get; set; }

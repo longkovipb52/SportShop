@@ -9,7 +9,9 @@ namespace SportShop.Models
         [Key]
         public int SizeOptionID { get; set; }
         
-        public int? CategoryID { get; set; }
+        [Display(Name = "Danh mục con")]
+        [Column("CategoryID")] // Mapping tới cột CategoryID trong database (thực chất là SubCategoryID)
+        public int? SubCategoryID { get; set; }
         
         [Required(ErrorMessage = "Tên kích thước không được để trống")]
         [StringLength(50, ErrorMessage = "Tên kích thước không được vượt quá 50 ký tự")]
@@ -22,6 +24,7 @@ namespace SportShop.Models
         public DateTime? CreatedAt { get; set; } = DateTime.Now;
         
         // Navigation properties
-        public Category? Category { get; set; }
+        [ForeignKey("SubCategoryID")]
+        public SubCategory? SubCategory { get; set; }
     }
 }

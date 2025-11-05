@@ -215,6 +215,17 @@ namespace SportShop.Areas.Admin.Controllers
 
             ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "CategoryID", "Name", product.CategoryID);
             ViewBag.Brands = new SelectList(await _context.Brands.ToListAsync(), "BrandID", "Name", product.BrandID);
+            
+            // Load SubCategories for the selected Category
+            if (product.CategoryID > 0)
+            {
+                ViewBag.SubCategories = new SelectList(
+                    await _context.SubCategories
+                        .Where(sc => sc.CategoryID == product.CategoryID && sc.IsActive)
+                        .OrderBy(sc => sc.DisplayOrder)
+                        .ToListAsync(), 
+                    "SubCategoryID", "Name", product.SubCategoryID);
+            }
 
             var viewModel = new ProductEditViewModel
             {
@@ -224,6 +235,7 @@ namespace SportShop.Areas.Admin.Controllers
                 Price = product.Price,
                 Stock = product.Stock,
                 CategoryID = product.CategoryID,
+                SubCategoryID = product.SubCategoryID,
                 BrandID = product.BrandID ?? 0,
                 CurrentImageURL = product.ImageURL,
                 Attributes = product.Attributes?.ToList() ?? new List<ProductAttribute>()
@@ -497,10 +509,30 @@ namespace SportShop.Areas.Admin.Controllers
         {
             try
             {
-                if (!ModelState.IsValid)
+                // Custom validation: Phải có ít nhất Size hoặc Color
+                if (string.IsNullOrWhiteSpace(model.Size) && string.IsNullOrWhiteSpace(model.Color))
                 {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                    return Json(new { success = false, message = string.Join(", ", errors) });
+                    return Json(new { success = false, message = "Vui lòng nhập ít nhất một trong hai: Kích thước hoặc Màu sắc" });
+                }
+
+                // Nếu có SizeOptionID, lấy Size từ master data
+                if (model.SizeOptionID.HasValue && model.SizeOptionID > 0)
+                {
+                    var sizeOption = await _context.SizeOptions.FindAsync(model.SizeOptionID.Value);
+                    if (sizeOption != null)
+                    {
+                        model.Size = sizeOption.SizeName;
+                    }
+                }
+
+                // Nếu có ColorOptionID, lấy Color từ master data
+                if (model.ColorOptionID.HasValue && model.ColorOptionID > 0)
+                {
+                    var colorOption = await _context.ColorOptions.FindAsync(model.ColorOptionID.Value);
+                    if (colorOption != null)
+                    {
+                        model.Color = colorOption.ColorName;
+                    }
                 }
 
                 // Get product to check stock limit
@@ -524,11 +556,14 @@ namespace SportShop.Areas.Admin.Controllers
                     });
                 }
 
-                // Check if combination already exists
+                // Check if combination already exists (so sánh theo Size và Color, bỏ qua các giá trị null)
+                var normalizedSize = string.IsNullOrWhiteSpace(model.Size) ? null : model.Size.Trim();
+                var normalizedColor = string.IsNullOrWhiteSpace(model.Color) ? null : model.Color.Trim();
+
                 var exists = await _context.ProductAttributes
                     .AnyAsync(a => a.ProductID == model.ProductID && 
-                                   a.Size == model.Size && 
-                                   a.Color == model.Color);
+                                   a.Size == normalizedSize && 
+                                   a.Color == normalizedColor);
 
                 if (exists)
                 {
@@ -538,10 +573,12 @@ namespace SportShop.Areas.Admin.Controllers
                 var attribute = new ProductAttribute
                 {
                     ProductID = model.ProductID,
-                    Size = model.Size,
-                    Color = model.Color,
+                    Size = normalizedSize,
+                    Color = normalizedColor,
                     Stock = model.Stock,
-                    Price = model.Price
+                    Price = model.Price,
+                    SizeOptionID = model.SizeOptionID > 0 ? model.SizeOptionID : null,
+                    ColorOptionID = model.ColorOptionID > 0 ? model.ColorOptionID : null
                 };
 
                 // Handle image upload
@@ -591,10 +628,30 @@ namespace SportShop.Areas.Admin.Controllers
         {
             try
             {
-                if (!ModelState.IsValid)
+                // Custom validation: Phải có ít nhất Size hoặc Color
+                if (string.IsNullOrWhiteSpace(model.Size) && string.IsNullOrWhiteSpace(model.Color))
                 {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                    return Json(new { success = false, message = string.Join(", ", errors) });
+                    return Json(new { success = false, message = "Vui lòng nhập ít nhất một trong hai: Kích thước hoặc Màu sắc" });
+                }
+
+                // Nếu có SizeOptionID, lấy Size từ master data
+                if (model.SizeOptionID.HasValue && model.SizeOptionID > 0)
+                {
+                    var sizeOption = await _context.SizeOptions.FindAsync(model.SizeOptionID.Value);
+                    if (sizeOption != null)
+                    {
+                        model.Size = sizeOption.SizeName;
+                    }
+                }
+
+                // Nếu có ColorOptionID, lấy Color từ master data
+                if (model.ColorOptionID.HasValue && model.ColorOptionID > 0)
+                {
+                    var colorOption = await _context.ColorOptions.FindAsync(model.ColorOptionID.Value);
+                    if (colorOption != null)
+                    {
+                        model.Color = colorOption.ColorName;
+                    }
                 }
 
                 var attribute = await _context.ProductAttributes.FindAsync(model.AttributeID);
@@ -624,11 +681,15 @@ namespace SportShop.Areas.Admin.Controllers
                     });
                 }
 
+                // Normalize Size và Color
+                var normalizedSize = string.IsNullOrWhiteSpace(model.Size) ? null : model.Size.Trim();
+                var normalizedColor = string.IsNullOrWhiteSpace(model.Color) ? null : model.Color.Trim();
+
                 // Check if new combination already exists (excluding current record)
                 var exists = await _context.ProductAttributes
                     .AnyAsync(a => a.ProductID == model.ProductID && 
-                                   a.Size == model.Size && 
-                                   a.Color == model.Color &&
+                                   a.Size == normalizedSize && 
+                                   a.Color == normalizedColor &&
                                    a.AttributeID != model.AttributeID);
 
                 if (exists)
@@ -636,10 +697,12 @@ namespace SportShop.Areas.Admin.Controllers
                     return Json(new { success = false, message = "Thuộc tính với kích thước và màu sắc này đã tồn tại" });
                 }
 
-                attribute.Size = model.Size;
-                attribute.Color = model.Color;
+                attribute.Size = normalizedSize;
+                attribute.Color = normalizedColor;
                 attribute.Stock = model.Stock;
                 attribute.Price = model.Price;
+                attribute.SizeOptionID = model.SizeOptionID > 0 ? model.SizeOptionID : null;
+                attribute.ColorOptionID = model.ColorOptionID > 0 ? model.ColorOptionID : null;
 
                 // Handle image upload
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
@@ -727,6 +790,63 @@ namespace SportShop.Areas.Admin.Controllers
                 await _context.SaveChangesAsync();
 
                 return Json(new { success = true, message = "Xóa thuộc tính thành công" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        // API: Get size options by subcategory
+        [HttpGet]
+        public async Task<IActionResult> GetSizeOptions(int? subCategoryId)
+        {
+            try
+            {
+                var query = _context.SizeOptions.Where(s => s.IsActive);
+
+                // Filter by subcategory if provided
+                if (subCategoryId.HasValue && subCategoryId > 0)
+                {
+                    query = query.Where(s => s.SubCategoryID == subCategoryId);
+                }
+
+                var sizeOptions = await query
+                    .OrderBy(s => s.DisplayOrder)
+                    .Select(s => new
+                    {
+                        s.SizeOptionID,
+                        s.SizeName,
+                        s.SubCategoryID
+                    })
+                    .ToListAsync();
+
+                return Json(new { success = true, data = sizeOptions });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        // API: Get color options
+        [HttpGet]
+        public async Task<IActionResult> GetColorOptions()
+        {
+            try
+            {
+                var colorOptions = await _context.ColorOptions
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.ColorName)
+                    .Select(c => new
+                    {
+                        c.ColorOptionID,
+                        c.ColorName,
+                        c.HexCode
+                    })
+                    .ToListAsync();
+
+                return Json(new { success = true, data = colorOptions });
             }
             catch (Exception ex)
             {

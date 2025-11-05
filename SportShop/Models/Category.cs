@@ -21,6 +21,8 @@ namespace SportShop.Models
         [Display(Name = "Hình ảnh")]
         public string? ImageURL { get; set; }
         
+        // Navigation properties
         public ICollection<Product>? Products { get; set; }
+        public ICollection<SubCategory>? SubCategories { get; set; }
     }
 }

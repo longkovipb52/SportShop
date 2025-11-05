@@ -32,6 +32,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Load master data when category changes
         categorySelect.addEventListener('change', function() {
             currentCategoryId = parseInt(this.value) || 0;
+            loadSubCategories(currentCategoryId);
+        });
+    }
+    
+    // Setup SubCategory change listener
+    const subCategorySelect = document.querySelector('select[name="SubCategoryID"]');
+    if (subCategorySelect) {
+        subCategorySelect.addEventListener('change', function() {
+            const subCategoryId = parseInt(this.value) || 0;
+            console.log('SubCategory changed to:', subCategoryId);
+            // Reload size options when subcategory changes
             loadMasterData();
         });
     }
@@ -62,6 +73,42 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Load SubCategories when Category changes
+async function loadSubCategories(categoryId) {
+    const subCategorySelect = document.querySelector('select[name="SubCategoryID"]');
+    if (!subCategorySelect) return;
+    
+    // Clear current options
+    subCategorySelect.innerHTML = '<option value="">-- Chọn danh mục con --</option>';
+    
+    if (!categoryId || categoryId <= 0) {
+        // Also reload size options when category is cleared
+        loadMasterData();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/Admin/Categories/GetSubCategories?categoryId=${categoryId}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            result.data.forEach(subCat => {
+                const option = document.createElement('option');
+                option.value = subCat.subCategoryID;
+                option.textContent = subCat.name;
+                subCategorySelect.appendChild(option);
+            });
+            console.log('Loaded subcategories:', result.data.length);
+        }
+        
+        // Reload size options after loading subcategories
+        loadMasterData();
+    } catch (error) {
+        console.error('Error loading subcategories:', error);
+        loadMasterData();
+    }
+}
 
 // Load all attributes for the product
 function loadAttributes() {
@@ -136,14 +183,31 @@ function displayAttributes(attributes) {
         const imageUrl = attr.imageURL ? attr.imageURL : '/upload/product/no-image.svg';
         const priceDisplay = attr.price ? formatCurrency(attr.price) : '<span class="text-muted">Giá mặc định</span>';
         
+        // Build display name: Size - Color (with fallbacks)
+        const sizeText = attr.size && attr.size.trim() !== '' ? attr.size : '';
+        const colorText = attr.color && attr.color.trim() !== '' ? attr.color : '';
+        let displayName = '';
+        
+        if (sizeText && colorText) {
+            displayName = `${sizeText} - ${colorText}`;
+        } else if (sizeText) {
+            displayName = sizeText;
+        } else if (colorText) {
+            displayName = colorText;
+        } else {
+            displayName = 'Thuộc tính không xác định';
+        }
+        
+        const altText = `${sizeText || 'N/A'} - ${colorText || 'N/A'}`;
+        
         html += `
             <div class="attribute-card ${stockStatus}" data-attribute-id="${attr.attributeID}">
                 <div class="attribute-image">
-                    <img src="${imageUrl}" alt="${attr.size} - ${attr.color}" onerror="this.src='/upload/product/no-image.svg'" />
+                    <img src="${imageUrl}" alt="${altText}" onerror="this.src='/upload/product/no-image.svg'" />
                 </div>
                 <div class="attribute-info">
                     <div class="attribute-header">
-                        <h4>${attr.size} - ${attr.color}</h4>
+                        <h4>${displayName}</h4>
                         ${stockBadge}
                     </div>
                     <div class="attribute-details">
@@ -309,31 +373,30 @@ function saveAttribute() {
     // Get size value from either select or input
     const sizeSelect = document.getElementById('attributeSizeSelect');
     const sizeInput = document.getElementById('attributeSize');
-    const sizeValue = sizeInput.style.display !== 'none' ? sizeInput.value : sizeSelect.value;
+    const sizeValue = sizeInput.style.display !== 'none' ? sizeInput.value.trim() : sizeSelect.value;
     
     // Get color value from either select or input
     const colorSelect = document.getElementById('attributeColorSelect');
     const colorInput = document.getElementById('attributeColor');
-    const colorValue = colorInput.style.display !== 'none' ? colorInput.value : colorSelect.value;
+    const colorValue = colorInput.style.display !== 'none' ? colorInput.value.trim() : colorSelect.value;
     
-    // Validate
-    if (!sizeValue || sizeValue === '__other__') {
-        showAttributeToast('Vui lòng chọn hoặc nhập kích thước', 'error');
+    // Validate: Phải có ít nhất Size hoặc Color
+    const hasSizeValue = sizeValue && sizeValue !== '' && sizeValue !== '__other__';
+    const hasColorValue = colorValue && colorValue !== '' && colorValue !== '__other__';
+    
+    if (!hasSizeValue && !hasColorValue) {
+        showAttributeToast('Vui lòng nhập ít nhất một trong hai: Kích thước hoặc Màu sắc', 'error');
         return;
     }
     
-    if (!colorValue || colorValue === '__other__') {
-        showAttributeToast('Vui lòng chọn hoặc nhập màu sắc', 'error');
-        return;
-    }
+    // Update hidden inputs with actual values (or empty if not provided)
+    sizeInput.value = hasSizeValue ? sizeValue : '';
+    colorInput.value = hasColorValue ? colorValue : '';
     
-    // Ensure hidden inputs have the actual values
-    sizeInput.value = sizeValue;
-    colorInput.value = colorValue;
-    
-    // Validate form
-    if (!form.checkValidity()) {
-        form.classList.add('was-validated');
+    // Validate other required fields (Stock, etc.)
+    const stockInput = document.querySelector('input[name="Stock"]');
+    if (!stockInput || !stockInput.value || parseInt(stockInput.value) < 0) {
+        showAttributeToast('Vui lòng nhập số lượng tồn kho hợp lệ', 'error');
         return;
     }
     
@@ -472,11 +535,6 @@ function updateStockSummary(excludeAttributeId = null) {
     stockSummary.style.display = 'flex';
 }
 
-// ==========================================
-// Master Data Functions (Size & Color Options)
-// ==========================================
-
-// Load master data from database
 async function loadMasterData() {
     await Promise.all([
         loadSizeOptions(),
@@ -487,9 +545,13 @@ async function loadMasterData() {
 // Load size options for current category
 async function loadSizeOptions() {
     try {
-        const url = currentCategoryId > 0 
-            ? `/Admin/AttributeManagement/GetSizes?categoryId=${currentCategoryId}`
-            : '/Admin/AttributeManagement/GetSizes';
+        // Get SubCategoryID from product if available
+        const subCategorySelect = document.querySelector('select[name="SubCategoryID"]');
+        const subCategoryId = subCategorySelect ? subCategorySelect.value : null;
+        
+        const url = subCategoryId && subCategoryId > 0
+            ? `/Admin/Products/GetSizeOptions?subCategoryId=${subCategoryId}`
+            : '/Admin/Products/GetSizeOptions';
         
         const response = await fetch(url);
         const result = await response.json();
@@ -497,28 +559,38 @@ async function loadSizeOptions() {
         if (result.success) {
             sizeOptions = result.data || [];
             populateSizeDropdown();
+            console.log('Loaded size options:', sizeOptions.length);
         } else {
             console.error('Failed to load sizes:', result.message);
+            sizeOptions = [];
+            populateSizeDropdown();
         }
     } catch (error) {
         console.error('Error loading sizes:', error);
+        sizeOptions = [];
+        populateSizeDropdown();
     }
 }
 
 // Load color options
 async function loadColorOptions() {
     try {
-        const response = await fetch('/Admin/AttributeManagement/GetColors');
+        const response = await fetch('/Admin/Products/GetColorOptions');
         const result = await response.json();
         
         if (result.success) {
             colorOptions = result.data || [];
             populateColorDropdown();
+            console.log('Loaded color options:', colorOptions.length);
         } else {
             console.error('Failed to load colors:', result.message);
+            colorOptions = [];
+            populateColorDropdown();
         }
     } catch (error) {
         console.error('Error loading colors:', error);
+        colorOptions = [];
+        populateColorDropdown();
     }
 }
 
@@ -533,9 +605,9 @@ function populateSizeDropdown() {
     // Add options from master data
     sizeOptions.forEach(size => {
         const option = document.createElement('option');
-        option.value = size.sizeName;
+        option.value = size.sizeName; // API returns SizeName (capital S)
         option.textContent = size.sizeName;
-        option.dataset.sizeOptionId = size.sizeOptionID;
+        option.dataset.sizeOptionId = size.sizeOptionID; // API returns SizeOptionID
         select.appendChild(option);
     });
     
@@ -557,10 +629,10 @@ function populateColorDropdown() {
     // Add options from master data
     colorOptions.forEach(color => {
         const option = document.createElement('option');
-        option.value = color.colorName;
+        option.value = color.colorName; // API returns ColorName (capital C)
         option.textContent = color.colorName;
-        option.dataset.colorOptionId = color.colorOptionID;
-        option.dataset.hexCode = color.hexCode || '';
+        option.dataset.colorOptionId = color.colorOptionID; // API returns ColorOptionID
+        option.dataset.hexCode = color.hexCode || ''; // API returns HexCode
         select.appendChild(option);
     });
     

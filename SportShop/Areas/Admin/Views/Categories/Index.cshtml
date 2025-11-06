@@ -43,23 +43,14 @@
         </div>
     </div>
 
-    <!-- Thông báo -->
+    <!-- Hidden elements for TempData messages -->
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i>
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        <span data-tempdata-success="@TempData["SuccessMessage"]" style="display: none;"></span>
     }
-
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle"></i>
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        <span data-tempdata-error="@TempData["ErrorMessage"]" style="display: none;"></span>
     }
 
     <!-- Bảng danh sách danh mục -->

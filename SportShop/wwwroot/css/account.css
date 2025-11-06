@@ -267,6 +267,50 @@
     background: #fafbfc;
 }
 
+/* Toggle Password Visibility Icon */
+.toggle-password {
+    position: absolute !important;
+    right: 1rem !important;
+    top: 50% !important;
+    left: auto !important; /* Override any left positioning */
+    transform: translateY(-50%) !important;
+    cursor: pointer;
+    color: #6c757d;
+    z-index: 10 !important;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    width: auto !important;
+    height: auto !important;
+}
+
+.toggle-password i {
+    position: static !important; /* Override label i positioning */
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    display: inline-block !important;
+}
+
+.toggle-password:hover {
+    color: var(--primary-pink);
+    transform: translateY(-50%) scale(1.1) !important;
+}
+
+.toggle-password:hover i {
+    transform: none !important; /* Keep icon in place */
+}
+
+
+/* Ensure lock icons in labels stay in correct position */
+.form-floating label .fa-lock {
+    position: absolute !important;
+    left: -2rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none !important;
+}
+
 .form-floating .form-control:focus {
     border-color: var(--primary-pink);
     box-shadow: 0 0 0 0.2rem rgba(255, 105, 180, 0.25);
@@ -650,25 +694,25 @@
 
 .toast-content {
     padding: 1rem 1.25rem;
-    color: white;
+    color: white !important;
     border-radius: 12px;
 }
 
 .toast-success {
-    background: linear-gradient(135deg, #28a745, #20c997);
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
 }
 
 .toast-error {
-    background: linear-gradient(135deg, #dc3545, #fd7e14);
+    background: linear-gradient(135deg, #dc3545, #fd7e14) !important;
 }
 
 .toast-warning {
-    background: linear-gradient(135deg, #ffc107, #ff8800);
+    background: linear-gradient(135deg, #ffc107, #ff8800) !important;
     color: #333 !important;
 }
 
 .toast-info {
-    background: linear-gradient(135deg, #17a2b8, #00c9ff);
+    background: linear-gradient(135deg, #17a2b8, #00c9ff) !important;
 }
 
 .toast-body {
@@ -907,6 +951,44 @@
   margin: 1rem 0;
 }
 
+/* Google Login Button */
+.google-login-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    color: #444;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.google-login-btn:hover {
+    background: #f8f9fa;
+    border-color: var(--primary-pink);
+    box-shadow: 0 4px 12px rgba(255, 105, 180, 0.15);
+    transform: translateY(-2px);
+    color: #444;
+}
+
+.google-login-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.google-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
 .social-btn {
   display: flex;
   align-items: center;
@@ -1063,4 +1145,77 @@
 
 #password-strength-container {
     margin-top: -1rem;
+}
+
+/* ============== OTP VERIFICATION STYLES ============== */
+
+.otp-input-container {
+    text-align: center;
+}
+
+.otp-input-container .form-control {
+    font-size: 24px;
+    letter-spacing: 8px;
+    font-weight: bold;
+    text-align: center;
+}
+
+#countdown {
+    color: var(--primary-pink);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+#countdown.text-warning {
+    color: #ffc107 !important;
+    animation: pulse 1s infinite;
+}
+
+#countdown.text-danger {
+    color: #dc3545 !important;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+#resendBtn {
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+#resendBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#resendBtn:disabled {
+    opacity: 0.6;
+    transform: none !important;
+    cursor: not-allowed;
+}
+
+.auth-subtitle strong {
+    color: var(--primary-pink);
+}
+
+/* OTP Input Animation on Focus */
+.otp-input-container .form-control:focus {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+}
+
+/* Success Animation for OTP Verification */
+@keyframes successPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.otp-success {
+    animation: successPulse 0.5s ease;
 }

@@ -5,16 +5,6 @@
 }
 
 <!-- Hidden elements for toast notification system -->
-@if (TempData["SuccessMessage"] != null)
-{
-    <div data-tempdata-success="@TempData["SuccessMessage"]" style="display: none;"></div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div data-tempdata-error="@TempData["ErrorMessage"]" style="display: none;"></div>
-}
-
 @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
 {
     var errors = new List<string>();

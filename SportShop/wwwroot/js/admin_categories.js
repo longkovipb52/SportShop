@@ -2,7 +2,53 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeCategoriesPage();
+    handleTempDataMessages();
 });
+
+/**
+ * Handle TempData messages on page load
+ */
+function handleTempDataMessages() {
+    // Check for success message
+    const successElement = document.querySelector('[data-tempdata-success]');
+    if (successElement) {
+        const message = successElement.getAttribute('data-tempdata-success');
+        if (message) {
+            showAlert('success', message);
+            successElement.remove();
+        }
+    }
+    
+    // Check for error message
+    const errorElement = document.querySelector('[data-tempdata-error]');
+    if (errorElement) {
+        const message = errorElement.getAttribute('data-tempdata-error');
+        if (message) {
+            showAlert('danger', message);
+            errorElement.remove();
+        }
+    }
+    
+    // Check for warning message
+    const warningElement = document.querySelector('[data-tempdata-warning]');
+    if (warningElement) {
+        const message = warningElement.getAttribute('data-tempdata-warning');
+        if (message) {
+            showAlert('warning', message);
+            warningElement.remove();
+        }
+    }
+    
+    // Check for info message
+    const infoElement = document.querySelector('[data-tempdata-info]');
+    if (infoElement) {
+        const message = infoElement.getAttribute('data-tempdata-info');
+        if (message) {
+            showAlert('info', message);
+            infoElement.remove();
+        }
+    }
+}
 
 /**
  * Initialize all categories page functionality
@@ -415,29 +461,27 @@ function showAlert(type, message) {
     existingAlerts.forEach(alert => alert.remove());
     
     const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show dynamic-alert" role="alert">
-            <i class="fas fa-${getAlertIcon(type)}"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-${type} alert-dismissible fade show dynamic-alert position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);" 
+             role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${getAlertIcon(type)} me-2" style="font-size: 1.2rem;"></i>
+                <span style="flex: 1;">${message}</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         </div>
     `;
     
-    // Insert at the top of the main container
-    const container = document.querySelector('.categories-container, .category-form-container, .category-details-container');
-    if (container) {
-        container.insertAdjacentHTML('afterbegin', alertHtml);
-        
-        // Auto-hide success alerts after 5 seconds
-        if (type === 'success') {
-            setTimeout(() => {
-                const alert = container.querySelector('.dynamic-alert');
-                if (alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }
-            }, 5000);
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        const alert = document.querySelector('.dynamic-alert');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
         }
-    }
+    }, 5000);
 }
 
 /**

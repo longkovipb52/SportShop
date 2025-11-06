@@ -3,6 +3,7 @@ using SportShop.Data;
 using SportShop.Services;
 using System;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +22,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Thêm Authentication cho Admin
+// Thêm Authentication cho Admin và Google
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -33,6 +34,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.ExpireTimeSpan = TimeSpan.FromHours(2);
         options.SlidingExpiration = true;
+    })
+    .AddGoogle(googleOptions =>
+    {
+        googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+        googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+        googleOptions.CallbackPath = "/signin-google";
+        googleOptions.SaveTokens = true;
     });
 
 // Thêm HTTP Context Accessor để sử dụng Session trong View
@@ -51,6 +59,9 @@ builder.Services.AddScoped<VnPayServiceNew>();
 
 // Thêm Voucher Service
 builder.Services.AddScoped<VoucherService>();
+
+// Thêm Email Service
+builder.Services.AddScoped<EmailService>();
 
 // Thêm Chatbot Service
 builder.Services.AddScoped<ChatbotService>();

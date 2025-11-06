@@ -1,0 +1,218 @@
+@model SportShop.Models.ViewModels.VerifyOtpViewModel
+@{
+    ViewData["Title"] = "Xác thực OTP";
+    ViewData["CustomCSS"] = "account.css";
+    var isResetPassword = ViewBag.IsResetPassword ?? false;
+    var returnAction = isResetPassword ? "ForgotPassword" : "Register";
+}
+
+<!-- Hidden elements for toast notification system -->
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+{
+    var errors = new List<string>();
+    foreach (var modelState in ViewData.ModelState.Values)
+    {
+        foreach (var error in modelState.Errors)
+        {
+            errors.Add(error.ErrorMessage);
+        }
+    }
+    <div data-modelstate-errors='@System.Text.Json.JsonSerializer.Serialize(errors)' style="display: none;"></div>
+}
+
+@* Session success message *@
+@if (Context.Session.Keys.Contains("SuccessMessage"))
+{
+    var successMessage = Context.Session.GetString("SuccessMessage");
+    Context.Session.Remove("SuccessMessage");
+    <div data-session-message="@successMessage" style="display: none;"></div>
+}
+
+<div class="auth-container">
+    <div class="auth-decoration auth-decoration-1"></div>
+    <div class="auth-decoration auth-decoration-2"></div>
+    
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <span class="text-pink">LoLo</span>Sport
+            </div>
+            <h1 class="auth-title">@(isResetPassword ? "Xác thực đặt lại mật khẩu" : "Xác thực tài khoản")</h1>
+            <p class="auth-subtitle">Nhập mã OTP đã được gửi đến email <strong>@Model.Email</strong></p>
+        </div>
+        
+        <div class="auth-body">
+            <form asp-controller="Account" asp-action="VerifyOtp" method="post" id="otpForm">
+                <input type="hidden" asp-for="Email" />
+                <input type="hidden" name="isResetPassword" value="@(isResetPassword.ToString().ToLower())" />
+                
+                <div class="otp-input-container mb-4">
+                    <div class="form-floating">
+                        <input asp-for="OtpCode" class="form-control text-center" 
+                               placeholder=" " 
+                               maxlength="6" 
+                               pattern="\d{6}"
+                               inputmode="numeric"
+                               autocomplete="off"
+                               id="otpInput"
+                               style="font-size: 24px; letter-spacing: 8px; font-weight: bold;" />
+                        <label asp-for="OtpCode">Mã OTP (6 chữ số)</label>
+                        <span asp-validation-for="OtpCode" class="invalid-feedback"></span>
+                    </div>
+                    <small class="form-text text-muted d-block text-center mt-2">
+                        <i class="fas fa-clock me-1"></i>
+                        Mã OTP có hiệu lực trong <strong><span id="countdown">5:00</span></strong>
+                    </small>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-auth" id="verifyBtn">
+                        <span class="btn-text">
+                            <i class="fas fa-check-circle me-2"></i>Xác thực
+                        </span>
+                        <span class="btn-spinner d-none">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Đang xác thực...
+                        </span>
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-secondary" id="resendBtn">
+                        <i class="fas fa-redo me-2"></i>Gửi lại mã OTP
+                    </button>
+                </div>
+            </form>
+            
+            <div class="auth-footer mt-4">
+                <a asp-controller="Account" asp-action="@returnAction">
+                    <i class="fas fa-arrow-left me-1"></i>@(isResetPassword ? "Quay lại" : "Quay lại đăng ký")
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/account.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Countdown timer (5 minutes = 300 seconds)
+            let timeLeft = 300;
+            const countdownElement = document.getElementById('countdown');
+            
+            const countdown = setInterval(function() {
+                timeLeft--;
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                
+                countdownElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    countdownElement.textContent = 'Đã hết hạn';
+                    countdownElement.classList.add('text-danger');
+                    
+                    if (typeof showToast === 'function') {
+                        showToast('Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới!', 'error');
+                    }
+                }
+                
+                // Warning when 1 minute left
+                if (timeLeft === 60) {
+                    countdownElement.classList.add('text-warning');
+                    if (typeof showToast === 'function') {
+                        showToast('Mã OTP sẽ hết hạn sau 1 phút!', 'warning');
+                    }
+                }
+            }, 1000);
+            
+            // Auto focus on OTP input
+            const otpInput = document.getElementById('otpInput');
+            if (otpInput) {
+                otpInput.focus();
+                
+                // Only allow numbers
+                otpInput.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            }
+            
+            // Handle form submission
+            const otpForm = document.getElementById('otpForm');
+            const verifyBtn = document.getElementById('verifyBtn');
+            
+            if (otpForm && verifyBtn) {
+                otpForm.addEventListener('submit', function(e) {
+                    const btnText = verifyBtn.querySelector('.btn-text');
+                    const btnSpinner = verifyBtn.querySelector('.btn-spinner');
+                    
+                    if (otpForm.checkValidity()) {
+                        btnText.classList.add('d-none');
+                        btnSpinner.classList.remove('d-none');
+                        verifyBtn.disabled = true;
+                    }
+                });
+            }
+            
+            // Handle resend OTP
+            const resendBtn = document.getElementById('resendBtn');
+            if (resendBtn) {
+                resendBtn.addEventListener('click', async function() {
+                    this.disabled = true;
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang gửi...';
+                    
+                    try {
+                        const formData = new FormData();
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                        if (token) {
+                            formData.append('__RequestVerificationToken', token);
+                        }
+                        
+                        const response = await fetch('@(isResetPassword ? Url.Action("ResendResetOtp", "Account") : Url.Action("ResendOtp", "Account"))', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            // Reset countdown
+                            timeLeft = 300;
+                            countdownElement.classList.remove('text-danger', 'text-warning');
+                            
+                            if (typeof showToast === 'function') {
+                                showToast(result.message, 'success');
+                            }
+                            
+                            // Disable button for 60 seconds
+                            let cooldown = 60;
+                            const cooldownInterval = setInterval(() => {
+                                cooldown--;
+                                this.innerHTML = `<i class="fas fa-clock me-2"></i>Chờ ${cooldown}s`;
+                                
+                                if (cooldown <= 0) {
+                                    clearInterval(cooldownInterval);
+                                    this.innerHTML = originalText;
+                                    this.disabled = false;
+                                }
+                            }, 1000);
+                        } else {
+                            if (typeof showToast === 'function') {
+                                showToast(result.message, 'error');
+                            }
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        if (typeof showToast === 'function') {
+                            showToast('Có lỗi xảy ra. Vui lòng thử lại!', 'error');
+                        }
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    }
+                });
+            }
+        });
+    </script>
+}

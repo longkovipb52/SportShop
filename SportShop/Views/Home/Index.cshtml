@@ -3,12 +3,11 @@
     ViewData["Title"] = "Home Page";
 }
 
-@if (TempData["SuccessMessage"] != null)
+@if (Context.Session.Keys.Contains("SuccessMessage"))
 {
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+    var successMessage = Context.Session.GetString("SuccessMessage");
+    Context.Session.Remove("SuccessMessage");
+    <div data-session-message="@successMessage" style="display: none;"></div>
 }
 
 <!-- Hero Section -->

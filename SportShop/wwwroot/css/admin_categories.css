@@ -837,10 +837,10 @@
 /* Alert Styles */
 .alert {
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 1rem 1.25rem;
-    margin-bottom: 1.5rem;
     border-left: 4px solid;
+    animation: slideInRight 0.3s ease-out;
 }
 
 .alert-success {
@@ -855,8 +855,40 @@
     color: #721c24;
 }
 
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-left-color: #ffc107;
+    color: #856404;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    border-left-color: #17a2b8;
+    color: #0c5460;
+}
+
 .alert i {
     margin-right: 0.5rem;
+}
+
+.alert .btn-close {
+    padding: 0.5rem;
+    opacity: 0.7;
+}
+
+.alert .btn-close:hover {
+    opacity: 1;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* Validation Styles */

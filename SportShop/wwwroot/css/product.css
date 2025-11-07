@@ -6,7 +6,7 @@
     color: white;
 }
 
-.hero-overlay {
+.products-hero .hero-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -16,7 +16,7 @@
     z-index: 1;
 }
 
-.hero-content {
+.products-hero .hero-content {
     position: relative;
     z-index: 2;
     height: 100%;
@@ -930,11 +930,11 @@
 }
 
 .grid-view .quick-view:hover {
-    background: #007bff !important;
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-yellow)) !important;
     color: white !important;
-    border-color: #007bff !important;
+    border-color: var(--primary-pink) !important;
     transform: translateY(-2px) rotate(360deg) !important;
-    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4) !important;
+    box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4) !important;
 }
 
 .grid-view .add-to-wishlist {
@@ -1276,4 +1276,133 @@
 /* Hiệu ứng hover cho rating */
 .form-check:hover .form-check-label[for^="rating-"] {
     color: var(--primary-pink);
+}
+
+/* ============== Quick View Modal Enhancements ============== */
+/* Stock Info Styles */
+#stock-info-section .stock-info {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 15px;
+}
+
+#current-stock {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 4px 8px;
+}
+
+#stock-status {
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Color and Size Section Styles */
+#color-selection-section,
+#size-selection-section {
+    transition: opacity 0.3s ease, height 0.3s ease;
+}
+
+#color-selection-section .color-option,
+#size-selection-section .size-option {
+    transition: all 0.2s ease;
+    min-width: 60px;
+    text-align: center;
+}
+
+#color-selection-section .color-option:hover,
+#size-selection-section .size-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#color-selection-section .color-option.active,
+#size-selection-section .size-option.active {
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-yellow));
+    border-color: var(--primary-pink);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(255, 105, 180, 0.3);
+}
+
+/* Stock status badge colors */
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+    color: #212529 !important;
+}
+
+.badge.bg-info {
+    background: linear-gradient(135deg, #17a2b8, #138496) !important;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #28a745, #1e7e34) !important;
+}
+
+.badge.bg-secondary {
+    background: linear-gradient(135deg, #6c757d, #545b62) !important;
+}
+
+/* Animation for stock updates */
+@keyframes stockUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.stock-update-animation {
+    animation: stockUpdate 0.3s ease-in-out;
+}
+
+/* Quick View Modal improvements */
+#quickViewModal .modal-content {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+#quickViewModal .modal-header {
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-yellow));
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+#quickViewModal .modal-body {
+    padding: 25px;
+}
+
+#quickViewModal .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+/* Ripple effect for attribute buttons */
+.color-option, .size-option {
+    position: relative;
+    overflow: hidden;
+}
+
+.color-option::before, .size-option::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.color-option:active::before, .size-option:active::before {
+    width: 300px;
+    height: 300px;
 }

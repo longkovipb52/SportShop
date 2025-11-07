@@ -650,7 +650,6 @@
     to { opacity: 1; }
 }
 
-/* ============== TOAST NOTIFICATION STYLES ============== */
 #toastContainer {
     z-index: 9999 !important;
     margin-top: 70px; /* Space for navbar */

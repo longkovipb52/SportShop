@@ -411,14 +411,23 @@
                             <p class="fw-bold fs-4 mb-3" id="quick-view-price"></p>
                             <p class="mb-3" id="quick-view-description"></p>
                             
-                            <div class="mb-3">
+                            <div class="mb-3" id="color-selection-section" style="display: none;">
                                 <label class="form-label">Màu sắc</label>
                                 <div class="color-options d-flex flex-wrap" id="quick-view-colors"></div>
                             </div>
                             
-                            <div class="mb-3">
+                            <div class="mb-3" id="size-selection-section" style="display: none;">
                                 <label class="form-label">Kích cỡ</label>
                                 <div class="size-options d-flex flex-wrap" id="quick-view-sizes"></div>
+                            </div>
+
+                            <!-- Thông tin số lượng tồn kho -->
+                            <div class="mb-3" id="stock-info-section">
+                                <div class="stock-info p-2 bg-light rounded">
+                                    <span class="fw-bold">Số lượng tồn:</span> 
+                                    <span id="current-stock" class="badge bg-success">0</span>
+                                    <span id="stock-status" class="text-muted ms-2"></span>
+                                </div>
                             </div>
                             
                             <div class="d-flex align-items-center mb-3">
@@ -429,7 +438,8 @@
                                         <i class="fas fa-minus"></i>
                                     </button>
                                     <input type="number" class="form-control text-center" value="1" min="1" id="product-quantity"
-                                           style="width: 70px; border: none; border-left: 1px solid #ced4da; border-right: 1px solid #ced4da;">
+                                           style="width: 70px; border: none; border-left: 1px solid #ced4da; border-right: 1px solid #ced4da;"
+                                           oninput="validateQuantityInput(this)">
                                     <button type="button" class="qty-btn qty-increase" id="quick-view-increase-quantity" 
                                             style="width: 40px; height: 40px; border: none; background: #f8f9fa; display: flex; align-items: center; justify-content: center; cursor: pointer;"
                                             onclick="console.log('Quick view increase clicked'); quickViewIncreaseQuantity();">
@@ -493,12 +503,15 @@
             const input = document.getElementById('product-quantity');
             if (input) {
                 let currentValue = parseInt(input.value) || 1;
-                const maxStock = 999; // You can set this dynamically based on product
+                const maxStock = parseInt(input.max) || 999; // Sử dụng max từ attribute thay vì số cố định
                 if (currentValue < maxStock) {
                     input.value = currentValue + 1;
                     console.log('Quick view increased to:', input.value);
                 } else {
                     console.log('Cannot increase above max stock in quick view:', maxStock);
+                    if (typeof showNotification === 'function') {
+                        showNotification(`Chỉ còn ${maxStock} sản phẩm trong kho`, 'warning');
+                    }
                 }
             } else {
                 console.error('Quick view quantity input not found');
@@ -546,5 +559,20 @@
                 });
             }
         });
+        
+        // Validate quantity input function
+        function validateQuantityInput(input) {
+            const max = parseInt(input.max) || 999;
+            const value = parseInt(input.value) || 1;
+            
+            if (value > max) {
+                input.value = max;
+                if (typeof showNotification === 'function') {
+                    showNotification(`Chỉ còn ${max} sản phẩm trong kho`, 'warning');
+                }
+            } else if (value < 1) {
+                input.value = 1;
+            }
+        }
     </script>
 }

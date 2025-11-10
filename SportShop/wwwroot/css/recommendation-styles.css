@@ -1,0 +1,453 @@
+/* recommendation-styles.css - Isolated CSS styles for recommendation system */
+/* Add to wwwroot/css/ in your ASP.NET Core project */
+
+/* Main recommendation section - namespace isolated */
+.ai-recommendations-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.ai-recommendations-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.ai-recommendations-title::before {
+    content: "🎯";
+    font-size: 1.2em;
+}
+
+/* Grid layout for recommendations - Bootstrap grid compatible for 5 items */
+.ai-recommendations-container {
+    margin: -0.75rem;
+}
+
+.ai-recommendations-container > .col-lg-2,
+.ai-recommendations-container > .col-md-4, 
+.ai-recommendations-container > .col-sm-6,
+.ai-recommendations-container > .col-6 {
+    padding: 0.75rem;
+}
+
+/* Custom 5-column layout for recommendations */
+.ai-recommendations-container.five-columns > div {
+    flex: 0 0 auto;
+    width: 20%; /* 5 columns exactly */
+}
+
+@media (max-width: 1200px) {
+    .ai-recommendations-container.five-columns > div {
+        width: 25%; /* 4 columns on smaller large screens */
+    }
+}
+
+@media (max-width: 992px) {
+    .ai-recommendations-container.five-columns > div {
+        width: 33.333333%; /* 3 columns on tablet */
+    }
+}
+
+@media (max-width: 768px) {
+    .ai-recommendations-container.five-columns > div {
+        width: 50%; /* 2 columns on mobile */
+    }
+}
+
+/* Individual recommendation item - Bootstrap card compatible */
+.ai-recommendation-item {
+    /* Inherit Bootstrap card styles but add specific enhancements */
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.ai-recommendation-item .card {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.ai-recommendation-item:hover .card {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border-color: #007bff;
+}
+
+/* Add a subtle AI recommendation indicator */
+.ai-recommendation-item::before {
+    content: "🎯 AI";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    z-index: 2;
+    font-weight: 600;
+}
+
+/* Ensure compatibility with Bootstrap's card-img-top-container */
+.ai-recommendation-item .card-img-top-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
+}
+
+.ai-recommendation-item .card-img-top {
+    transition: transform 0.3s ease;
+}
+
+.ai-recommendation-item:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+/* Product information - Bootstrap card compatible */
+.ai-recommendation-item .product-info {
+    flex-grow: 1;
+}
+
+.ai-recommendation-item .card-title {
+    margin-bottom: 0.5rem;
+}
+
+.ai-recommendation-item .card-title a {
+    text-decoration: none !important;
+    color: #2c3e50;
+    transition: color 0.3s ease;
+}
+
+.ai-recommendation-item .card-title a:hover {
+    color: #3498db;
+}
+
+.ai-recommendation-item .product-description {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.ai-recommendation-item .product-meta .badge {
+    font-size: 0.75rem;
+}
+
+.ai-recommendation-item .rating {
+    margin-bottom: 1rem;
+}
+
+.ai-recommendation-item .rating .stars i {
+    font-size: 0.9rem;
+}
+
+.ai-recommendation-item .price-section {
+    margin-bottom: 1rem;
+}
+
+.ai-recommendation-item .price {
+    font-weight: 700;
+    color: #e74c3c;
+}
+
+.ai-recommendation-item .stock-info {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.ai-recommendation-score {
+    font-size: 0.8rem;
+    color: #f39c12;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background: #fff3cd;
+    border-radius: 15px;
+    display: inline-flex;
+    width: fit-content;
+}
+
+/* Action buttons - Bootstrap compatible with enhancements */
+.ai-recommendation-item .product-actions {
+    margin-top: auto;
+}
+
+.ai-recommendation-item .product-actions .btn {
+    transition: all 0.3s ease;
+}
+
+.ai-recommendation-item .product-actions .btn:hover {
+    transform: translateY(-1px);
+}
+
+.ai-recommendation-item .product-actions .add-to-cart:hover {
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.ai-recommendation-item .product-actions .quick-view:hover {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.ai-recommendation-item .product-actions .add-to-wishlist:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* Loading and empty states - Bootstrap grid compatible */
+.ai-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #6c757d;
+    font-style: italic;
+    width: 100%;
+    text-align: center;
+}
+
+.ai-loading::before {
+    content: "⏳";
+    margin-right: 0.5rem;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.ai-no-recommendations {
+    width: 100%;
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.ai-no-recommendations::before {
+    content: "🤔";
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+/* Notification system - isolated */
+.ai-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.ai-notification-success {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+}
+
+.ai-notification-error {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.ai-notification-info {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.ai-notification button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.ai-notification button:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Responsive design - Bootstrap grid compatible for 5 items */
+@media (max-width: 1200px) {
+    .ai-recommendations-container .col-lg-2 {
+        flex: 0 0 auto;
+        width: 20%; /* 5 columns on large screens */
+    }
+}
+
+@media (max-width: 992px) {
+    .ai-recommendations-container .col-lg-2 {
+        width: 33.333333%; /* 3 columns on tablet */
+    }
+}
+
+@media (max-width: 768px) {
+    .ai-recommendations-section {
+        margin: 1rem 0;
+        padding: 1rem;
+    }
+    
+    .ai-recommendations-container.five-columns > div {
+        width: 50%; /* 2 columns on mobile */
+    }
+    
+    .ai-recommendation-item .product-actions {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .ai-recommendation-item .btn {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .ai-notification {
+        right: 10px;
+        left: 10px;
+        width: auto;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .ai-recommendations-container.five-columns > div {
+        width: 50%; /* Keep 2 columns on very small screens */
+    }
+    
+    .ai-recommendation-item .card-title {
+        font-size: 1rem;
+    }
+    
+    .ai-recommendation-item .price {
+        font-size: 1rem;
+    }
+    
+    .ai-recommendation-item .btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+    }
+}
+
+/* Dark mode support - Bootstrap card compatible */
+@media (prefers-color-scheme: dark) {
+    .ai-recommendations-section {
+        background: #2c3e50;
+        color: #ecf0f1;
+    }
+    
+    .ai-recommendations-title {
+        color: #ecf0f1;
+    }
+    
+    .ai-recommendation-item .card {
+        background: #34495e;
+        color: #ecf0f1;
+        border-color: #495057;
+    }
+    
+    .ai-recommendation-item .card-title a {
+        color: #ecf0f1;
+    }
+    
+    .ai-recommendation-item .card-title a:hover {
+        color: #3498db;
+    }
+    
+    .ai-recommendation-item .product-meta .badge.bg-light {
+        background-color: #6c757d !important;
+        color: #ecf0f1 !important;
+    }
+    
+    .ai-recommendation-item .product-description {
+        color: #bdc3c7;
+    }
+    
+    .ai-recommendation-score {
+        background: #f39c12;
+        color: #2c3e50;
+    }
+}
+
+/* Print styles - Bootstrap card compatible */
+@media print {
+    .ai-recommendations-section {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .ai-recommendation-item .card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .ai-recommendation-item .product-actions {
+        display: none;
+    }
+}
+
+/* Accessibility improvements - Bootstrap compatible */
+.ai-recommendation-item:focus-within {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+.ai-recommendation-item .btn:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Reduced motion support - Bootstrap compatible */
+@media (prefers-reduced-motion: reduce) {
+    .ai-recommendation-item,
+    .ai-recommendation-item .card-img-top,
+    .ai-recommendation-item .btn {
+        transition: none;
+    }
+    
+    .ai-loading::before {
+        animation: none;
+    }
+    
+    .ai-notification {
+        animation: none;
+    }
+}

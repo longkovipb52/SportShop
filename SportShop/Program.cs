@@ -4,6 +4,8 @@ using SportShop.Services;
 using System;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using System.Data;
+using System.Data.SqlClient; // Thêm cho Dapper
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,13 @@ builder.Services.AddControllers();
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// THÊM: Dapper connection cho Recommendation System
+builder.Services.AddScoped<IDbConnection>(provider =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    return new SqlConnection(connectionString);
+});
 
 // Thêm hỗ trợ Session
 builder.Services.AddDistributedMemoryCache();
@@ -66,6 +75,9 @@ builder.Services.AddScoped<EmailService>();
 // Thêm Chatbot Service
 builder.Services.AddScoped<ChatbotService>();
 
+// Thêm Interaction Tracking Service
+builder.Services.AddScoped<InteractionTrackingService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -84,7 +96,7 @@ app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers(); 
+app.MapControllers(); // Đã có - sẽ map RecommendationController
 
 app.MapAreaControllerRoute(
     name: "admin",

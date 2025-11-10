@@ -398,6 +398,25 @@
     </div>
 </section>
 
+<!-- AI Recommendations Section -->
+<section class="ai-recommendations-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h2 class="ai-recommendations-title">
+                    Gợi ý sản phẩm dành cho bạn
+                </h2>
+                <p class="text-muted">Được cá nhân hóa dựa trên sở thích và lịch sử mua hàng của bạn</p>
+            </div>
+        </div>
+        
+        <div id="user-recommendations" class="ai-recommendations-container five-columns row g-3 grid-view">
+            <!-- Recommendations will be loaded here by JavaScript -->
+            <div class="ai-loading col-12">Đang tải gợi ý sản phẩm...</div>
+        </div>
+    </div>
+</section>
+
 <!-- Contact Section -->
 <section id="contact-section" class="py-5">
     <div class="container">
@@ -501,21 +520,59 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize quick view functionality
     initQuickView();
+    
+    // Check wishlist status for all products on page load
+    checkAllWishlistStatus();
+    
+    // Re-initialize after any dynamic content changes
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                // Re-initialize for any new buttons added
+                initAddToCart();
+                initWishlist();
+                initQuickView();
+                checkAllWishlistStatus();
+            }
+        });
+    });
+    
+    // Observe changes to recommendations container
+    const recommendationsContainer = document.getElementById('user-recommendations');
+    if (recommendationsContainer) {
+        observer.observe(recommendationsContainer, { childList: true, subtree: true });
+    }
+    
+    // Also observe tab content for brand products
+    const tabContent = document.querySelector('.tab-content');
+    if (tabContent) {
+        observer.observe(tabContent, { childList: true, subtree: true });
+    }
 });
 
 // Add to cart functionality
 function initAddToCart() {
-    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+    const addToCartButtons = document.querySelectorAll('.add-to-cart:not([data-cart-initialized])');
     
     addToCartButtons.forEach(button => {
+        // Mark as initialized to prevent multiple listeners
+        button.setAttribute('data-cart-initialized', 'true');
+        
         button.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopImmediatePropagation(); // Prevent multiple handlers
+            
+            // Disable button temporarily to prevent multiple clicks
+            if (this.disabled) return;
+            this.disabled = true;
             
             const productId = this.getAttribute('data-product-id');
             const quantity = this.getAttribute('data-quantity') || 1;
             
             if (productId) {
                 addToCart(productId, quantity, null, this);
+            } else {
+                this.disabled = false;
             }
         });
     });
@@ -523,16 +580,34 @@ function initAddToCart() {
 
 // Wishlist functionality
 function initWishlist() {
-    const wishlistButtons = document.querySelectorAll('.add-to-wishlist');
+    const wishlistButtons = document.querySelectorAll('.add-to-wishlist:not([data-wishlist-initialized])');
     
     wishlistButtons.forEach(button => {
+        // Mark as initialized to prevent multiple listeners
+        button.setAttribute('data-wishlist-initialized', 'true');
+        
         button.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopImmediatePropagation(); // Prevent multiple handlers
+            
+            // Disable button temporarily to prevent multiple clicks
+            if (this.disabled || this.dataset.processing === 'true') return;
+            this.disabled = true;
+            this.dataset.processing = 'true';
             
             const productId = this.getAttribute('data-product-id');
             
             if (productId) {
-                toggleWishlist(productId);
+                toggleWishlist(productId).finally(() => {
+                    // Re-enable button after request completes
+                    setTimeout(() => {
+                        this.disabled = false;
+                        this.dataset.processing = 'false';
+                    }, 1000); // Increased to 1 second
+                });
+            } else {
+                this.disabled = false;
+                this.dataset.processing = 'false';
             }
         });
     });
@@ -540,23 +615,43 @@ function initWishlist() {
 
 // Quick view functionality
 function initQuickView() {
-    const quickViewButtons = document.querySelectorAll('.quick-view');
+    const quickViewButtons = document.querySelectorAll('.quick-view:not([data-quickview-initialized])');
     
     quickViewButtons.forEach(button => {
+        // Mark as initialized to prevent multiple listeners
+        button.setAttribute('data-quickview-initialized', 'true');
+        
         button.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopImmediatePropagation(); // Prevent multiple handlers
+            
+            // Disable button temporarily to prevent multiple clicks
+            if (this.disabled) return;
+            this.disabled = true;
             
             const productId = this.getAttribute('data-product-id');
             
             if (productId) {
-                openQuickViewModal(productId);
+                // Use global openQuickViewModal from product.js
+                if (typeof window.openQuickViewModal === 'function') {
+                    window.openQuickViewModal(productId);
+                } else {
+                    console.error('openQuickViewModal function not found. Redirecting to product page.');
+                    window.location.href = `/Product/Details/${productId}`;
+                }
+                // Re-enable button after modal opens
+                setTimeout(() => {
+                    this.disabled = false;
+                }, 500);
+            } else {
+                this.disabled = false;
             }
         });
     });
 }
 
 // Add to cart function (from product.js)
-function addToCart(productId, quantity, attributeId = null, buttonElement = null) {
+window.addToCart = function(productId, quantity, attributeId = null, buttonElement = null) {
     console.log("Adding to cart:", { productId, quantity, attributeId });
     
     // Đảm bảo các tham số là kiểu dữ liệu đúng
@@ -619,8 +714,11 @@ function addToCart(productId, quantity, attributeId = null, buttonElement = null
 }
 
 // Toggle wishlist function
-function toggleWishlist(productId) {
-    fetch('/Wishlist/Toggle', {
+window.toggleWishlist = function(productId) {
+    console.log('=== toggleWishlist called ===');
+    console.log('ProductId:', productId, 'Type:', typeof productId);
+    
+    return fetch('/Wishlist/Toggle', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -628,63 +726,33 @@ function toggleWishlist(productId) {
         },
         body: JSON.stringify({ productId: parseInt(productId) })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             showNotification(data.message, 'success');
             
-            // Update all wishlist buttons for this product
-            const wishlistButtons = document.querySelectorAll(`[data-product-id="${productId}"].add-to-wishlist`);
-            wishlistButtons.forEach(button => {
-                const icon = button.querySelector('i');
-                if (data.isInWishlist) {
-                    icon.classList.remove('far');
-                    icon.classList.add('fas');
-                    button.classList.add('text-danger');
-                } else {
-                    icon.classList.remove('fas');
-                    icon.classList.add('far');
-                    button.classList.remove('text-danger');
-                }
-            });
-            
+            // Use the new centralized function to update button state
+            updateWishlistButtonState(productId, data.inWishlist);
             updateWishlistCount();
         } else {
+            console.error('Wishlist toggle failed:', data.message);
             showNotification(data.message, 'error');
         }
+        return data; // Return data for promise chain
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('Error in toggleWishlist:', error);
         showNotification('Có lỗi xảy ra khi cập nhật danh sách yêu thích', 'error');
+        throw error; // Re-throw for promise chain
     });
-}
+};
 
-// Quick view modal function
-function openQuickViewModal(productId) {
-    // If quick view modal exists, use it; otherwise redirect to product detail
-    const quickViewModal = document.getElementById('quickViewModal');
-    if (quickViewModal) {
-        // Load product data and show modal
-        fetch(`/Product/GetProductDetails/${productId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                populateQuickView(data.product);
-                const modal = new bootstrap.Modal(quickViewModal);
-                modal.show();
-            } else {
-                window.location.href = `/Product/Details/${productId}`;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            window.location.href = `/Product/Details/${productId}`;
-        });
-    } else {
-        // Redirect to product detail page
-        window.location.href = `/Product/Details/${productId}`;
-    }
-}
+// Quick view function is now handled by product.js globally
+// Removed duplicate function to prevent double QUICK_VIEW logging
 
 // Update cart counter
 function updateCartCounter(count) {
@@ -701,22 +769,96 @@ function updateCartCounter(count) {
 
 // Update wishlist count
 function updateWishlistCount() {
-    fetch('/Wishlist/GetCount')
+    fetch('/Wishlist/Count')
     .then(response => response.json())
     .then(data => {
-        const wishlistCounters = document.querySelectorAll('.wishlist-count');
-        wishlistCounters.forEach(counter => {
-            counter.textContent = data.count;
-            if (data.count > 0) {
-                counter.style.display = 'inline';
-            } else {
-                counter.style.display = 'none';
-            }
-        });
+        if (data.success) {
+            const wishlistCounters = document.querySelectorAll('.wishlist-count');
+            wishlistCounters.forEach(counter => {
+                counter.textContent = data.count;
+                if (data.count > 0) {
+                    counter.style.display = 'inline';
+                } else {
+                    counter.style.display = 'none';
+                }
+            });
+        }
     })
     .catch(error => {
         console.error('Error updating wishlist count:', error);
     });
+}
+
+// Check wishlist status for all products
+function checkAllWishlistStatus() {
+    // Get all unique product IDs from the page
+    const productIds = new Set();
+    
+    // From data-product-id attributes
+    document.querySelectorAll('[data-product-id]').forEach(element => {
+        const productId = parseInt(element.getAttribute('data-product-id'));
+        if (productId) productIds.add(productId);
+    });
+    
+    // From onclick handlers
+    document.querySelectorAll('[onclick*="handleAddToWishlist"]').forEach(element => {
+        const match = element.getAttribute('onclick').match(/handleAddToWishlist\((\d+)\)/);
+        if (match) productIds.add(parseInt(match[1]));
+    });
+    
+    // Check status for each product
+    productIds.forEach(productId => {
+        checkWishlistStatus(productId);
+    });
+}
+
+// Check wishlist status for a specific product
+function checkWishlistStatus(productId) {
+    fetch(`/Wishlist/Check?productId=${productId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateWishlistButtonState(productId, data.inWishlist);
+        }
+    })
+    .catch(error => {
+        console.log(`Could not check wishlist status for product ${productId}:`, error);
+    });
+}
+
+// Update wishlist button state
+function updateWishlistButtonState(productId, inWishlist) {
+    // Update all wishlist buttons for this product (data-product-id version)
+    const wishlistButtons = document.querySelectorAll(`[data-product-id="${productId}"].add-to-wishlist`);
+    wishlistButtons.forEach(button => {
+        updateButtonUI(button, inWishlist);
+    });
+    
+    // Also update buttons with onclick handlers (for recommendations)
+    const onclickButtons = document.querySelectorAll(`[onclick*="handleAddToWishlist(${productId})"]`);
+    onclickButtons.forEach(button => {
+        updateButtonUI(button, inWishlist);
+    });
+}
+
+// Update individual button UI
+function updateButtonUI(button, inWishlist) {
+    const icon = button.querySelector('i');
+    if (icon) {
+        if (inWishlist) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            button.classList.remove('btn-outline-danger');
+            button.classList.add('btn-danger');
+            button.setAttribute('title', 'Xóa khỏi yêu thích');
+        } else {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            button.classList.remove('btn-danger');
+            button.classList.add('btn-outline-danger');
+            button.setAttribute('title', 'Thêm vào yêu thích');
+        }
+    }
 }
 
 // Show notification

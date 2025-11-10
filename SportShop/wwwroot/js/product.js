@@ -1364,6 +1364,11 @@ function updateWishlistCount() {
 window.openQuickViewModal = function(productId) {
     console.log('Opening quick view modal for product:', productId);
     
+    // Log QUICK_VIEW interaction when modal opens (no rating for QUICK_VIEW events)
+    if (window.currentUserId && typeof RecommendationService !== 'undefined') {
+        RecommendationService.logInteraction(window.currentUserId, productId, 'QUICK_VIEW');
+    }
+    
     // Check if we're on the product page (modal exists)
     const modalElement = document.getElementById('quickViewModal');
     if (!modalElement) {

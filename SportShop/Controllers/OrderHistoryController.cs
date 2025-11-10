@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SportShop.Data;
 using SportShop.Models;
 using SportShop.Models.ViewModels;
+using SportShop.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,10 +14,12 @@ namespace SportShop.Controllers
     public class OrderHistoryController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly InteractionTrackingService _trackingService;
 
-        public OrderHistoryController(ApplicationDbContext context)
+        public OrderHistoryController(ApplicationDbContext context, InteractionTrackingService trackingService)
         {
             _context = context;
+            _trackingService = trackingService;
         }
 
         // GET: OrderHistory - Hiển thị lịch sử đơn hàng
@@ -314,6 +317,16 @@ namespace SportShop.Controllers
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
 
+            // Track write review event
+            try
+            {
+                await _trackingService.TrackWriteReviewAsync(productId, rating);
+            }
+            catch (Exception)
+            {
+                // Tracking failure should not affect the main flow
+            }
+
             return Json(new { success = true, message = "Cảm ơn bạn đã đánh giá sản phẩm!" });
         }
 
@@ -421,6 +434,16 @@ namespace SportShop.Controllers
             review.Comment = comment ?? "";
 
             await _context.SaveChangesAsync();
+
+            // Track write review event (cập nhật cũng được track như lần viết mới)
+            try
+            {
+                await _trackingService.TrackWriteReviewAsync(review.ProductID, rating);
+            }
+            catch (Exception)
+            {
+                // Tracking failure should not affect the main flow
+            }
 
             return Json(new { success = true, message = "Cập nhật đánh giá thành công!" });
         }

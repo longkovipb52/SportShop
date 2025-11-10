@@ -544,15 +544,20 @@ function goToProduct(productId) {
   const modal = document.getElementById('quickViewModal');
   
   if (modal) {
-    openQuickViewModal(productId);
+    // Use global openQuickViewModal from product.js to avoid duplicate logging
+    if (typeof window.openQuickViewModal === 'function') {
+      window.openQuickViewModal(productId);
+    } else {
+      legacyOpenQuickViewModal(productId);
+    }
   } else {
     // Nếu không có modal, chuyển đến trang product index với tham số để mở modal
     window.location.href = `/Product/Index?openModal=${productId}`;
   }
 }
 
-// Function để mở modal quick view
-function openQuickViewModal(productId) {
+// Legacy quick view function - renamed to avoid conflict with product.js
+function legacyOpenQuickViewModal(productId) {
   const modal = document.getElementById('quickViewModal');
   if (modal) {
     // Show loading state

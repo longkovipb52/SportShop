@@ -4,6 +4,7 @@ using SportShop.Data;
 using SportShop.Models;
 using SportShop.Models.ViewModels;
 using SportShop.Models.DTOs; // Thêm namespace này
+using SportShop.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,12 @@ namespace SportShop.Controllers
     public class ProductController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly InteractionTrackingService _trackingService;
 
-        public ProductController(ApplicationDbContext context)
+        public ProductController(ApplicationDbContext context, InteractionTrackingService trackingService)
         {
             _context = context;
+            _trackingService = trackingService;
         }
 
         // Trang danh sách sản phẩm
@@ -36,6 +39,20 @@ namespace SportShop.Controllers
             {
                 productsQuery = productsQuery.Where(p => p.CategoryID == categoryId);
                 ViewData["CurrentCategory"] = categoryId;
+                
+                // Track category filter
+                var category = await _context.Categories.FindAsync(categoryId.Value);
+                if (category != null)
+                {
+                    try
+                    {
+                        await _trackingService.TrackCategoryFilterAsync(categoryId.Value, category.Name);
+                    }
+                    catch (Exception)
+                    {
+                        // Tracking failure should not affect the main flow
+                    }
+                }
             }
 
             // Lọc theo thương hiệu
@@ -43,6 +60,20 @@ namespace SportShop.Controllers
             {
                 productsQuery = productsQuery.Where(p => p.BrandID == brandId);
                 ViewData["CurrentBrand"] = brandId;
+                
+                // Track brand filter
+                var brand = await _context.Brands.FindAsync(brandId.Value);
+                if (brand != null)
+                {
+                    try
+                    {
+                        await _trackingService.TrackBrandFilterAsync(brandId.Value, brand.Name);
+                    }
+                    catch (Exception)
+                    {
+                        // Tracking failure should not affect the main flow
+                    }
+                }
             }
 
             // Thêm bộ lọc giá
@@ -199,6 +230,9 @@ namespace SportShop.Controllers
                     return NotFound();
                 }
 
+                // No VIEW_PRODUCT tracking - removed per user request
+                // Since QUICK_VIEW provides better interaction data
+
                 // Lấy thuộc tính sản phẩm (kích cỡ, màu sắc)
                 var attributes = product.Attributes.ToList();
 
@@ -260,6 +294,16 @@ namespace SportShop.Controllers
 
             // Phân trang
             var totalItems = await productsQuery.CountAsync();
+            
+            // Track search event
+            try
+            {
+                await _trackingService.TrackSearchAsync(keyword, totalItems);
+            }
+            catch (Exception)
+            {
+                // Tracking failure should not affect the main flow
+            }
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
             if (page < 1) page = 1;
@@ -301,6 +345,16 @@ namespace SportShop.Controllers
         {
             try
             {
+                // Track quick view
+                try
+                {
+                    await _trackingService.TrackQuickViewAsync(id);
+                }
+                catch (Exception)
+                {
+                    // Tracking failure should not affect the main flow
+                }
+                
                 // Lấy thông tin sản phẩm
                 var product = await _context.Products
                     .Include(p => p.Category)

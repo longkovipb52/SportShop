@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/checkout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/voice-search.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/recommendation-styles.css" asp-append-version="true" />
     
     <!-- Custom CSS per page -->
     @if (ViewData["CustomCSS"] != null)
@@ -475,6 +476,78 @@
     <script src="~/js/chatbot-ai.js" asp-append-version="true"></script>
     <script src="~/js/voucher.js" asp-append-version="true"></script>
     <script src="~/js/voice-search.js" asp-append-version="true"></script>
+    <script src="~/js/recommendation.js" asp-append-version="true"></script>
+    <script src="~/js/recommendation-debug.js" asp-append-version="true"></script>
+    
+    <script>
+        // Authentication hooks for recommendation reload
+        window.onUserLogin = function(userId) {
+            console.log('🔑 User logged in with ID:', userId);
+            window.currentUserId = userId;
+            
+            // Trigger storage event for session monitoring
+            localStorage.setItem('userLoggedIn', Date.now().toString());
+            
+            // Force reload recommendations
+            if (typeof window.loadRecommendations === 'function') {
+                setTimeout(() => {
+                    window.loadRecommendations();
+                }, 500);
+            }
+        };
+        
+        window.onUserLogout = function() {
+            console.log('🚪 User logged out');
+            window.currentUserId = null;
+            
+            // Trigger storage event 
+            localStorage.setItem('userLoggedOut', Date.now().toString());
+            
+            // Force reload recommendations
+            if (typeof window.loadRecommendations === 'function') {
+                setTimeout(() => {
+                    window.loadRecommendations();
+                }, 500);
+            }
+        };
+    </script>
+    
+    <script>
+        // Set current user ID for recommendations
+        @{
+            int? userId = Context.Session.GetInt32("UserId");
+        }
+        @if (userId.HasValue)
+        {
+            <text>
+            window.currentUserId = @userId.Value;
+            console.log('Current User ID set for recommendations:', @userId.Value);
+            </text>
+        }
+        else
+        {
+            <text>
+            window.currentUserId = null;
+            console.log('Anonymous user - will show popular recommendations');
+            </text>
+        }
+        
+        // Global function to update user ID after login
+        window.updateCurrentUserId = function(newUserId) {
+            console.log('Updating current user ID from', window.currentUserId, 'to', newUserId);
+            window.currentUserId = newUserId;
+            
+            // Trigger recommendations reload if the function exists
+            if (typeof window.updateUserRecommendations === 'function') {
+                window.updateUserRecommendations(newUserId);
+            }
+            
+            // Also try to reload recommendations directly
+            if (typeof window.loadRecommendations === 'function') {
+                window.loadRecommendations();
+            }
+        };
+    </script>
     
     <script>
         // Search functionality

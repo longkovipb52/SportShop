@@ -32,6 +32,9 @@ namespace SportShop.Data
         public DbSet<ColorOption> ColorOptions { get; set; }
         public DbSet<AttributeType> AttributeTypes { get; set; }
         public DbSet<CategoryAttributeType> CategoryAttributeTypes { get; set; }
+        
+        // Interaction tracking for recommendation system
+        public DbSet<InteractionEvent> InteractionEvent { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

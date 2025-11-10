@@ -77,6 +77,9 @@ namespace SportShop.Controllers
                         }
                         HttpContext.Session.SetString("Role", roleName);
                         
+                        // Đánh dấu đăng nhập thành công cho recommendation system
+                        HttpContext.Session.SetString("LoginTimestamp", DateTime.UtcNow.ToString());
+                        
                         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                         {
                             return Redirect(returnUrl);

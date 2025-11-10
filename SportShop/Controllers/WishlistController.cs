@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SportShop.Data;
 using SportShop.Models;
+using SportShop.Services;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace SportShop.Controllers
 {
@@ -12,10 +15,12 @@ namespace SportShop.Controllers
     public class WishlistController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly InteractionTrackingService _trackingService;
 
-        public WishlistController(ApplicationDbContext context)
+        public WishlistController(ApplicationDbContext context, InteractionTrackingService trackingService)
         {
             _context = context;
+            _trackingService = trackingService;
         }
 
         // GET: Wishlist - Hiển thị danh sách sản phẩm yêu thích
@@ -47,10 +52,62 @@ namespace SportShop.Controllers
 
         // POST: Wishlist/Toggle - Thêm/xóa sản phẩm khỏi danh sách yêu thích
         [HttpPost("Toggle")]
-        public async Task<IActionResult> Toggle(int productId)
+        public async Task<IActionResult> Toggle()
         {
             try
             {
+                Console.WriteLine($"=== Wishlist Toggle Debug ===");
+                Console.WriteLine($"Content-Type: {Request.ContentType}");
+                Console.WriteLine($"Has Form Content: {Request.HasFormContentType}");
+                
+                int productId = 0;
+                
+                // First try to get from form data (trang sản phẩm)
+                if (Request.HasFormContentType && Request.Form.ContainsKey("productId"))
+                {
+                    if (int.TryParse(Request.Form["productId"], out productId))
+                    {
+                        Console.WriteLine($"ProductId from form: {productId}");
+                    }
+                }
+                // Try query string as fallback
+                else if (Request.Query.ContainsKey("productId"))
+                {
+                    if (int.TryParse(Request.Query["productId"], out productId))
+                    {
+                        Console.WriteLine($"ProductId from query: {productId}");
+                    }
+                }
+                // Then try to get from JSON body (trang chủ)
+                else if (Request.ContentType?.Contains("application/json") == true)
+                {
+                    try
+                    {
+                        using var reader = new StreamReader(Request.Body);
+                        var body = await reader.ReadToEndAsync();
+                        Console.WriteLine($"Request body: {body}");
+                        
+                        if (!string.IsNullOrEmpty(body))
+                        {
+                            var jsonDoc = System.Text.Json.JsonDocument.Parse(body);
+                            if (jsonDoc.RootElement.TryGetProperty("productId", out var productIdElement))
+                            {
+                                productId = productIdElement.GetInt32();
+                                Console.WriteLine($"ProductId from JSON: {productId}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error parsing JSON: {ex.Message}");
+                    }
+                }
+                
+                if (productId <= 0)
+                {
+                    Console.WriteLine("Invalid productId");
+                    return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                }
                 int? userId = HttpContext.Session.GetInt32("UserId");
                 
                 if (!userId.HasValue)
@@ -76,9 +133,31 @@ namespace SportShop.Controllers
                 if (existingWishlistItem != null)
                 {
                     // Đã có trong wishlist, xóa khỏi wishlist
-                    // Lưu ý: Không giảm TotalLikes khi xóa khỏi wishlist
-                    _context.Wishlists.Remove(existingWishlistItem);
-                    await _context.SaveChangesAsync();
+                    // Sử dụng ExecuteSqlRaw để tránh concurrency exception
+                    try
+                    {
+                        var affectedRows = await _context.Database.ExecuteSqlRawAsync(
+                            "DELETE FROM Wishlist WHERE UserID = {0} AND ProductID = {1}", 
+                            userId.Value, productId);
+                            
+                        Console.WriteLine($"Deleted {affectedRows} wishlist rows for Product {productId}, User {userId.Value}");
+                    }
+                    catch (Exception dbEx)
+                    {
+                        Console.WriteLine($"Database error during wishlist deletion: {dbEx.Message}");
+                        // Tiếp tục coi như thành công vì có thể đã bị xóa
+                    }
+
+                    // Track remove from wishlist event - await để đảm bảo hoàn thành
+                    try
+                    {
+                        await _trackingService.TrackRemoveFromWishlistAsync(productId);
+                    }
+                    catch (Exception trackEx)
+                    {
+                        // Log lỗi tracking nhưng không làm gián đoạn flow chính
+                        Console.WriteLine($"Tracking error: {trackEx.Message}");
+                    }
 
                     return Json(new { 
                         success = true, 
@@ -90,6 +169,21 @@ namespace SportShop.Controllers
                 else
                 {
                     // Chưa có trong wishlist, thêm vào wishlist và tăng TotalLikes
+                    // Kiểm tra lại lần nữa để tránh race condition
+                    var doubleCheckWishlistItem = await _context.Wishlists
+                        .FirstOrDefaultAsync(w => w.UserID == userId.Value && w.ProductID == productId);
+                        
+                    if (doubleCheckWishlistItem != null)
+                    {
+                        // Đã được thêm bởi request khác
+                        return Json(new { 
+                            success = true, 
+                            message = "Sản phẩm đã có trong danh sách yêu thích.",
+                            action = "already_exists",
+                            inWishlist = true
+                        });
+                    }
+
                     var wishlistItem = new Wishlist
                     {
                         UserID = userId.Value,
@@ -99,11 +193,38 @@ namespace SportShop.Controllers
 
                     _context.Wishlists.Add(wishlistItem);
                     
-                    // Tăng TotalLikes cho sản phẩm
+                    // Reload product để có state mới nhất trước khi update
+                    await _context.Entry(product).ReloadAsync();
                     product.TotalLikes++;
                     _context.Products.Update(product);
                     
-                    await _context.SaveChangesAsync();
+                    try
+                    {
+                        await _context.SaveChangesAsync();
+                        Console.WriteLine($"Successfully added wishlist item for Product {productId}, User {userId.Value}");
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        Console.WriteLine($"Error adding to wishlist: {ex.Message}");
+                        // Có thể do unique constraint violation (đã có wishlist item)
+                        return Json(new { 
+                            success = true, 
+                            message = "Sản phẩm đã có trong danh sách yêu thích.",
+                            action = "already_exists",
+                            inWishlist = true
+                        });
+                    }
+
+                    // Track add to wishlist event - await để đảm bảo hoàn thành
+                    try
+                    {
+                        await _trackingService.TrackAddToWishlistAsync(productId);
+                    }
+                    catch (Exception trackEx)
+                    {
+                        // Log lỗi tracking nhưng không làm gián đoạn flow chính
+                        Console.WriteLine($"Tracking error: {trackEx.Message}");
+                    }
 
                     return Json(new { 
                         success = true, 
@@ -116,6 +237,8 @@ namespace SportShop.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in Wishlist Toggle: {ex.Message}");
+                Console.WriteLine($"Exception StackTrace: {ex.StackTrace}");
+                Console.WriteLine($"Exception Details: {ex}");
                 return Json(new { success = false, message = "Có lỗi xảy ra. Vui lòng thử lại." });
             }
         }
@@ -137,16 +260,29 @@ namespace SportShop.Controllers
                     });
                 }
 
-                var wishlistItem = await _context.Wishlists
-                    .FirstOrDefaultAsync(w => w.UserID == userId.Value && w.ProductID == productId);
+                // Kiểm tra xem sản phẩm có trong wishlist không
+                var exists = await _context.Wishlists
+                    .AnyAsync(w => w.UserID == userId.Value && w.ProductID == productId);
 
-                if (wishlistItem == null)
+                if (!exists)
                 {
                     return Json(new { success = false, message = "Sản phẩm không có trong danh sách yêu thích." });
                 }
 
-                _context.Wishlists.Remove(wishlistItem);
-                await _context.SaveChangesAsync();
+                // Sử dụng ExecuteSqlRaw để tránh concurrency exception
+                try
+                {
+                    var affectedRows = await _context.Database.ExecuteSqlRawAsync(
+                        "DELETE FROM Wishlist WHERE UserID = {0} AND ProductID = {1}", 
+                        userId.Value, productId);
+                        
+                    Console.WriteLine($"Deleted {affectedRows} wishlist rows for Product {productId}, User {userId.Value}");
+                }
+                catch (Exception dbEx)
+                {
+                    Console.WriteLine($"Database error during wishlist deletion: {dbEx.Message}");
+                    // Tiếp tục coi như thành công vì có thể đã bị xóa
+                }
 
                 return Json(new { 
                     success = true, 
@@ -170,18 +306,18 @@ namespace SportShop.Controllers
                 
                 if (!userId.HasValue)
                 {
-                    return Json(new { inWishlist = false });
+                    return Json(new { success = true, inWishlist = false });
                 }
 
                 var exists = await _context.Wishlists
                     .AnyAsync(w => w.UserID == userId.Value && w.ProductID == productId);
 
-                return Json(new { inWishlist = exists });
+                return Json(new { success = true, inWishlist = exists });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in Wishlist Check: {ex.Message}");
-                return Json(new { inWishlist = false });
+                return Json(new { success = false, inWishlist = false });
             }
         }
 
@@ -195,18 +331,18 @@ namespace SportShop.Controllers
                 
                 if (!userId.HasValue)
                 {
-                    return Json(new { count = 0 });
+                    return Json(new { success = true, count = 0 });
                 }
 
                 var count = await _context.Wishlists
                     .CountAsync(w => w.UserID == userId.Value);
 
-                return Json(new { count = count });
+                return Json(new { success = true, count = count });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in Wishlist Count: {ex.Message}");
-                return Json(new { count = 0 });
+                return Json(new { success = false, count = 0 });
             }
         }
 

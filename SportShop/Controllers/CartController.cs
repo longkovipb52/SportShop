@@ -24,8 +24,9 @@ namespace SportShop.Controllers
         private readonly VnPayServiceNew _vnPayService;
         private readonly IConfiguration _configuration;
         private readonly VoucherService _voucherService;
+        private readonly InteractionTrackingService _trackingService;
 
-        public CartController(ApplicationDbContext context, PayPalService payPalService, MoMoService moMoService, VnPayServiceNew vnPayService, IConfiguration configuration, VoucherService voucherService)
+        public CartController(ApplicationDbContext context, PayPalService payPalService, MoMoService moMoService, VnPayServiceNew vnPayService, IConfiguration configuration, VoucherService voucherService, InteractionTrackingService trackingService)
         {
             _context = context;
             _payPalService = payPalService;
@@ -33,6 +34,7 @@ namespace SportShop.Controllers
             _vnPayService = vnPayService;
             _configuration = configuration;
             _voucherService = voucherService;
+            _trackingService = trackingService;
         }
 
         // GET: Cart - Hiển thị trang giỏ hàng
@@ -241,6 +243,17 @@ namespace SportShop.Controllers
                 {
                     // Xóa từ session
                     RemoveCartItemSession(productId, attributeId);
+                }
+
+                // Track remove from cart event - await để đảm bảo hoàn thành
+                try
+                {
+                    await _trackingService.TrackRemoveFromCartAsync(productId, attributeId);
+                }
+                catch (Exception trackEx)
+                {
+                    // Log lỗi tracking nhưng không làm gián đoạn flow chính
+                    Console.WriteLine($"Tracking error: {trackEx.Message}");
                 }
 
                 // Đảm bảo lấy lại dữ liệu giỏ hàng mới nhất
@@ -709,6 +722,17 @@ namespace SportShop.Controllers
                 // Người dùng đã đăng nhập, lưu vào database
                 await AddToCartForUserAsync(userId.Value, request.ProductId, request.Quantity, request.AttributeId);
                 Console.WriteLine($"Added to cart for user {userId.Value} with attributeId: {request.AttributeId}");
+
+                // Track add to cart event - await để đảm bảo hoàn thành
+                try
+                {
+                    await _trackingService.TrackAddToCartAsync(request.ProductId, request.Quantity, request.AttributeId);
+                }
+                catch (Exception trackEx)
+                {
+                    // Log lỗi tracking nhưng không làm gián đoạn flow chính
+                    Console.WriteLine($"Tracking error: {trackEx.Message}");
+                }
 
                 // Lấy số lượng sản phẩm trong giỏ hàng
                 int cartCount = await GetCartCountAsync();
@@ -1318,6 +1342,16 @@ namespace SportShop.Controllers
                 {
                     await _voucherService.MarkVoucherAsUsedAsync(userVoucherId.Value, userId.Value);
                     HttpContext.Session.Remove("SelectedUserVoucherID");
+                }
+
+                // Track purchase event with order details
+                try
+                {
+                    await _trackingService.TrackPurchaseAsync(order.OrderID, totalAmount, cartItems.Select(c => c.ProductId).ToArray());
+                }
+                catch (Exception)
+                {
+                    // Tracking failure should not affect the main flow
                 }
 
                 // Xóa giỏ hàng sau khi đặt hàng thành công

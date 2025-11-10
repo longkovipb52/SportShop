@@ -44,7 +44,7 @@ namespace SportShop.Controllers
                 .Take(5)
                 .ToListAsync();
 
-            // Lấy sản phẩm theo từng thương hiệu (6 sản phẩm mỗi thương hiệu)
+            // Lấy sản phẩm theo từng thương hiệu (5 sản phẩm mỗi thương hiệu)
             var productsByBrand = new Dictionary<Brand, IEnumerable<Product>>();
             foreach (var brand in brands)
             {
@@ -54,7 +54,7 @@ namespace SportShop.Controllers
                     .Include(p => p.Brand)
                     .Where(p => p.BrandID == brand.BrandID)
                     .OrderByDescending(p => p.CreatedAt)
-                    .Take(6)
+                    .Take(5)
                     .ToListAsync();
                 
                 productsByBrand[brand] = brandProducts;

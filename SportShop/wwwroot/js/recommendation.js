@@ -134,8 +134,8 @@ class RecommendationService {
                 badge = '<span class="badge bg-success position-absolute top-0 start-0 m-2">Gợi ý tốt</span>';
             }
             
-            // Generate star rating (default to 4 stars for recommendations)
-            const rating = 4;
+            // Generate star rating based on actual rating or default to 0
+            const rating = rec.averageRating || rec.AverageRating || 0;
             let stars = '';
             for (let i = 1; i <= 5; i++) {
                 stars += `<i class="fas fa-star ${i <= rating ? 'text-warning' : 'text-muted'}"></i>`;
@@ -182,7 +182,10 @@ class RecommendationService {
                                         ${stars}
                                     </div>
                                     <span class="text-muted small ms-1">
-                                        Gợi ý cho bạn
+                                        ${rating > 0 ? 
+                                            `${rating.toFixed(1)} (${rec.reviewCount || rec.ReviewCount || 0})` : 
+                                            'Chưa có đánh giá'
+                                        }
                                     </span>
                                 </div>
                             </div>

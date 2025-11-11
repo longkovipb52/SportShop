@@ -1647,12 +1647,25 @@ namespace SportShop.Controllers
                 await _voucherService.MarkVoucherAsUsedAsync(userVoucherId.Value, userId.Value);
             }
             
+            // Track purchase event
+            try
+            {
+                await _trackingService.TrackPurchaseAsync(order.OrderID, totalAmount, cartItems.Select(c => c.ProductId).ToArray());
+            }
+            catch (Exception)
+            {
+                
+            }
+            
             // Clear voucher sessions
             HttpContext.Session.Remove("VoucherCode");
             HttpContext.Session.Remove("SelectedUserVoucherID");
             HttpContext.Session.Remove("VoucherIdPayPal");
             HttpContext.Session.Remove("UserVoucherIdPayPal");
             HttpContext.Session.Remove("DiscountAmountPayPal");
+
+            // Clear cart after successful order
+            await ClearCartAsync();
 
             return order.OrderID;
         }
@@ -1977,6 +1990,16 @@ namespace SportShop.Controllers
             if (userVoucherId.HasValue && userId.HasValue)
             {
                 await _voucherService.MarkVoucherAsUsedAsync(userVoucherId.Value, userId.Value);
+            }
+            
+            // Track purchase event
+            try
+            {
+                await _trackingService.TrackPurchaseAsync(order.OrderID, totalAmount, cartItems.Select(c => c.ProductId).ToArray());
+            }
+            catch (Exception)
+            {
+                
             }
             
             // Clear voucher sessions
@@ -2338,12 +2361,24 @@ namespace SportShop.Controllers
                     await _voucherService.MarkVoucherAsUsedAsync(userVoucherId.Value, userId.Value);
                 }
                 
+                // Track purchase event
+                try
+                {
+                    await _trackingService.TrackPurchaseAsync(order.OrderID, totalAmount, cartItems.Select(c => c.ProductId).ToArray());
+                }
+                catch (Exception)
+                {
+                    
+                }
+                
                 // Clear voucher sessions
                 HttpContext.Session.Remove("VoucherCode");
                 HttpContext.Session.Remove("SelectedUserVoucherID");
                 HttpContext.Session.Remove("VoucherIdVnPay");
                 HttpContext.Session.Remove("UserVoucherIdVnPay");
                 HttpContext.Session.Remove("DiscountAmountVnPay");
+
+                await ClearCartAsync();
 
                 return order.OrderID;
             }

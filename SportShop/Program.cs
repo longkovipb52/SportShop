@@ -78,6 +78,12 @@ builder.Services.AddScoped<ChatbotService>();
 // Thêm Interaction Tracking Service
 builder.Services.AddScoped<InteractionTrackingService>();
 
+// 🆕 Thêm External ML Training Service
+builder.Services.AddScoped<ExternalMLTrainingService>();
+
+// 🆕 Thêm Background Service cho auto-training
+builder.Services.AddHostedService<ModelTrainingBackgroundService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

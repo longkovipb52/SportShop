@@ -1,7 +1,3 @@
-/* recommendation-styles.css - Isolated CSS styles for recommendation system */
-/* Add to wwwroot/css/ in your ASP.NET Core project */
-
-/* Main recommendation section - namespace isolated */
 .ai-recommendations-section {
     margin: 2rem 0;
     padding: 1.5rem;
@@ -26,7 +22,6 @@
     font-size: 1.2em;
 }
 
-/* Grid layout for recommendations - Bootstrap grid compatible for 5 items */
 .ai-recommendations-container {
     margin: -0.75rem;
 }

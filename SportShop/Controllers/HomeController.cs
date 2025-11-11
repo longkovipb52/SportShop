@@ -33,6 +33,9 @@ namespace SportShop.Controllers
             // Lấy 8 sản phẩm nổi bật
             var products = await _context.Products
                 .Include(p => p.Attributes)
+                .Include(p => p.Reviews)
+                .Include(p => p.Category)
+                .Include(p => p.Brand)
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(8) // Lấy 8 sản phẩm thay vì 4
                 .ToListAsync();
@@ -52,6 +55,7 @@ namespace SportShop.Controllers
                     .Include(p => p.Attributes)
                     .Include(p => p.Category)
                     .Include(p => p.Brand)
+                    .Include(p => p.Reviews) // Thêm Reviews để tính AverageRating
                     .Where(p => p.BrandID == brand.BrandID)
                     .OrderByDescending(p => p.CreatedAt)
                     .Take(5)

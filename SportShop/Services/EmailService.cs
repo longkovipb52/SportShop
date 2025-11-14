@@ -3,6 +3,8 @@ using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using SportShop.Data;
 
 namespace SportShop.Services
 {
@@ -64,6 +66,25 @@ namespace SportShop.Services
         }
 
         /// <summary>
+        /// Gửi email thông báo nhận voucher mới
+        /// </summary>
+        public async Task<bool> SendVoucherNotificationEmailAsync(string toEmail, string userName, string voucherCode, string voucherDescription, decimal discountValue, string discountType)
+        {
+            try
+            {
+                var subject = "🎉 Bạn nhận được voucher mới từ SportShop!";
+                var body = GenerateVoucherNotificationEmailBody(userName, voucherCode, voucherDescription, discountValue, discountType);
+
+                return await SendEmailAsync(toEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending voucher notification email: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Gửi email OTP để đặt lại mật khẩu
         /// </summary>
         public async Task<bool> SendResetPasswordOtpAsync(string toEmail, string userName, string otpCode)
@@ -79,6 +100,17 @@ namespace SportShop.Services
                 Console.WriteLine($"Error sending reset password OTP: {ex.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Gửi email thông báo voucher nhận được khi viết đánh giá
+        /// </summary>
+        public async Task SendReviewVoucherNotificationEmailAsync(string toEmail, string customerName, string voucherCode, string voucherDescription, decimal voucherValue, string voucherType, int rating)
+        {
+            var subject = "🌟 Cảm ơn bạn đã đánh giá! Nhận ngay voucher ưu đãi!";
+            var body = GenerateReviewVoucherNotificationEmailBody(customerName, voucherCode, voucherDescription, voucherValue, voucherType, rating);
+            
+            await SendEmailAsync(toEmail, subject, body);
         }
 
         /// <summary>
@@ -315,6 +347,171 @@ namespace SportShop.Services
         }
 
         /// <summary>
+        /// Tạo nội dung email thông báo voucher mới
+        /// </summary>
+        private string GenerateVoucherNotificationEmailBody(string userName, string voucherCode, string voucherDescription, decimal discountValue, string discountType)
+        {
+            string discountText = discountType.Equals("Percentage", StringComparison.OrdinalIgnoreCase) 
+                ? $"{discountValue}% OFF" 
+                : $"{discountValue:N0}đ OFF";
+                
+            string emoji = discountType.Equals("Percentage", StringComparison.OrdinalIgnoreCase) ? "🔥" : "💰";
+
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }}
+        .content {{
+            padding: 40px 30px;
+        }}
+        .voucher-card {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }}
+        .voucher-card::before {{
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.1) 10px,
+                rgba(255,255,255,0.1) 20px
+            );
+            animation: shine 3s linear infinite;
+        }}
+        @keyframes shine {{
+            0% {{ transform: translateX(-100%) translateY(-100%) rotate(45deg); }}
+            100% {{ transform: translateX(100%) translateY(100%) rotate(45deg); }}
+        }}
+        .voucher-code {{
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }}
+        .discount-value {{
+            font-size: 24px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }}
+        .btn {{
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 15px 35px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 25px 0;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }}
+        .btn:hover {{
+            transform: translateY(-2px);
+        }}
+        .footer {{
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }}
+        .celebration {{
+            font-size: 48px;
+            margin-bottom: 20px;
+        }}
+        .highlight {{
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <div class='celebration'>🎉🎁🎉</div>
+            <h1>Voucher Mới Dành Riêng Cho Bạn!</h1>
+        </div>
+        
+        <div class='content'>
+            <h2>Chào {userName}!</h2>
+            <p><strong>Chúc mừng!</strong> Bạn vừa nhận được một voucher đặc biệt từ SportShop!</p>
+            
+            <div class='voucher-card'>
+                <div class='discount-value'>{emoji} {discountText}</div>
+                <div class='voucher-code'>{voucherCode}</div>
+                <p style='margin: 0; opacity: 0.9; position: relative; z-index: 1;'>{voucherDescription}</p>
+            </div>
+            
+            <div class='highlight'>
+                <p style='margin: 0;'><strong>💡 Cách sử dụng:</strong></p>
+                <p style='margin: 5px 0 0 0;'>Nhập mã voucher <strong>{voucherCode}</strong> khi thanh toán để nhận ưu đãi!</p>
+            </div>
+            
+            <p>Voucher này được tặng để cảm ơn sự tin tưởng và ủng hộ của bạn dành cho SportShop. Hãy sử dụng ngay để không bỏ lỡ cơ hội tiết kiệm!</p>
+            
+            <div style='text-align: center;'>
+                <a href='http://localhost:5084' class='btn'>Mua sắm ngay</a>
+            </div>
+            
+            <div style='margin-top: 30px; padding: 15px; background-color: #e7f3ff; border-radius: 8px;'>
+                <p style='margin: 0; font-size: 14px; color: #0066cc;'>
+                    <strong>🔔 Lưu ý:</strong> Bạn có thể xem tất cả voucher của mình trong mục ""Voucher của tôi"" trên website SportShop.
+                </p>
+            </div>
+        </div>
+        
+        <div class='footer'>
+            <p>Cảm ơn bạn đã tin tưởng SportShop!</p>
+            <p>&copy; 2025 SportShop. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>";
+        }
+
+        /// <summary>
         /// Tạo nội dung email OTP đặt lại mật khẩu
         /// </summary>
         private string GenerateResetPasswordOtpEmailBody(string userName, string otpCode)
@@ -451,6 +648,73 @@ namespace SportShop.Services
         {
             var random = new Random();
             return random.Next(100000, 999999).ToString();
+        }
+
+        private string GenerateReviewVoucherNotificationEmailBody(string customerName, string voucherCode, string voucherDescription, decimal voucherValue, string voucherType, int rating)
+        {
+            var stars = new string('⭐', rating);
+            
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f6f9fc; }}
+        .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }}
+        .content {{ padding: 30px; }}
+        .voucher-card {{ background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); border-radius: 15px; padding: 25px; margin: 20px 0; text-align: center; border: 3px dashed #e17055; animation: pulse 2s infinite; }}
+        .voucher-code {{ font-size: 24px; font-weight: bold; color: #2d3436; margin: 10px 0; letter-spacing: 2px; }}
+        .rating-section {{ text-align: center; margin: 20px 0; }}
+        .stars {{ font-size: 32px; margin: 10px 0; }}
+        @keyframes pulse {{ 0% {{ transform: scale(1); }} 50% {{ transform: scale(1.05); }} 100% {{ transform: scale(1); }} }}
+        .btn {{ display: inline-block; padding: 12px 30px; background: #00b894; color: white; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 20px 0; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>🎉 Cảm ơn bạn đã đánh giá!</h1>
+            <p>Chào {customerName}, cảm ơn bạn đã dành thời gian đánh giá sản phẩm!</p>
+        </div>
+        
+        <div class='content'>
+            <div class='rating-section'>
+                <h3>Đánh giá của bạn</h3>
+                <div class='stars'>{stars}</div>
+                <p>Cảm ơn bạn đã đánh giá {rating} sao!</p>
+            </div>
+            
+            <div class='voucher-card'>
+                <h2>🎁 Voucher ưu đãi dành cho bạn!</h2>
+                <div class='voucher-code'>{voucherCode}</div>
+                <p><strong>{voucherDescription}</strong></p>
+                <p>Hãy sử dụng mã này cho lần mua sắm tiếp theo!</p>
+            </div>
+            
+            <div style='text-align: center;'>
+                <a href='http://localhost:5084' class='btn'>Mua sắm ngay</a>
+            </div>
+            
+            <div style='margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;'>
+                <h4>📋 Điều kện sử dụng:</h4>
+                <ul style='margin: 10px 0; padding-left: 20px;'>
+                    <li>Voucher có giá trị đến 31/12/2025</li>
+                    <li>Áp dụng cho đơn hàng từ {voucherValue:N0}đ</li>
+                    <li>Không áp dụng cùng chương trình khuyến mãi khác</li>
+                    <li>Mỗi tài khoản chỉ sử dụng 1 lần</li>
+                </ul>
+            </div>
+            
+            <div style='text-align: center; margin-top: 30px; color: #666;'>
+                <p>Cảm ơn bạn đã tin tưởng và mua sắm tại <strong>SportShop</strong>!</p>
+                <p>Đánh giá của bạn giúp chúng tôi cải thiện chất lượng sản phẩm và dịch vụ.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>";
         }
     }
 }

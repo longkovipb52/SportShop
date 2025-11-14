@@ -477,9 +477,9 @@ body {
   font-size: 0.65rem;
   width: 18px;
   height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 /* Dropdown Menu Animation */

@@ -411,8 +411,15 @@
         </div>
         
         <div id="user-recommendations" class="ai-recommendations-container five-columns row g-3 grid-view">
-            <!-- Recommendations will be loaded here by JavaScript -->
-            <div class="ai-loading col-12">Đang tải gợi ý sản phẩm...</div>
+            <!-- Recommendations will be loaded lazily when section comes into view -->
+            <div class="ai-loading col-12">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải gợi ý sản phẩm...</span>
+                    </div>
+                    <p class="mt-2">Đang tải gợi ý sản phẩm dành cho bạn...</p>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -524,17 +531,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check wishlist status for all products on page load
     checkAllWishlistStatus();
     
-    // Re-initialize after any dynamic content changes
+    // Lazy load recommendations using Intersection Observer
+    const recommendationsSection = document.getElementById('user-recommendations');
+    if (recommendationsSection) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Load recommendations when section comes into view
+                    if (typeof window.loadRecommendations === 'function') {
+                        window.loadRecommendations();
+                    }
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            rootMargin: '100px' // Start loading 100px before the section is visible
+        });
+        
+        observer.observe(recommendationsSection);
+    }
+    
+    // Re-initialize after any dynamic content changes - throttled
+    let observerTimeout;
     const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
+        // Throttle observer execution to reduce performance impact
+        if (observerTimeout) return;
+        
+        observerTimeout = setTimeout(() => {
+            let shouldReinitialize = false;
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    // Only reinitialize if new product cards were added
+                    for (let node of mutation.addedNodes) {
+                        if (node.nodeType === 1 && (node.classList.contains('product-card') || node.querySelector('.product-card'))) {
+                            shouldReinitialize = true;
+                            break;
+                        }
+                    }
+                }
+            });
+            
+            if (shouldReinitialize) {
                 // Re-initialize for any new buttons added
                 initAddToCart();
                 initWishlist();
                 initQuickView();
                 checkAllWishlistStatus();
             }
-        });
+            
+            observerTimeout = null;
+        }, 200);
     });
     
     // Observe changes to recommendations container
@@ -789,7 +835,7 @@ function updateWishlistCount() {
     });
 }
 
-// Check wishlist status for all products
+// Check wishlist status for all products - optimized
 function checkAllWishlistStatus() {
     // Get all unique product IDs from the page
     const productIds = new Set();
@@ -797,19 +843,48 @@ function checkAllWishlistStatus() {
     // From data-product-id attributes
     document.querySelectorAll('[data-product-id]').forEach(element => {
         const productId = parseInt(element.getAttribute('data-product-id'));
-        if (productId) productIds.add(productId);
+        if (productId && productId > 0) productIds.add(productId);
     });
     
     // From onclick handlers
     document.querySelectorAll('[onclick*="handleAddToWishlist"]').forEach(element => {
         const match = element.getAttribute('onclick').match(/handleAddToWishlist\((\d+)\)/);
-        if (match) productIds.add(parseInt(match[1]));
+        if (match) {
+            const productId = parseInt(match[1]);
+            if (productId > 0) productIds.add(productId);
+        }
     });
     
-    // Check status for each product
-    productIds.forEach(productId => {
-        checkWishlistStatus(productId);
-    });
+    // Batch check instead of individual requests
+    if (productIds.size > 0) {
+        const productIdArray = Array.from(productIds);
+        
+        // Send batch request instead of individual ones
+        fetch('/Wishlist/CheckMultiple', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ productIds: productIdArray })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update all buttons based on batch result
+                Object.entries(data.wishlistStatus || {}).forEach(([productId, inWishlist]) => {
+                    updateWishlistButtonState(parseInt(productId), inWishlist);
+                });
+            }
+        })
+        .catch(error => {
+            console.log('Could not batch check wishlist status:', error);
+            // Fallback to individual checks but throttled
+            productIdArray.forEach((productId, index) => {
+                setTimeout(() => checkWishlistStatus(productId), index * 100);
+            });
+        });
+    }
 }
 
 // Check wishlist status for a specific product

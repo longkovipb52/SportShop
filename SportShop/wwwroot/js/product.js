@@ -1293,55 +1293,10 @@ function showNotification(message, type = 'info') {
     }
 }
 
-// Thêm hàm mới để xử lý cuộn sidebar
+// Simplified sidebar initialization - remove independent scroll handling
 function initSidebarScroll() {
-    const sidebarWrapper = document.querySelector('.filter-sidebar-wrapper');
-    
-    if (sidebarWrapper) {
-        // Xử lý sự kiện cuộn để thêm class khi cần
-        sidebarWrapper.addEventListener('scroll', function() {
-            if (this.scrollTop + this.clientHeight < this.scrollHeight) {
-                this.classList.add('scrolled');
-            } else {
-                this.classList.remove('scrolled');
-            }
-        });
-        
-        // Điều chỉnh chiều cao sidebar khi kích thước cửa sổ thay đổi
-        function adjustSidebarHeight() {
-            const header = document.querySelector('header');
-            const headerHeight = header ? header.offsetHeight : 80;
-            
-            sidebarWrapper.style.top = (headerHeight + 20) + 'px';
-            sidebarWrapper.style.maxHeight = `calc(100vh - ${headerHeight + 40}px)`;
-        }
-        
-        // Gọi hàm khi trang tải và khi resize cửa sổ
-        adjustSidebarHeight();
-        window.addEventListener('resize', adjustSidebarHeight);
-        
-        // Đặt lại vị trí sidebar khi tải lại trang
-        window.addEventListener('beforeunload', function() {
-            sidebarWrapper.scrollTop = 0;
-        });
-
-        function checkStickyState() {
-            const rect = sidebarWrapper.getBoundingClientRect();
-            const header = document.querySelector('header');
-            const headerHeight = header ? header.offsetHeight : 80;
-            
-            if (rect.top <= headerHeight + 20) {
-                sidebarWrapper.classList.add('sticked');
-            } else {
-                sidebarWrapper.classList.remove('sticked');
-            }
-        }
-        
-        // Gọi khi cuộn trang
-        window.addEventListener('scroll', checkStickyState);
-        // Kiểm tra ban đầu
-        checkStickyState();
-    }
+    // Remove all sidebar-specific scroll handling since we want unified page scrolling
+    console.log('Sidebar scroll handling disabled for unified page scrolling');
 }
 
 // Update wishlist count in dropdown

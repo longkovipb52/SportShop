@@ -8,6 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - LoLoSport</title>
     
+    <!-- Preload critical CSS -->
+    <link rel="preload" href="~/css/site.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="~/css/style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     
@@ -21,12 +25,10 @@
     <link rel="icon" href="~/image/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="~/image/favicon.ico" type="image/x-icon">
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/checkout.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/voice-search.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/recommendation-styles.css" asp-append-version="true" />
+    <!-- Non-critical CSS loaded asynchronously -->
+    <link rel="stylesheet" href="~/css/checkout.css" asp-append-version="true" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="~/css/voice-search.css" asp-append-version="true" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="~/css/recommendation-styles.css" asp-append-version="true" media="print" onload="this.media='all'">
     
     <!-- Custom CSS per page -->
     @if (ViewData["CustomCSS"] != null)
@@ -477,7 +479,6 @@
     <script src="~/js/voucher.js" asp-append-version="true"></script>
     <script src="~/js/voice-search.js" asp-append-version="true"></script>
     <script src="~/js/recommendation.js" asp-append-version="true"></script>
-    <script src="~/js/recommendation-debug.js" asp-append-version="true"></script>
     
     <script>
         // Authentication hooks for recommendation reload

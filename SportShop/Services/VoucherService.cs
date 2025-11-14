@@ -29,10 +29,12 @@ namespace SportShop.Services
     public class VoucherService
     {
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
 
-        public VoucherService(ApplicationDbContext context)
+        public VoucherService(ApplicationDbContext context, EmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public async Task<Voucher?> GetByCodeAsync(string code)
@@ -42,7 +44,39 @@ namespace SportShop.Services
             return await _context.Vouchers.FirstOrDefaultAsync(v => v.Code == code);
         }
 
-        // ==================== EVENT-BASED VOUCHER ASSIGNMENT ====================
+        
+        private async Task SendVoucherNotificationAsync(int userId, Voucher voucher)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == userId);
+                if (user == null || string.IsNullOrWhiteSpace(user.Email))
+                    return;
+
+                string voucherDescription = voucher.DiscountType.Equals("Percentage", StringComparison.OrdinalIgnoreCase)
+                    ? $"Giảm {voucher.DiscountValue}% cho đơn hàng"
+                    : $"Giảm {voucher.DiscountValue:N0}đ cho đơn hàng";
+
+                if (voucher.MinOrderAmount.HasValue && voucher.MinOrderAmount > 0)
+                {
+                    voucherDescription += $" (tối thiểu {voucher.MinOrderAmount.Value:N0}đ)";
+                }
+
+                await _emailService.SendVoucherNotificationEmailAsync(
+                    user.Email,
+                    user.FullName ?? user.Username,
+                    voucher.Code,
+                    voucherDescription,
+                    voucher.DiscountValue,
+                    voucher.DiscountType
+                );
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nhưng không làm gián đoạn flow chính
+                Console.WriteLine($"Lỗi khi gửi email thông báo voucher: {ex.Message}");
+            }
+        }
 
         /// <summary>
         /// Phương án 1: Tặng voucher chào mừng khi user đăng ký
@@ -77,6 +111,9 @@ namespace SportShop.Services
                 _context.UserVouchers.Add(userVoucher);
                 await _context.SaveChangesAsync();
 
+                // Gửi email thông báo voucher mới
+                await SendVoucherNotificationAsync(userId, welcomeVoucher);
+
                 return true;
             }
             catch (Exception)
@@ -84,22 +121,6 @@ namespace SportShop.Services
                 return false;
             }
         }
-
-        /// <summary>
-        /// Phương án 5a: Tặng voucher sinh nhật (Disabled - User model không có DateOfBirth)
-        /// Nếu muốn dùng, cần thêm field DateOfBirth vào bảng User
-        /// </summary>
-        /*
-        public async Task<bool> AssignBirthdayVoucherAsync(int userId)
-        {
-            // TODO: Thêm DateOfBirth vào User model trước
-            return await Task.FromResult(false);
-        }
-        */
-
-        /// <summary>
-        /// Phương án 5b: Tặng voucher sau đơn hàng đầu tiên
-        /// </summary>
         public async Task<bool> AssignFirstOrderVoucherAsync(int userId)
         {
             try
@@ -137,6 +158,9 @@ namespace SportShop.Services
 
                 _context.UserVouchers.Add(userVoucher);
                 await _context.SaveChangesAsync();
+
+                // Gửi email thông báo voucher mới
+                await SendVoucherNotificationAsync(userId, firstOrderVoucher);
 
                 return true;
             }
@@ -199,6 +223,9 @@ namespace SportShop.Services
 
                 _context.UserVouchers.Add(userVoucher);
                 await _context.SaveChangesAsync();
+
+                // Gửi email thông báo voucher mới
+                await SendVoucherNotificationAsync(userId, milestoneVoucher);
 
                 return true;
             }
@@ -409,6 +436,104 @@ namespace SportShop.Services
             result.Voucher = voucher;
             result.DiscountAmount = discount;
             return result;
+        }
+
+        /// <summary>
+        /// Phương án: Tặng voucher khi viết đánh giá sản phẩm
+        /// </summary>
+        public async Task<bool> AssignReviewVoucherAsync(int userId, int productId, int rating)
+        {
+            try
+            {
+                // Kiểm tra đã viết review cho sản phẩm này chưa
+                var existingReview = await _context.Reviews
+                    .AnyAsync(r => r.UserID == userId && r.ProductID == productId);
+
+                if (!existingReview)
+                {
+                    // Chưa có review, không tặng voucher
+                    return false;
+                }
+
+                // Xác định voucher dựa vào rating
+                string voucherCode = "";
+                if (rating >= 5) voucherCode = "REVIEW5STAR"; // 15% OFF
+                else if (rating >= 4) voucherCode = "REVIEW4STAR"; // 10% OFF  
+                else if (rating >= 3) voucherCode = "REVIEWGOOD"; // 5% OFF
+
+                if (string.IsNullOrEmpty(voucherCode))
+                {
+                    // Rating quá thấp, không tặng voucher
+                    return false;
+                }
+
+                var voucher = await _context.Vouchers
+                    .FirstOrDefaultAsync(v => v.Code == voucherCode && v.IsActive);
+
+                if (voucher == null)
+                {
+                    return false;
+                }
+
+                // Kiểm tra xem user đã nhận voucher review nào trong ngày hôm nay chưa
+                // Lấy danh sách ID của tất cả voucher review
+                var reviewVoucherIds = await _context.Vouchers
+                    .Where(v => v.Code == "REVIEW5STAR" || v.Code == "REVIEW4STAR" || v.Code == "REVIEWGOOD")
+                    .Select(v => v.VoucherID)
+                    .ToListAsync();
+
+                var today = DateTime.Now.Date;
+                var hasRecentReviewVoucher = await _context.UserVouchers
+                    .AnyAsync(uv => uv.UserID == userId && 
+                                  reviewVoucherIds.Contains(uv.VoucherID) &&
+                                  uv.AssignedDate.Date == today);
+
+                if (hasRecentReviewVoucher)
+                {
+                    // Đã nhận voucher review hôm nay rồi, tránh spam
+                    return false;
+                }
+
+                // Assign voucher
+                var userVoucher = new UserVoucher
+                {
+                    UserID = userId,
+                    VoucherID = voucher.VoucherID,
+                    AssignedDate = DateTime.Now,
+                    IsUsed = false,
+                    Note = null // Tạm thời set null để tránh lỗi database
+                };
+
+                _context.UserVouchers.Add(userVoucher);
+                await _context.SaveChangesAsync();
+
+                // Gửi email thông báo voucher mới
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserID == userId);
+                if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+                {
+                    string voucherDescription = $"Giảm {voucher.DiscountValue}% cho đơn hàng";
+                    if (voucher.MinOrderAmount.HasValue && voucher.MinOrderAmount > 0)
+                    {
+                        voucherDescription += $" (tối thiểu {voucher.MinOrderAmount.Value:N0}đ)";
+                    }
+
+                    await _emailService.SendReviewVoucherNotificationEmailAsync(
+                        user.Email,
+                        user.FullName ?? user.Username,
+                        voucher.Code,
+                        voucherDescription,
+                        voucher.DiscountValue,
+                        voucher.DiscountType,
+                        rating
+                    );
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }

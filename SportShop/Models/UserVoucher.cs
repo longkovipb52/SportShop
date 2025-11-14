@@ -24,6 +24,9 @@ namespace SportShop.Models
         [Display(Name = "Ngày sử dụng")]
         public DateTime? UsedDate { get; set; }
 
+        [StringLength(500)]
+        public string? Note { get; set; }
+
         // Navigation properties
         [ForeignKey("UserID")]
         public virtual User User { get; set; } = null!;

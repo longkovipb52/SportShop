@@ -414,5 +414,54 @@ namespace SportShop.Controllers
                 return Json(new { success = false, message = "Có lỗi xảy ra. Vui lòng thử lại." });
             }
         }
+
+        // POST: Wishlist/CheckMultiple - Batch check wishlist status for multiple products
+        [HttpPost]
+        [Route("CheckMultiple")]
+        public async Task<IActionResult> CheckMultiple([FromBody] CheckMultipleRequest request)
+        {
+            try
+            {
+                int? userId = HttpContext.Session.GetInt32("UserId");
+                
+                if (!userId.HasValue)
+                {
+                    return Json(new { success = true, wishlistStatus = new {} });
+                }
+
+                if (request?.ProductIds == null || !request.ProductIds.Any())
+                {
+                    return Json(new { success = true, wishlistStatus = new {} });
+                }
+
+                // Get all wishlist items for this user and the requested products
+                var wishlistItems = await _context.Wishlists
+                    .Where(w => w.UserID == userId.Value && request.ProductIds.Contains(w.ProductID))
+                    .Select(w => w.ProductID)
+                    .ToListAsync();
+
+                // Create response dictionary
+                var wishlistStatus = request.ProductIds.ToDictionary(
+                    productId => productId.ToString(),
+                    productId => wishlistItems.Contains(productId)
+                );
+
+                return Json(new { 
+                    success = true, 
+                    wishlistStatus = wishlistStatus 
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in CheckMultiple: {ex.Message}");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi kiểm tra danh sách yêu thích." });
+            }
+        }
+    }
+
+    // Helper class for CheckMultiple request
+    public class CheckMultipleRequest
+    {
+        public int[] ProductIds { get; set; } = new int[0];
     }
 }

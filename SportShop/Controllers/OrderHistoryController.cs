@@ -15,11 +15,16 @@ namespace SportShop.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly InteractionTrackingService _trackingService;
+        private readonly VoucherService _voucherService; // 🆕 THÊM MỚI
 
-        public OrderHistoryController(ApplicationDbContext context, InteractionTrackingService trackingService)
+        public OrderHistoryController(
+            ApplicationDbContext context, 
+            InteractionTrackingService trackingService,
+            VoucherService voucherService) // 🆕 THÊM MỚI
         {
             _context = context;
             _trackingService = trackingService;
+            _voucherService = voucherService; // 🆕 THÊM MỚI
         }
 
         // GET: OrderHistory - Hiển thị lịch sử đơn hàng
@@ -327,7 +332,30 @@ namespace SportShop.Controllers
                 // Tracking failure should not affect the main flow
             }
 
-            return Json(new { success = true, message = "Cảm ơn bạn đã đánh giá sản phẩm!" });
+            // 🆕 THÊM MỚI: Tặng voucher khi viết đánh giá
+            bool voucherAssigned = false;
+            string voucherMessage = "";
+            
+            try
+            {
+                voucherAssigned = await _voucherService.AssignReviewVoucherAsync(userId.Value, productId, rating);
+                
+                if (voucherAssigned)
+                {
+                    var voucherType = rating >= 5 ? "15%" : rating >= 4 ? "10%" : "5%";
+                    voucherMessage = $" Bạn đã nhận được voucher giảm {voucherType} để sử dụng cho lần mua tiếp theo!";
+                }
+            }
+            catch (Exception)
+            {
+                // Voucher assignment failure should not affect the review submission
+            }
+
+            return Json(new { 
+                success = true, 
+                message = $"Cảm ơn bạn đã đánh giá sản phẩm!{voucherMessage}",
+                voucherAssigned = voucherAssigned
+            });
         }
 
         // GET: OrderHistory/CheckReviewed - Check if product has been reviewed
@@ -429,13 +457,16 @@ namespace SportShop.Controllers
                 return Json(new { success = false, message = "Đánh giá phải từ 1 đến 5 sao" });
             }
 
+            // Check if rating was improved and worthy of voucher
+            bool ratingImproved = rating > (review.Rating ?? 0);
+            
             // Update review
             review.Rating = rating;
             review.Comment = comment ?? "";
 
             await _context.SaveChangesAsync();
 
-            // Track write review event (cập nhật cũng được track như lần viết mới)
+            // Track write review event
             try
             {
                 await _trackingService.TrackWriteReviewAsync(review.ProductID, rating);
@@ -445,7 +476,33 @@ namespace SportShop.Controllers
                 // Tracking failure should not affect the main flow
             }
 
-            return Json(new { success = true, message = "Cập nhật đánh giá thành công!" });
+            // 🆕 Tặng voucher nếu rating được cải thiện
+            bool voucherAssigned = false;
+            string voucherMessage = "";
+            
+            if (ratingImproved)
+            {
+                try
+                {
+                    voucherAssigned = await _voucherService.AssignReviewVoucherAsync(userId.Value, review.ProductID, rating);
+                    
+                    if (voucherAssigned)
+                    {
+                        var voucherType = rating >= 5 ? "15%" : rating >= 4 ? "10%" : "5%";
+                        voucherMessage = $" Bạn đã nhận được voucher giảm {voucherType} nhờ cải thiện đánh giá!";
+                    }
+                }
+                catch (Exception)
+                {
+                    // Voucher assignment failure should not affect the review update
+                }
+            }
+
+            return Json(new { 
+                success = true, 
+                message = $"Cập nhật đánh giá thành công!{voucherMessage}",
+                voucherAssigned = voucherAssigned 
+            });
         }
 
         // POST: OrderHistory/CancelOrder - Cancel order
@@ -585,5 +642,6 @@ namespace SportShop.Controllers
                 _ => ("Không xác định", "status-unknown")
             };
         }
+
     }
 }

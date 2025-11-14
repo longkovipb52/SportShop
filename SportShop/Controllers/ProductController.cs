@@ -148,19 +148,12 @@ namespace SportShop.Controllers
             var productIds = products.Select(p => p.ProductID).ToList();
             var ratings = await GetProductRatingsAsync(productIds);
 
-            // Gán dữ liệu đánh giá cho sản phẩm
-            foreach (var product in products)
+            // Debug log để kiểm tra
+            Console.WriteLine($"🔍 Products count: {products.Count}");
+            Console.WriteLine($"🔍 Ratings count: {ratings.Count}");
+            foreach(var ratingItem in ratings)
             {
-                if (ratings.TryGetValue(product.ProductID, out var ratingData))
-                {
-                    product.Reviews = new List<Review>
-                    {
-                        new Review
-                        {
-                            Rating = (int)Math.Round(ratingData.AverageRating)
-                        }
-                    };
-                }
+                Console.WriteLine($"🔍 ProductID {ratingItem.Key}: Rating={ratingItem.Value.AverageRating:F1}, Reviews={ratingItem.Value.ReviewCount}");
             }
 
             // Lấy danh mục và thương hiệu cho filter
@@ -179,7 +172,7 @@ namespace SportShop.Controllers
                 CategoryId = categoryId,
                 BrandId = brandId,
                 Keyword = keyword,
-                ProductRatings = ratings
+                ProductRatings = ratings // ✅ Gán ProductRatings dictionary đúng cách
             };
 
             return View(viewModel);

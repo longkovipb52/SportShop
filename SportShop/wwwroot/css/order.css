@@ -800,6 +800,31 @@
 }
 
 /* Action Buttons */
+.btn-outline-primary:hover {
+    background-color: var(--primary-pink);
+    border-color: var(--primary-pink);
+}
+
+.btn-outline-success:hover {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+/* Review Modal Enhancements */
+.review-modal-content {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 .order-actions .btn {
     border-radius: 25px;
     font-weight: 600;

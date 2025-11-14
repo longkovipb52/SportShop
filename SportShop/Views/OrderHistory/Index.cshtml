@@ -922,28 +922,27 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        // Show success message
+                        // Hide modal first
                         const modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
                         modal.hide();
 
-                        // Show success alert
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-success alert-dismissible fade show animate__animated animate__bounceIn';
-                        alertDiv.innerHTML = `
-                            <i class="fas fa-check-circle me-2"></i>
-                            ${result.message}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        document.querySelector('.order-content .container').insertBefore(
-                            alertDiv, 
-                            document.querySelector('.order-content .container').firstChild
-                        );
-
-                        // Auto hide alert
-                        setTimeout(() => {
-                            alertDiv.classList.add('animate__fadeOut');
-                            setTimeout(() => alertDiv.remove(), 1000);
-                        }, 5000);
+                        // Show toast notification using the existing toast system
+                        if (typeof showToast === 'function') {
+                            if (result.voucherAssigned) {
+                                // Special toast for voucher assignment
+                                showToast(
+                                    `🎉 ${result.message}`, 
+                                    'success', 
+                                    6000 // Show longer for voucher notification
+                                );
+                            } else {
+                                // Regular success toast
+                                showToast(result.message, 'success');
+                            }
+                        } else {
+                            // Fallback if toast function not available
+                            alert(result.message);
+                        }
 
                         // Reload page to update button status
                         setTimeout(() => {
@@ -951,11 +950,21 @@
                         }, 2000);
 
                     } else {
-                        alert(result.message || 'Có lỗi xảy ra. Vui lòng thử lại!');
+                        // Show error using toast system
+                        if (typeof showToast === 'function') {
+                            showToast(result.message || 'Có lỗi xảy ra. Vui lòng thử lại!', 'error');
+                        } else {
+                            alert(result.message || 'Có lỗi xảy ra. Vui lòng thử lại!');
+                        }
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+                    // Show error using toast system
+                    if (typeof showToast === 'function') {
+                        showToast('Có lỗi xảy ra. Vui lòng thử lại!', 'error');
+                    } else {
+                        alert('Có lỗi xảy ra. Vui lòng thử lại!');
+                    }
                 } finally {
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;

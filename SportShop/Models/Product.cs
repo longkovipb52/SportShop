@@ -58,7 +58,8 @@ namespace SportShop.Models
                 if (Reviews == null || !Reviews.Any())
                     return 0;
                 
-                var validReviews = Reviews.Where(r => r.Rating.HasValue).ToList();
+                // Chỉ tính rating từ các đánh giá đã được duyệt và có rating
+                var validReviews = Reviews.Where(r => r.Rating.HasValue && r.Status == "Approved").ToList();
                 if (!validReviews.Any())
                     return 0;
                 
@@ -74,7 +75,8 @@ namespace SportShop.Models
                 if (Reviews == null)
                     return 0;
                 
-                return Reviews.Count;
+                // Chỉ đếm các đánh giá đã được duyệt
+                return Reviews.Count(r => r.Status == "Approved");
             }
         }
         // Navigation properties

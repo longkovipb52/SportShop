@@ -326,8 +326,21 @@ window.handleViewProduct = function(productId) {
     window.location.href = `/Product/Details/${productId}`;
 };
 
-// Global function to load recommendations
-window.loadRecommendations = async function() {
+// Debounce function to prevent excessive API calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Global function to load recommendations - debounced
+window.loadRecommendations = debounce(async function() {
     console.log('Loading recommendations for user:', window.currentUserId);
     
     const userRecsContainer = document.getElementById('user-recommendations');
@@ -372,7 +385,7 @@ window.loadRecommendations = async function() {
         console.error('Error loading recommendations:', error);
         userRecsContainer.innerHTML = `<div class="ai-no-recommendations col-12">Lỗi tải gợi ý: ${error.message}</div>`;
     }
-};
+}, 500); // Debounce delay of 500ms
 
 // Function to update user and reload recommendations
 window.updateUserRecommendations = function(newUserId) {
@@ -388,7 +401,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Initial load
     await window.loadRecommendations();
     
-    // Monitor for user session changes more frequently after login
+    // Monitor for user session changes - optimized frequency
     let lastUserId = window.currentUserId;
     let checkCount = 0;
     
@@ -402,20 +415,20 @@ document.addEventListener('DOMContentLoaded', async function() {
             window.loadRecommendations();
         }
         
-        // Check more frequently in first 30 seconds (for login detection)
-        if (checkCount > 30) {
+        // Check more frequently only in first 10 seconds (reduced from 30)
+        if (checkCount > 5) {
             clearInterval(sessionChecker);
             
-            // Then check less frequently
+            // Then check much less frequently
             setInterval(() => {
                 if (window.currentUserId !== lastUserId) {
                     console.log(`🔄 User ID changed from ${lastUserId} to ${window.currentUserId}, reloading recommendations`);
                     lastUserId = window.currentUserId;
                     window.loadRecommendations();
                 }
-            }, 5000); // Check every 5 seconds after initial period
+            }, 10000); // Check every 10 seconds instead of 5
         }
-    }, 1000); // Check every second for first 30 seconds
+    }, 2000); // Check every 2 seconds instead of 1 second
     
     // Also check for session changes via storage events
     window.addEventListener('storage', function(e) {

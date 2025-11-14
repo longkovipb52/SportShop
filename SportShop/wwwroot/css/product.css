@@ -555,16 +555,17 @@
 }
 
 .filter-sidebar-wrapper {
-    position: sticky;
-    top: 80px; /* Điều chỉnh khoảng cách từ top tùy theo header của bạn */
-    max-height: calc(100vh - 100px); /* Điều chỉnh chiều cao tối đa */
-    overflow-y: auto;
-    padding-right: 5px; /* Thêm khoảng trống cho thanh cuộn */
+    /* Remove sticky positioning and independent scroll */
+    /* position: sticky; */
+    /* top: 80px; */
+    /* max-height: calc(100vh - 100px); */
+    /* overflow-y: auto; */
+    /* padding-right: 5px; */
     margin-bottom: 20px;
 }
 
-/* Tùy chỉnh thanh cuộn cho sidebar */
-.filter-sidebar-wrapper::-webkit-scrollbar {
+/* Remove sidebar-specific scroll behavior since we want unified scrolling */
+/* .filter-sidebar-wrapper::-webkit-scrollbar {
     width: 5px;
 }
 
@@ -580,16 +581,16 @@
 
 .filter-sidebar-wrapper::-webkit-scrollbar-thumb:hover {
     background: var(--primary-pink);
-}
+} */
 
-/* Đảm bảo cuộn mượt mà */
+/* Đảm bảo cuộn mượt mà cho toàn bộ trang */
 .filter-sidebar-wrapper {
-    scrollbar-width: thin; /* Firefox */
+    /* scrollbar-width: thin; */
     scroll-behavior: smooth;
 }
 
-/* Tạo hiệu ứng shadow khi cuộn */
-.filter-sidebar {
+/* Remove scroll shadow effects since we want unified scrolling */
+/* .filter-sidebar {
     position: relative;
 }
 
@@ -608,18 +609,26 @@
 
 .filter-sidebar-wrapper.scrolled .filter-sidebar::after {
     opacity: 1;
-}
+} */
 
-/* Đảm bảo phần danh sách sản phẩm cuộn độc lập */
+/* Simplified products container */
 .products-container-wrapper {
     position: relative;
-    min-height: 50vh;
 }
 
-/* Responsive */
+/* Responsive - Unified scrolling for all screen sizes */
 @media (max-width: 991.98px) {
     .filter-sidebar {
         margin-bottom: 30px;
+        /* Remove any sticky positioning on mobile */
+        position: static !important;
+    }
+    
+    .filter-sidebar-wrapper {
+        /* Ensure no independent scrolling on mobile */
+        max-height: none !important;
+        overflow-y: visible !important;
+        position: static !important;
     }
     
     .main-image {

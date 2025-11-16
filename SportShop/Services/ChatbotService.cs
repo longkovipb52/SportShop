@@ -77,8 +77,19 @@ namespace SportShop.Services
                     context.Products = await GetProductsByPriceAsync(isHighest: false);
                     break;
 
+                case "recommendation":
+                    context.TopProducts = await GetTopProductsAsync();
+                    context.Categories = await _context.Categories.Select(c => c.Name).ToListAsync();
+                    context.Brands = await _context.Brands.Select(b => b.Name).ToListAsync();
+                    break;
+
                 case "product_search":
                     context.Products = await GetRelevantProductsAsync(userMessage);
+                    if (!context.Products.Any())
+                    {
+                        // Nếu không tìm thấy sản phẩm chính xác, gợi ý sản phẩm hot
+                        context.TopProducts = await GetTopProductsAsync();
+                    }
                     context.Categories = await _context.Categories.Select(c => c.Name).ToListAsync();
                     context.Brands = await _context.Brands.Select(b => b.Name).ToListAsync();
                     break;
@@ -124,6 +135,11 @@ namespace SportShop.Services
                 (message.Contains("sản phẩm") && (message.Contains("thấp nhất") || message.Contains("rẻ nhất"))))
                 return "price_lowest";
 
+            // Kiểm tra câu hỏi về gợi ý sản phẩm
+            if (message.Contains("gợi ý") || message.Contains("khuyên") || message.Contains("nên mua") ||
+                message.Contains("tương tự") || message.Contains("recommend") || message.Contains("like"))
+                return "recommendation";
+
             if (message.Contains("tìm") || message.Contains("mua") || message.Contains("sản phẩm") || 
                 message.Contains("giày") || message.Contains("áo") || message.Contains("quần"))
                 return "product_search";
@@ -146,16 +162,26 @@ namespace SportShop.Services
         private async Task<List<ProductInfo>> GetRelevantProductsAsync(string query)
         {
             query = query.ToLower();
+            var queryWords = query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             
             var products = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Brand)
-                .Where(p => p.Name.ToLower().Contains(query) || 
-                           (p.Description != null && p.Description.ToLower().Contains(query)) ||
-                           p.Category.Name.ToLower().Contains(query) ||
-                           (p.Brand != null && p.Brand.Name.ToLower().Contains(query)))
+                .Where(p => 
+                    // Tìm chính xác
+                    p.Name.ToLower().Contains(query) || 
+                    (p.Description != null && p.Description.ToLower().Contains(query)) ||
+                    p.Category.Name.ToLower().Contains(query) ||
+                    (p.Brand != null && p.Brand.Name.ToLower().Contains(query)) ||
+                    // Tìm từng từ
+                    queryWords.Any(word => p.Name.ToLower().Contains(word)) ||
+                    queryWords.Any(word => p.Description != null && p.Description.ToLower().Contains(word)) ||
+                    queryWords.Any(word => p.Category.Name.ToLower().Contains(word)) ||
+                    queryWords.Any(word => p.Brand != null && p.Brand.Name.ToLower().Contains(word))
+                )
+                .Where(p => p.Stock > 0) // Chỉ lấy sản phẩm còn hàng
                 .OrderByDescending(p => p.TotalLikes)
-                .Take(5)
+                .Take(10) // Tăng số lượng
                 .Select(p => new ProductInfo
                 {
                     Name = p.Name,
@@ -164,9 +190,34 @@ namespace SportShop.Services
                     Category = p.Category.Name,
                     Brand = p.Brand != null ? p.Brand.Name : "Chưa xác định",
                     Stock = p.Stock,
-                    ProductID = p.ProductID
+                    ProductID = p.ProductID,
+                    ImageUrl = p.ImageURL ?? ""
                 })
                 .ToListAsync();
+
+            // Nếu không tìm thấy, thử tìm sản phẩm tương tự trong cùng category
+            if (!products.Any() && queryWords.Length > 0)
+            {
+                var firstWord = queryWords[0];
+                products = await _context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.Brand)
+                    .Where(p => p.Category.Name.ToLower().Contains(firstWord) && p.Stock > 0)
+                    .OrderByDescending(p => p.TotalLikes)
+                    .Take(5)
+                    .Select(p => new ProductInfo
+                    {
+                        Name = p.Name,
+                        Price = p.Price,
+                        Description = p.Description ?? "",
+                        Category = p.Category.Name,
+                        Brand = p.Brand != null ? p.Brand.Name : "Chưa xác định",
+                        Stock = p.Stock,
+                        ProductID = p.ProductID,
+                        ImageUrl = p.ImageURL ?? ""
+                    })
+                    .ToListAsync();
+            }
 
             return products;
         }
@@ -189,7 +240,8 @@ namespace SportShop.Services
                 Category = p.Category.Name,
                 Brand = p.Brand != null ? p.Brand.Name : "Chưa xác định",
                 Stock = p.Stock,
-                ProductID = p.ProductID
+                ProductID = p.ProductID,
+                ImageUrl = p.ImageURL ?? ""
             }).ToList();
         }
 
@@ -243,7 +295,8 @@ namespace SportShop.Services
                     Price = p.Price,
                     Category = p.Category.Name,
                     Brand = p.Brand != null ? p.Brand.Name : "Chưa xác định",
-                    ProductID = p.ProductID
+                    ProductID = p.ProductID,
+                    ImageUrl = p.ImageURL ?? ""
                 })
                 .ToListAsync();
         }
@@ -286,6 +339,11 @@ namespace SportShop.Services
                 foreach (var product in context.Products)
                 {
                     sb.AppendLine($"- {product.Name}");
+                    if (!string.IsNullOrEmpty(product.ImageUrl))
+                    {
+                        var imagePath = product.ImageUrl.StartsWith('/') ? product.ImageUrl : $"/upload/product/{product.ImageUrl}";
+                        sb.AppendLine($"  <IMAGE>{imagePath}</IMAGE>");
+                    }
                     sb.AppendLine($"  + Giá: {product.Price:N0}đ");
                     sb.AppendLine($"  + Danh mục: {product.Category}");
                     sb.AppendLine($"  + Thương hiệu: {product.Brand}");
@@ -307,6 +365,11 @@ namespace SportShop.Services
                 sb.AppendLine("SẢN PHẨM HOT HIỆN TẠI:");
                 foreach (var product in context.TopProducts)
                 {
+                    if (!string.IsNullOrEmpty(product.ImageUrl))
+                    {
+                        var imagePath = product.ImageUrl.StartsWith('/') ? product.ImageUrl : $"/upload/product/{product.ImageUrl}";
+                        sb.AppendLine($"<IMAGE>{imagePath}</IMAGE>");
+                    }
                     sb.AppendLine($"- {product.Name} ({product.Category} - {product.Brand}) - {product.Price:N0}đ");
                     sb.AppendLine($"  Link: /Product/Details/{product.ProductID}");
                 }
@@ -347,6 +410,11 @@ namespace SportShop.Services
             sb.AppendLine("5. Nếu không chắc chắn, đề nghị liên hệ hotline");
             sb.AppendLine("6. Luôn kết thúc bằng câu hỏi để tiếp tục hội thoại");
             sb.AppendLine("7. Định dạng link sản phẩm: [Xem chi tiết](/Product/Details/{ProductID})");
+            sb.AppendLine("8. Luôn trả lời ĐÚNG TRỌNG TÂM câu hỏi, tập trung vào nội dung chính, không lan man hoặc trả lời ngoài lề");
+            sb.AppendLine("9. Nếu câu hỏi về sản phẩm, ưu tiên gợi ý sản phẩm liên quan nhất");
+            sb.AppendLine("10. Sử dụng thông tin context được cung cấp để trả lời chính xác, không bịa đặt");
+            sb.AppendLine("11. Nếu không tìm thấy sản phẩm chính xác, gợi ý sản phẩm tương tự hoặc sản phẩm hot, và hỏi thêm thông tin để hỗ trợ tốt hơn");
+            sb.AppendLine("12. Khi mô tả sản phẩm, include hình ảnh bằng <IMAGE>url</IMAGE> nếu có");
 
             return sb.ToString();
         }
@@ -372,6 +440,7 @@ namespace SportShop.Services
         public string Category { get; set; } = "";
         public string Brand { get; set; } = "";
         public int Stock { get; set; }
+        public string ImageUrl { get; set; } = "";
     }
 
     public class OrderInfo

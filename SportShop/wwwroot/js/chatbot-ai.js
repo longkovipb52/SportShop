@@ -173,6 +173,15 @@ class AIChatbot {
         text = text.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Italic
         text = text.replace(/\n/g, '<br>'); // Line breaks
         
+        // Convert custom image format [IMAGE:url] to HTML
+        text = text.replace(/\[IMAGE:([^\]]+)\]/g, '<img src="$1" alt="Hình ảnh sản phẩm" class="chatbot-image img-fluid rounded" style="max-width: 200px; max-height: 200px;">');
+        
+        // Convert custom image format <IMAGE>url</IMAGE> to HTML
+        text = text.replace(/<IMAGE>([^<]+)<\/IMAGE>/g, '<img src="$1" alt="Hình ảnh sản phẩm" class="chatbot-image img-fluid rounded" style="max-width: 200px; max-height: 200px;">');
+        
+        // Convert markdown images ![alt](url) to HTML (fallback)
+        text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="chatbot-image img-fluid rounded" style="max-width: 200px; max-height: 200px;">');
+        
         // Convert markdown links [text](url) to HTML
         text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="product-link">$1 <i class="fas fa-external-link-alt"></i></a>');
         

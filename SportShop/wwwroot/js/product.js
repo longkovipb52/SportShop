@@ -790,12 +790,11 @@ function initAddToCart() {
             
             console.log("Quick view add to cart:", { productId, quantity, attributeId });
             
-            // Kiểm tra xem đã chọn thuộc tính chưa (nếu cần)
-            const hasColors = document.querySelector('.color-option') !== null;
-            const hasSizes = document.querySelector('.size-option') !== null;
+            // Kiểm tra xem đã chọn thuộc tính chưa (nếu sản phẩm có thuộc tính)
+            const hasAttributes = window.productAttributes && window.productAttributes.length > 0;
             
-            if ((hasColors || hasSizes) && attributeId === null) {
-                showNotification('Vui lòng chọn màu sắc và kích thước', 'warning');
+            if (hasAttributes && attributeId === null) {
+                showNotification('Vui lòng chọn thuộc tính sản phẩm', 'warning');
                 return;
             }
             

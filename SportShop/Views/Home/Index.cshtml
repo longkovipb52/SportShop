@@ -366,6 +366,9 @@
                                                         <button class="btn btn-outline-primary quick-view" data-product-id="@product.ProductID" title="Xem nhanh">
                                                             <i class="fas fa-eye"></i>
                                                         </button>
+                                                        <a href="@Url.Action("Details", "Product", new { id = product.ProductID })" class="btn btn-outline-info" title="Xem chi tiết">
+                                                            <i class="fas fa-external-link-alt"></i>
+                                                        </a>
                                                         <button class="btn btn-outline-danger add-to-wishlist" data-product-id="@product.ProductID" title="Thêm vào yêu thích">
                                                             <i class="far fa-heart"></i>
                                                         </button>
@@ -678,17 +681,8 @@ function initQuickView() {
             const productId = this.getAttribute('data-product-id');
             
             if (productId) {
-                // Use global openQuickViewModal from product.js
-                if (typeof window.openQuickViewModal === 'function') {
-                    window.openQuickViewModal(productId);
-                } else {
-                    console.error('openQuickViewModal function not found. Redirecting to product page.');
-                    window.location.href = `/Product/Details/${productId}`;
-                }
-                // Re-enable button after modal opens
-                setTimeout(() => {
-                    this.disabled = false;
-                }, 500);
+                // Redirect to product index page and open modal there
+                window.location.href = `/Product/Index?openModal=${productId}`;
             } else {
                 this.disabled = false;
             }

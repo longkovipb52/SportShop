@@ -214,6 +214,9 @@ class RecommendationService {
                                             title="Xem nhanh">
                                         <i class="fas fa-eye"></i>
                                     </button>
+                                    <a href="/Product/Details/${rec.productID}" class="btn btn-outline-info" title="Xem chi tiết">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
                                     <button class="btn btn-outline-danger add-to-wishlist" 
                                             onclick="handleAddToWishlist(${rec.productID})"
                                             title="Thêm vào yêu thích">
@@ -322,8 +325,8 @@ window.handleAddToWishlist = function(productId) {
 
 window.handleViewProduct = function(productId) {
     // No VIEW_PRODUCT logging - removed to reduce noise in interaction data
-    // Navigate to product detail page (ASP.NET MVC routing)
-    window.location.href = `/Product/Details/${productId}`;
+    // Navigate to product index page and open modal
+    window.location.href = `/Product/Index?openModal=${productId}`;
 };
 
 // Debounce function to prevent excessive API calls

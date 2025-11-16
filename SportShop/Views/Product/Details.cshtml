@@ -1,22 +1,989 @@
 @model SportShop.Models.ViewModels.ProductDetailViewModel
 @{
-    ViewData["Title"] = "Chi tiết sản phẩm";
+    ViewData["Title"] = Model.Product.Name + " - Chi tiết sản phẩm";
+    ViewData["CustomCSS"] = "product.css";
 }
 
-<script>
-    // Tự động chuyển hướng về trang Product Index và mở modal
-    document.addEventListener('DOMContentLoaded', function() {
-        const productId = @Model.Product.ProductID;
-        console.log('Details page loaded, redirecting to Index with modal for product:', productId);
-        window.location.href = `/Product/Index?openModal=${productId}`;
-    });
-</script>
+<style>
+/* Custom styles for product detail page */
+.product-detail-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
 
-<div class="container py-5">
-    <div class="text-center">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+.product-detail-hero .breadcrumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+}
+
+.product-detail-hero .breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.product-detail-hero .breadcrumb-item a:hover {
+    color: white;
+}
+
+.product-detail-hero .breadcrumb-item.active {
+    color: white;
+    font-weight: 500;
+}
+
+.product-images {
+    position: sticky;
+    top: 2rem;
+}
+
+.main-image {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.main-image:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.main-image img {
+    width: 100%;
+    height: 500px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.main-image:hover img {
+    transform: scale(1.05);
+}
+
+.product-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+.rating .stars {
+    font-size: 1.2rem;
+}
+
+.product-price .price {
+    font-size: 3rem;
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stock-info {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.product-description {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-radius: 10px;
+    border-left: 4px solid #3498db;
+}
+
+.color-options .color-option {
+    border: 2px solid #e9ecef;
+    background-color: white !important;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+}
+
+.color-options .color-option.active {
+    border-color: #3498db;
+    background-color: #3498db !important;
+    color: white !important;
+    transform: scale(1.05);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
+.size-options .size-option {
+    min-width: 50px;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.size-options .size-option.active {
+    background-color: #3498db !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.quantity-controls {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.quantity-controls .qty-btn {
+    width: 45px;
+    height: 45px;
+    border: none;
+    background: #f8f9fa;
+    color: #6c757d;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.quantity-controls .qty-btn:hover {
+    background: #3498db;
+    color: white;
+}
+
+.quantity-controls input {
+    width: 80px;
+    border: none;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.add-to-cart-section .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.add-to-cart-section .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.product-meta {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-top: 2rem;
+}
+
+.reviews-section {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.reviews-section h3 {
+    color: #2c3e50;
+    font-weight: 700;
+    position: relative;
+}
+
+.reviews-section h3::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    border-radius: 2px;
+}
+
+.review-item {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.review-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.related-products-section {
+    background: #f8f9fa;
+}
+
+.related-products-section h3 {
+    color: #2c3e50;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.related-products-section h3::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    border-radius: 2px;
+}
+
+.related-products-section .product-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.related-products-section .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.related-products-section .card-img-top-container {
+    height: 200px;
+    overflow: hidden;
+}
+
+.related-products-section .card-img-top {
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.related-products-section .product-card:hover .card-img-top {
+    transform: scale(1.1);
+}
+
+/* Loading animation */
+@@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.product-detail-section .row > * {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.product-detail-section .col-lg-6:first-child {
+    animation-delay: 0.2s;
+}
+
+.product-detail-section .col-lg-6:last-child {
+    animation-delay: 0.4s;
+}
+
+/* Responsive adjustments */
+@@media (max-width: 768px) {
+    .product-title {
+        font-size: 2rem;
+    }
+
+    .product-price .price {
+        font-size: 2.5rem;
+    }
+
+    .main-image img {
+        height: 300px;
+    }
+
+    .product-images {
+        position: static;
+        margin-bottom: 2rem;
+    }
+}
+</style>
+<section class="product-detail-section py-5">
+    <div class="container">
+        <div class="row g-5">
+            <!-- Product Images -->
+            <div class="col-lg-6">
+                <div class="product-images">
+                    <div class="main-image mb-3">
+                        <img id="main-product-image" src="@(string.IsNullOrEmpty(Model.Product.ImageURL) ? "/image/product-placeholder.png" : $"/upload/product/{Model.Product.ImageURL}")"
+                             alt="@Model.Product.Name" class="img-fluid rounded shadow">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="col-lg-6">
+                <div class="product-info">
+                    <h1 class="product-title mb-3">@Model.Product.Name</h1>
+
+                    <!-- Rating -->
+                    <div class="rating mb-3">
+                        @if (Model.Reviews.Any())
+                        {
+                            var avgRating = Model.Reviews.Average(r => r.Rating) ?? 0;
+                            <div class="stars mb-2">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="fas fa-star @(i <= avgRating ? "text-warning" : "text-muted")"></i>
+                                }
+                            </div>
+                            <span class="text-muted">(@avgRating.ToString("0.0") sao từ @Model.Reviews.Count đánh giá)</span>
+                        }
+                        else
+                        {
+                            <div class="stars mb-2">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="fas fa-star text-muted"></i>
+                                }
+                            </div>
+                            <span class="text-muted">Chưa có đánh giá</span>
+                        }
+                    </div>
+
+                    <!-- Price -->
+                    <div class="product-price mb-4">
+                        <span class="price fw-bold fs-2 text-primary">@string.Format("{0:N0}", Model.Product.Price)đ</span>
+                        @if (Model.Product.Stock > 0)
+                        {
+                            <div class="stock-info mt-2">
+                                <i class="fas fa-check-circle text-success"></i>
+                                <span class="text-success fw-bold">Còn @Model.Product.Stock sản phẩm</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="stock-info mt-2">
+                                <i class="fas fa-times-circle text-danger"></i>
+                                <span class="text-danger fw-bold">Hết hàng</span>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Description -->
+                    <div class="product-description mb-4">
+                        <h5 class="fw-bold mb-3">Mô tả sản phẩm</h5>
+                        <p class="text-muted">@(string.IsNullOrEmpty(Model.Product.Description) ? "Không có mô tả sản phẩm." : Model.Product.Description)</p>
+                    </div>
+
+                    <!-- Attributes Selection -->
+                    @if (Model.Attributes != null && Model.Attributes.Any())
+                    {
+                        <!-- Color Selection -->
+                        @if (Model.Attributes.Any(a => !string.IsNullOrEmpty(a.Color)))
+                        {
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Màu sắc</label>
+                                <div class="color-options d-flex flex-wrap gap-2">
+                                    @foreach (var color in Model.Attributes.Where(a => !string.IsNullOrEmpty(a.Color)).Select(a => a.Color).Distinct())
+                                    {
+                                        <button type="button" class="btn color-option"
+                                                data-color="@color">
+                                            @color
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Size Selection -->
+                        @if (Model.Attributes.Any(a => !string.IsNullOrEmpty(a.Size)))
+                        {
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Kích cỡ</label>
+                                <div class="size-options d-flex flex-wrap gap-2">
+                                    @foreach (var size in Model.Attributes.Where(a => !string.IsNullOrEmpty(a.Size)).Select(a => a.Size).Distinct())
+                                    {
+                                        <button type="button" class="btn btn-outline-secondary size-option"
+                                                data-size="@size">
+                                            @size
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <!-- Quantity and Add to Cart -->
+                    <div class="add-to-cart-section mb-4">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="quantity-controls d-flex">
+                                <button type="button" class="btn btn-outline-secondary qty-btn" id="decrease-qty">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" class="form-control text-center" id="product-qty" value="1" min="1" max="@Model.Product.Stock">
+                                <button type="button" class="btn btn-outline-secondary qty-btn" id="increase-qty">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            @if (Model.Product.Stock > 0)
+                            {
+                                <button class="btn btn-primary btn-lg flex-fill" id="add-to-cart-btn" data-id="@Model.Product.ProductID">
+                                    <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary btn-lg flex-fill" disabled>
+                                    <i class="fas fa-times me-2"></i>Hết hàng
+                                </button>
+                            }
+                        </div>
+
+                        <button class="btn btn-outline-danger w-100" id="add-to-wishlist-btn" data-id="@Model.Product.ProductID">
+                            <i class="far fa-heart me-2"></i>Thêm vào yêu thích
+                        </button>
+                    </div>
+
+                    <!-- Product Meta -->
+                    <div class="product-meta">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <p class="mb-2"><strong>Danh mục:</strong> @Model.Product.Category.Name</p>
+                            </div>
+                            <div class="col-sm-6">
+                                <p class="mb-2"><strong>Thương hiệu:</strong> @(Model.Product.Brand?.Name ?? "Không có thương hiệu")</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <p class="mt-3">Đang chuyển hướng...</p>
+    </div>
+</section>
+
+<!-- Reviews Section -->
+<section class="reviews-section py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <h3 class="text-center mb-4">Đánh giá sản phẩm</h3>
+
+                @if (Model.Reviews.Any())
+                {
+                    <div class="reviews-list">
+                        @foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
+                        {
+                            <div class="review-item card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="card-title mb-1">@review.User.FullName</h6>
+                                            <div class="rating">
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <i class="fas fa-star @(i <= (review.Rating ?? 0) ? "text-warning" : "text-muted")"></i>
+                                                }
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">@review.CreatedAt?.ToString("dd/MM/yyyy")</small>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(review.Comment))
+                                    {
+                                        <p class="card-text">@review.Comment</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Chưa có đánh giá nào</h5>
+                        <p class="text-muted">Hãy là người đầu tiên đánh giá sản phẩm này!</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Related Products -->
+@if (Model.RelatedProducts.Any())
+{
+    <section class="related-products-section py-5">
+        <div class="container">
+            <h3 class="text-center mb-4">Sản phẩm liên quan</h3>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+                @foreach (var product in Model.RelatedProducts)
+                {
+                    <div class="col">
+                        <div class="card h-100 product-card">
+                            <div class="card-img-top-container position-relative overflow-hidden">
+                                <img src="@(string.IsNullOrEmpty(product.ImageURL) ? "/image/product-placeholder.png" : $"/upload/product/{product.ImageURL}")"
+                                     class="card-img-top" alt="@product.Name">
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <a href="@Url.Action("Details", "Product", new { id = product.ProductID })" class="text-decoration-none text-dark">
+                                        @(product.Name.Length > 50 ? product.Name.Substring(0, 50) + "..." : product.Name)
+                                    </a>
+                                </h6>
+                                <p class="card-text fw-bold text-primary">@string.Format("{0:N0}", product.Price)đ</p>
+                            </div>
+                            <div class="card-footer bg-transparent border-0">
+                                <a href="@Url.Action("Details", "Product", new { id = product.ProductID })" class="btn btn-outline-primary w-100">
+                                    Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="~/js/product.js"></script>
+
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+            mirror: false
+        });
+
+        // Quantity controls with smooth animation
+        document.getElementById('decrease-qty')?.addEventListener('click', function() {
+            const input = document.getElementById('product-qty');
+            const currentValue = parseInt(input.value);
+            if (currentValue > 1) {
+                input.value = currentValue - 1;
+                animateValueChange(input, currentValue, currentValue - 1);
+            }
+        });
+
+        document.getElementById('increase-qty')?.addEventListener('click', function() {
+            const input = document.getElementById('product-qty');
+            const currentValue = parseInt(input.value);
+            const max = parseInt(input.max) || 999;
+            if (currentValue < max) {
+                input.value = currentValue + 1;
+                animateValueChange(input, currentValue, currentValue + 1);
+            }
+        });
+
+        function animateValueChange(element, from, to) {
+            element.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                element.style.transform = 'scale(1)';
+            }, 150);
+        }
+
+        // Add to cart with loading animation
+        document.getElementById('add-to-cart-btn')?.addEventListener('click', function() {
+            const button = this;
+            const productId = button.getAttribute('data-id');
+            const quantity = parseInt(document.getElementById('product-qty').value) || 1;
+            
+            // Get selected attribute ID
+            const selectedAttributeId = getSelectedAttributeId();
+            
+            if (productId) {
+                // Use the global addToCart function from product.js
+                if (typeof window.addToCart === 'function') {
+                    window.addToCart(productId, quantity, selectedAttributeId, button);
+                } else {
+                    // Fallback implementation
+                    addToCartFallback(productId, quantity, selectedAttributeId, button);
+                }
+            }
+        });
+
+        // Add to wishlist with heart animation
+        document.getElementById('add-to-wishlist-btn')?.addEventListener('click', function() {
+            const button = this;
+            const productId = button.getAttribute('data-id');
+            
+            if (productId) {
+                // Use the global toggleWishlist function
+                if (typeof window.toggleWishlist === 'function') {
+                    window.toggleWishlist(productId).then(() => {
+                        updateWishlistButtonUI(button, productId);
+                    });
+                } else {
+                    // Fallback implementation
+                    toggleWishlistFallback(productId, button);
+                }
+            }
+        });
+
+        // Color and size selection with smooth transitions and image change
+        let selectedColor = '';
+        let selectedSize = '';
+
+        // Store attributes data for JavaScript
+        const attributesData = @Html.Raw(Json.Serialize((Model.Attributes ?? new List<SportShop.Models.ProductAttribute>()).Select(a => new {
+            attributeId = a.AttributeID,
+            color = a.Color,
+            size = a.Size,
+            imageURL = a.ImageURL
+        }).ToList()));
+
+        document.querySelectorAll('.color-option').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.color-option').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.transform = 'scale(1)';
+                });
+                this.classList.add('active');
+                this.style.transform = 'scale(1.05)';
+
+                selectedColor = this.dataset.color;
+                updateMainImage();
+            });
+        });
+
+        document.querySelectorAll('.size-option').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.size-option').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.transform = 'translateY(0)';
+                });
+                this.classList.add('active');
+                this.style.transform = 'translateY(-2px)';
+
+                selectedSize = this.dataset.size;
+                updateMainImage();
+            });
+        });
+
+        function updateMainImage() {
+            // Find attribute that matches both selected color and size, or just color, or just size
+            let targetAttribute = null;
+
+            // First priority: attribute with both matching color and size
+            if (selectedColor && selectedSize) {
+                targetAttribute = attributesData.find(attr =>
+                    attr.color === selectedColor &&
+                    attr.size === selectedSize &&
+                    attr.imageURL &&
+                    attr.imageURL.trim() !== '');
+            }
+
+            // Second priority: attribute with matching color only
+            if (!targetAttribute && selectedColor) {
+                targetAttribute = attributesData.find(attr =>
+                    attr.color === selectedColor &&
+                    attr.imageURL &&
+                    attr.imageURL.trim() !== '');
+            }
+
+            // Third priority: attribute with matching size only
+            if (!targetAttribute && selectedSize) {
+                targetAttribute = attributesData.find(attr =>
+                    attr.size === selectedSize &&
+                    attr.imageURL &&
+                    attr.imageURL.trim() !== '');
+            }
+
+            // If found attribute with image, change main image
+            if (targetAttribute && targetAttribute.imageURL) {
+                changeMainImage(targetAttribute.imageURL);
+            }
+        }
+
+        function changeMainImage(imageUrl) {
+            const mainImage = document.getElementById('main-product-image');
+            if (mainImage) {
+                // Add fade out effect
+                mainImage.style.opacity = '0.7';
+                setTimeout(() => {
+                    mainImage.src = imageUrl;
+                    mainImage.style.opacity = '1';
+                }, 200);
+            }
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Lazy loading for related products
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px 50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy');
+                    observer.unobserve(img);
+                }
+            });
+        }, observerOptions);
+
+        // Observe related product images
+        document.querySelectorAll('.related-products-section img[data-src]').forEach(img => {
+            observer.observe(img);
+        });
+
+        // Helper function to get selected attribute ID
+        function getSelectedAttributeId() {
+            let selectedAttributeId = null;
+            
+            // Find attribute that matches selected color and size
+            if (attributesData && attributesData.length > 0) {
+                const matchingAttribute = attributesData.find(attr => 
+                    (!selectedColor || attr.color === selectedColor) &&
+                    (!selectedSize || attr.size === selectedSize)
+                );
+                
+                if (matchingAttribute) {
+                    selectedAttributeId = matchingAttribute.attributeId;
+                }
+            }
+            
+            return selectedAttributeId;
+        }
+
+        // Update wishlist button UI after toggle
+        function updateWishlistButtonUI(button, productId) {
+            const icon = button.querySelector('i');
+            
+            // Check current state by looking at the icon
+            if (icon.classList.contains('far')) {
+                // Currently not in wishlist, will be added
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                button.classList.remove('btn-outline-danger');
+                button.classList.add('btn-danger');
+                button.innerHTML = '<i class="fas fa-heart me-2"></i>Đã thêm vào yêu thích';
+                
+                // Heart animation
+                icon.style.transform = 'scale(1.3)';
+                setTimeout(() => {
+                    icon.style.transform = 'scale(1)';
+                }, 300);
+            } else {
+                // Currently in wishlist, will be removed
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                button.classList.remove('btn-danger');
+                button.classList.add('btn-outline-danger');
+                button.innerHTML = '<i class="far fa-heart me-2"></i>Thêm vào yêu thích';
+            }
+        }
+
+        // Fallback add to cart function
+        function addToCartFallback(productId, quantity, attributeId, button) {
+            const originalText = button.innerHTML;
+            
+            // Show loading state
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang thêm...';
+            button.disabled = true;
+            
+            // Make API call
+            fetch('/Cart/AddToCartJson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify({
+                    productId: parseInt(productId),
+                    quantity: quantity,
+                    attributeId: attributeId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message || 'Đã thêm sản phẩm vào giỏ hàng thành công!', 'success');
+                    // Update cart counter if function exists
+                    if (typeof updateCartCounter === 'function') {
+                        updateCartCounter(data.cartCount);
+                    }
+                    
+                    button.innerHTML = '<i class="fas fa-check me-2"></i>Đã thêm!';
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-success');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.classList.remove('btn-success');
+                        button.classList.add('btn-primary');
+                        button.disabled = false;
+                    }, 2000);
+                } else {
+                    showNotification(data.message || 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng', 'error');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        // Fallback toggle wishlist function
+        function toggleWishlistFallback(productId, button) {
+            fetch('/Wishlist/Toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ productId: parseInt(productId) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    updateWishlistButtonUI(button, productId);
+                    
+                    // Update wishlist count if function exists
+                    if (typeof updateWishlistCount === 'function') {
+                        updateWishlistCount();
+                    }
+                } else {
+                    showNotification(data.message || 'Có lỗi xảy ra khi cập nhật danh sách yêu thích', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Có lỗi xảy ra khi cập nhật danh sách yêu thích', 'error');
+            });
+        }
+
+        // Notification function
+        function showNotification(message, type = 'info') {
+            // Remove any existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Hide notification after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+    </script>
+}
+
+<!-- Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xem nhanh sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <img src="" alt="Product" id="quick-view-image" class="img-fluid">
+                        </div>
+                        <div class="col-md-6">
+                            <h4 id="quick-view-title"></h4>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rating" id="quick-view-rating">
+                                    <!-- Stars sẽ được thêm động bởi JavaScript -->
+                                </div>
+                            </div>
+                            <p class="fw-bold fs-4 mb-3" id="quick-view-price"></p>
+                            <p class="mb-3" id="quick-view-description"></p>
+                            
+                            <div class="mb-3" id="color-selection-section" style="display: none;">
+                                <label class="form-label">Màu sắc</label>
+                                <div class="color-options d-flex flex-wrap" id="quick-view-colors"></div>
+                            </div>
+                            
+                            <div class="mb-3" id="size-selection-section" style="display: none;">
+                                <label class="form-label">Kích cỡ</label>
+                                <div class="size-options d-flex flex-wrap" id="quick-view-sizes"></div>
+                            </div>
+
+                            <!-- Thông tin số lượng tồn kho -->
+                            <div class="mb-3" id="stock-info-section">
+                                <div class="stock-info p-2 bg-light rounded">
+                                    <span class="fw-bold">Số lượng tồn:</span> 
+                                    <span id="current-stock" class="badge bg-success">0</span>
+                                    <span id="stock-status" class="text-muted ms-2"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="quantity-controls d-flex" style="border: 1px solid #ced4da; border-radius: 0.375rem; overflow: hidden;">
+                                    <button type="button" class="qty-btn qty-decrease" id="quick-view-decrease-quantity" 
+                                            style="width: 40px; height: 40px; border: none; background: #f8f9fa; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                            onclick="quickViewDecreaseQuantity();">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" class="form-control text-center" value="1" min="1" id="product-quantity"
+                                           style="width: 70px; border: none; border-left: 1px solid #ced4da; border-right: 1px solid #ced4da;"
+                                           oninput="validateQuantityInput(this)">
+                                    <button type="button" class="qty-btn qty-increase" id="quick-view-increase-quantity" 
+                                            style="width: 40px; height: 40px; border: none; background: #f8f9fa; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                            onclick="quickViewIncreaseQuantity();">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <button id="quick-view-add-to-cart" class="btn btn-primary ms-3">Thêm vào giỏ hàng</button>
+                            </div>
+                            
+                            <div class="product-meta">
+                                <p class="mb-2">
+                                    <span class="fw-bold">Danh mục:</span> 
+                                    <span id="quick-view-category"></span>
+                                </p>
+                                <p class="mb-0">
+                                    <span class="fw-bold">Thương hiệu:</span> 
+                                    <span id="quick-view-brand"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+

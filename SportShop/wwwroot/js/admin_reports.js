@@ -76,6 +76,7 @@ class ReportsManager {
         // Only add categoryID and brandID if they have values
         const categoryID = $('#categoryFilter').val();
         const brandID = $('#brandFilter').val();
+        const paymentMethod = $('#paymentMethodFilter').val();
         
         if (categoryID) {
             filters.categoryID = categoryID;
@@ -83,6 +84,10 @@ class ReportsManager {
         
         if (brandID) {
             filters.brandID = brandID;
+        }
+
+        if (paymentMethod) {
+            filters.paymentMethod = paymentMethod;
         }
         
         return filters;
@@ -795,98 +800,291 @@ class ReportsManager {
 
     // Export Functions
     exportReport() {
-        this.showToast('Đang xuất báo cáo Excel...', 'info');
+        this.showToast('Đang xuất báo cáo Excel với biểu đồ...', 'info');
         
         try {
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-            
-            // Sheet 1: Thông tin báo cáo
-            const infoData = [
-                ['BÁO CÁO THỐNG KÊ KINH DOANH'],
-                [''],
-                ['Thời gian:', `${moment(this.filters.startDate).format('DD/MM/YYYY')} - ${moment(this.filters.endDate).format('DD/MM/YYYY')}`],
-                ['Chu kỳ:', this.filters.period === 'day' ? 'Theo ngày' : this.filters.period === 'week' ? 'Theo tuần' : this.filters.period === 'month' ? 'Theo tháng' : this.filters.period === 'quarter' ? 'Theo quý' : 'Theo năm'],
-                ['Xuất lúc:', moment().format('DD/MM/YYYY HH:mm:ss')],
-                [''],
-                ['TỔNG QUAN'],
-                ['Doanh thu tháng:', $('#monthRevenue').text().replace(' VNĐ', '')],
-                ['Đơn hàng tháng:', $('#monthOrders').text()],
-                ['Tổng khách hàng:', $('#totalCustomers').text()],
-                ['Tỷ lệ chuyển đổi:', $('#conversionRate').text()]
-            ];
-            const wsInfo = XLSX.utils.aoa_to_sheet(infoData);
-            XLSX.utils.book_append_sheet(wb, wsInfo, 'Tổng quan');
-            
-            // Sheet 2: Doanh thu (from chart data)
-            if (this.charts.revenue && this.charts.revenue.data) {
-                const revenueData = [['Thời gian', 'Doanh thu (VNĐ)']];
-                const labels = this.charts.revenue.data.labels;
-                const data = this.charts.revenue.data.datasets[0].data;
-                for (let i = 0; i < labels.length; i++) {
-                    revenueData.push([labels[i], data[i]]);
-                }
-                const wsRevenue = XLSX.utils.aoa_to_sheet(revenueData);
-                XLSX.utils.book_append_sheet(wb, wsRevenue, 'Doanh thu');
-            }
-            
-            // Sheet 3: Sản phẩm bán chạy
-            const productData = [['STT', 'Sản phẩm', 'Danh mục', 'Thương hiệu', 'Đơn giá', 'Số lượng bán', 'Doanh thu', 'Đánh giá']];
-            $('#productsTable tbody tr').each(function() {
-                const cells = $(this).find('td');
-                if (cells.length === 1) return; // Skip "no data" row
-                const row = [];
-                row.push(cells.eq(0).text().trim()); // STT
-                row.push(cells.eq(1).find('.product-details strong').text().trim()); // Tên SP
-                row.push(cells.eq(1).find('.text-muted').first().text().replace('Danh mục:', '').trim()); // Danh mục
-                row.push(cells.eq(1).find('.text-muted').last().text().replace('Thương hiệu:', '').trim()); // Thương hiệu
-                row.push(cells.eq(2).text().trim()); // Giá
-                row.push(cells.eq(3).text().trim()); // Số lượng
-                row.push(cells.eq(4).text().trim()); // Doanh thu
-                row.push(cells.eq(5).text().trim()); // Đánh giá
-                productData.push(row);
-            });
-            const wsProducts = XLSX.utils.aoa_to_sheet(productData);
-            XLSX.utils.book_append_sheet(wb, wsProducts, 'Sản phẩm bán chạy');
-            
-            // Sheet 4: Khách hàng thân thiết
-            const customerData = [['STT', 'Họ tên', 'Email', 'Số ĐT', 'Tổng đơn', 'Tổng chi tiêu', 'TB/Đơn', 'Loại KH', 'Trạng thái']];
-            $('#customersTable tbody tr').each(function() {
-                const cells = $(this).find('td');
-                if (cells.length === 1) return;
-                const row = [];
-                cells.each(function(index) {
-                    if (index === 8) return; // Skip action column
-                    row.push($(this).text().trim());
-                });
-                customerData.push(row);
-            });
-            const wsCustomers = XLSX.utils.aoa_to_sheet(customerData);
-            XLSX.utils.book_append_sheet(wb, wsCustomers, 'Khách hàng');
-            
-            // Sheet 5: Phương thức thanh toán
-            const paymentData = [['Phương thức', 'Tổng GD', 'GD thành công', 'GD thất bại', 'Tỷ lệ TC', 'Tổng tiền', 'TB/GD']];
-            $('#paymentTable tbody tr').each(function() {
-                const cells = $(this).find('td');
-                if (cells.length === 1) return;
-                const row = [];
-                cells.each(function() {
-                    row.push($(this).text().trim());
-                });
-                paymentData.push(row);
-            });
-            const wsPayments = XLSX.utils.aoa_to_sheet(paymentData);
-            XLSX.utils.book_append_sheet(wb, wsPayments, 'Thanh toán');
-            
-            // Export file
-            const fileName = `bao-cao-${moment().format('YYYY-MM-DD-HHmmss')}.xlsx`;
-            XLSX.writeFile(wb, fileName);
-            
-            this.showToast('Đã xuất báo cáo Excel thành công!', 'success');
+            this.generateExcelWithCharts();
         } catch (error) {
             console.error('Export error:', error);
             this.showToast('Có lỗi xảy ra khi xuất báo cáo', 'error');
         }
+    }
+
+    async generateExcelWithCharts() {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'SportShop Admin';
+        workbook.created = new Date();
+
+        // Capture all charts
+        const chartPromises = await Promise.allSettled([
+            this.captureChartImage('revenueChart'),
+            this.captureChartImage('productChart'),
+            this.captureChartImage('paymentChart')
+        ]);
+
+        const chartImages = chartPromises.map(promise => 
+            promise.status === 'fulfilled' ? promise.value : null
+        ).filter(img => img !== null);
+
+        // Sheet 1: Tổng quan với biểu đồ
+        await this.createOverviewSheet(workbook, chartImages);
+
+        // Sheet 2: Doanh thu
+        this.createRevenueSheet(workbook);
+
+        // Sheet 3: Sản phẩm bán chạy
+        this.createProductsSheet(workbook);
+
+        // Sheet 4: Khách hàng
+        this.createCustomersSheet(workbook);
+
+        // Sheet 5: Thanh toán
+        this.createPaymentsSheet(workbook);
+
+        // Export file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bao-cao-${moment().format('YYYY-MM-DD-HHmmss')}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        this.showToast('Đã xuất báo cáo Excel với biểu đồ thành công!', 'success');
+    }
+
+    async captureChartImage(canvasId) {
+        return new Promise((resolve, reject) => {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                reject(new Error(`Canvas ${canvasId} not found`));
+                return;
+            }
+
+            html2canvas(canvas, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                width: canvas.width,
+                height: canvas.height
+            }).then(canvas => {
+                canvas.toBlob(blob => {
+                    resolve({
+                        id: canvasId,
+                        blob: blob,
+                        title: this.getChartTitle(canvasId)
+                    });
+                }, 'image/png');
+            }).catch(reject);
+        });
+    }
+
+    getChartTitle(canvasId) {
+        switch(canvasId) {
+            case 'revenueChart': return 'Biểu đồ doanh thu';
+            case 'productChart': return 'Sản phẩm bán chạy';
+            case 'paymentChart': return 'Phương thức thanh toán';
+            default: return 'Biểu đồ';
+        }
+    }
+
+    async createOverviewSheet(workbook, chartImages) {
+        const sheet = workbook.addWorksheet('Tổng quan');
+
+        // Title
+        sheet.getCell('A1').value = 'BÁO CÁO THỐNG KÊ KINH DOANH';
+        sheet.getCell('A1').font = { size: 16, bold: true };
+        sheet.mergeCells('A1:G1');
+
+        // Report info
+        sheet.getCell('A3').value = 'Thời gian:';
+        sheet.getCell('B3').value = `${moment(this.filters.startDate).format('DD/MM/YYYY')} - ${moment(this.filters.endDate).format('DD/MM/YYYY')}`;
+        
+        sheet.getCell('A4').value = 'Chu kỳ:';
+        sheet.getCell('B4').value = this.filters.period === 'day' ? 'Theo ngày' : 
+                                   this.filters.period === 'week' ? 'Theo tuần' : 
+                                   this.filters.period === 'month' ? 'Theo tháng' : 
+                                   this.filters.period === 'quarter' ? 'Theo quý' : 'Theo năm';
+        
+        sheet.getCell('A5').value = 'Xuất lúc:';
+        sheet.getCell('B5').value = moment().format('DD/MM/YYYY HH:mm:ss');
+
+        // Overview data
+        sheet.getCell('A7').value = 'TỔNG QUAN';
+        sheet.getCell('A7').font = { bold: true };
+        
+        sheet.getCell('A8').value = 'Doanh thu tháng:';
+        sheet.getCell('B8').value = $('#monthRevenue').text().replace(' VNĐ', '').replace(/,/g, '');
+        sheet.getCell('B8').numFmt = '#,##0 VNĐ';
+        
+        sheet.getCell('A9').value = 'Đơn hàng tháng:';
+        sheet.getCell('B9').value = parseInt($('#monthOrders').text()) || 0;
+        
+        sheet.getCell('A10').value = 'Tổng khách hàng:';
+        sheet.getCell('B10').value = parseInt($('#totalCustomers').text()) || 0;
+        
+        sheet.getCell('A11').value = 'Tỷ lệ chuyển đổi:';
+        sheet.getCell('B11').value = $('#conversionRate').text();
+
+        // Add charts
+        let rowOffset = 13;
+        for (let i = 0; i < chartImages.length; i++) {
+            const chartImage = chartImages[i];
+            const imageId = workbook.addImage({
+                buffer: await chartImage.blob.arrayBuffer(),
+                extension: 'png',
+            });
+
+            sheet.getCell(`A${rowOffset}`).value = chartImage.title;
+            sheet.getCell(`A${rowOffset}`).font = { bold: true };
+            
+            sheet.addImage(imageId, {
+                tl: { col: 0, row: rowOffset },
+                ext: { width: 600, height: 300 }
+            });
+            
+            rowOffset += 20; // Space for next chart
+        }
+
+        // Auto-fit columns
+        sheet.columns.forEach(column => {
+            column.width = 20;
+        });
+    }
+
+    createRevenueSheet(workbook) {
+        const sheet = workbook.addWorksheet('Doanh thu');
+        
+        // Header
+        sheet.getCell('A1').value = 'Thời gian';
+        sheet.getCell('B1').value = 'Doanh thu (VNĐ)';
+        sheet.getCell('A1').font = { bold: true };
+        sheet.getCell('B1').font = { bold: true };
+
+        // Data from chart
+        if (this.charts.revenue && this.charts.revenue.data) {
+            const labels = this.charts.revenue.data.labels;
+            const data = this.charts.revenue.data.datasets[0].data;
+            
+            for (let i = 0; i < labels.length; i++) {
+                sheet.getCell(`A${i + 2}`).value = labels[i];
+                sheet.getCell(`B${i + 2}`).value = data[i];
+                sheet.getCell(`B${i + 2}`).numFmt = '#,##0 VNĐ';
+            }
+        }
+
+        // Auto-fit columns
+        sheet.columns.forEach(column => {
+            column.width = 20;
+        });
+    }
+
+    createProductsSheet(workbook) {
+        const sheet = workbook.addWorksheet('Sản phẩm bán chạy');
+        
+        // Header
+        const headers = ['STT', 'Sản phẩm', 'Danh mục', 'Thương hiệu', 'Đơn giá', 'Số lượng bán', 'Doanh thu', 'Đánh giá'];
+        headers.forEach((header, index) => {
+            sheet.getCell(1, index + 1).value = header;
+            sheet.getCell(1, index + 1).font = { bold: true };
+        });
+
+        // Data from table
+        let rowIndex = 2;
+        $('#productsTable tbody tr').each(function() {
+            const cells = $(this).find('td');
+            if (cells.length === 1) return; // Skip "no data" row
+            
+            sheet.getCell(rowIndex, 1).value = parseInt(cells.eq(0).text().trim()) || 0;
+            sheet.getCell(rowIndex, 2).value = cells.eq(1).find('.product-details strong').text().trim();
+            sheet.getCell(rowIndex, 3).value = cells.eq(2).text().trim();
+            sheet.getCell(rowIndex, 4).value = cells.eq(3).text().trim();
+            sheet.getCell(rowIndex, 5).value = parseFloat(cells.eq(4).text().trim().replace(/,/g, '')) || 0;
+            sheet.getCell(rowIndex, 5).numFmt = '#,##0 VNĐ';
+            sheet.getCell(rowIndex, 6).value = parseInt(cells.eq(5).text().trim()) || 0;
+            sheet.getCell(rowIndex, 7).value = parseFloat(cells.eq(6).text().trim().replace(/,/g, '')) || 0;
+            sheet.getCell(rowIndex, 7).numFmt = '#,##0 VNĐ';
+            sheet.getCell(rowIndex, 8).value = cells.eq(7).text().trim();
+            
+            rowIndex++;
+        });
+
+        // Auto-fit columns
+        sheet.columns.forEach(column => {
+            column.width = 15;
+        });
+    }
+
+    createCustomersSheet(workbook) {
+        const sheet = workbook.addWorksheet('Khách hàng');
+        
+        // Header
+        const headers = ['STT', 'Họ tên', 'Email', 'Số ĐT', 'Tổng đơn', 'Tổng chi tiêu', 'TB/Đơn', 'Loại KH', 'Trạng thái'];
+        headers.forEach((header, index) => {
+            sheet.getCell(1, index + 1).value = header;
+            sheet.getCell(1, index + 1).font = { bold: true };
+        });
+
+        // Data from table
+        let rowIndex = 2;
+        $('#customersTable tbody tr').each(function() {
+            const cells = $(this).find('td');
+            if (cells.length === 1) return;
+            
+            sheet.getCell(rowIndex, 1).value = parseInt(cells.eq(0).text().trim()) || 0;
+            sheet.getCell(rowIndex, 2).value = cells.eq(1).find('strong').text().trim();
+            sheet.getCell(rowIndex, 3).value = cells.eq(1).find('.text-muted').first().text().trim();
+            sheet.getCell(rowIndex, 4).value = cells.eq(1).find('.text-muted').last().text().trim();
+            sheet.getCell(rowIndex, 5).value = parseInt(cells.eq(2).text().trim()) || 0;
+            sheet.getCell(rowIndex, 6).value = parseFloat(cells.eq(3).text().trim().replace(/,/g, '')) || 0;
+            sheet.getCell(rowIndex, 6).numFmt = '#,##0 VNĐ';
+            sheet.getCell(rowIndex, 7).value = parseFloat(cells.eq(4).text().trim().replace(/,/g, '')) || 0;
+            sheet.getCell(rowIndex, 7).numFmt = '#,##0 VNĐ';
+            sheet.getCell(rowIndex, 8).value = cells.eq(5).text().trim();
+            sheet.getCell(rowIndex, 9).value = cells.eq(6).text().trim();
+            
+            rowIndex++;
+        });
+
+        // Auto-fit columns
+        sheet.columns.forEach(column => {
+            column.width = 15;
+        });
+    }
+
+    createPaymentsSheet(workbook) {
+        const sheet = workbook.addWorksheet('Thanh toán');
+        
+        // Header
+        const headers = ['Phương thức', 'Tổng GD', 'GD thành công', 'GD thất bại', 'Tỷ lệ TC', 'Tổng tiền', 'TB/GD'];
+        headers.forEach((header, index) => {
+            sheet.getCell(1, index + 1).value = header;
+            sheet.getCell(1, index + 1).font = { bold: true };
+        });
+
+        // Data from table
+        let rowIndex = 2;
+        $('#paymentTable tbody tr').each(function() {
+            const cells = $(this).find('td');
+            if (cells.length === 1) return;
+            
+            sheet.getCell(rowIndex, 1).value = cells.eq(0).find('strong').text().trim();
+            sheet.getCell(rowIndex, 2).value = parseInt(cells.eq(1).text().trim()) || 0;
+            sheet.getCell(rowIndex, 3).value = parseInt(cells.eq(2).text().trim()) || 0;
+            sheet.getCell(rowIndex, 4).value = parseInt(cells.eq(3).text().trim()) || 0;
+            sheet.getCell(rowIndex, 5).value = cells.eq(4).text().trim();
+            sheet.getCell(rowIndex, 6).value = parseFloat(cells.eq(5).text().trim().replace(/,/g, '')) || 0;
+            sheet.getCell(rowIndex, 6).numFmt = '#,##0 VNĐ';
+            sheet.getCell(rowIndex, 7).value = parseFloat(cells.eq(6).text().trim().replace(/,/g, '')) || 0;
+            sheet.getCell(rowIndex, 7).numFmt = '#,##0 VNĐ';
+            
+            rowIndex++;
+        });
+
+        // Auto-fit columns
+        sheet.columns.forEach(column => {
+            column.width = 15;
+        });
     }
 
     exportTableData(tableType) {

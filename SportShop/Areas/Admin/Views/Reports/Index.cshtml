@@ -59,6 +59,17 @@
                 </select>
             </div>
 
+            <div class="filter-group">
+                <label for="paymentMethodFilter">Phương thức thanh toán:</label>
+                <select id="paymentMethodFilter" name="paymentMethod" class="form-select">
+                    <option value="">Tất cả phương thức</option>
+                    <option value="COD" selected="@(Model.Filter.PaymentMethod == "COD")">Thanh toán khi nhận hàng</option>
+                    <option value="MoMo" selected="@(Model.Filter.PaymentMethod == "MoMo")">Ví MoMo</option>
+                    <option value="VnPay" selected="@(Model.Filter.PaymentMethod == "VnPay")">VnPay</option>
+                    <option value="PayPal" selected="@(Model.Filter.PaymentMethod == "PayPal")">PayPal</option>
+                </select>
+            </div>
+
             <div class="filter-actions">
                 <button type="button" id="applyFilter" class="btn btn-primary">
                     <i class="fas fa-filter"></i>
@@ -479,6 +490,10 @@
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <!-- SheetJS library for Excel export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- ExcelJS for advanced Excel features with images -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <!-- html2canvas for chart capture -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="~/js/admin_reports.js" asp-append-version="true"></script>
     
     <script>

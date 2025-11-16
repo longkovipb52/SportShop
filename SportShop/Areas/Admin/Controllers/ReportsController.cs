@@ -129,6 +129,9 @@ namespace SportShop.Areas.Admin.Controllers
                 ));
             }
 
+            // Apply payment method filter
+            ordersQuery = ApplyPaymentMethodFilter(ordersQuery, filter);
+
             // Revenue calculations for filtered data
             overview.MonthRevenue = await ordersQuery
                 .Where(o => o.Status == "Hoàn thành")
@@ -191,6 +194,9 @@ namespace SportShop.Areas.Admin.Controllers
                     (!filter.BrandID.HasValue || oi.Product.BrandID == filter.BrandID.Value)
                 ));
             }
+
+            // Apply payment method filter if specified
+            query = ApplyPaymentMethodFilter(query, filter);
 
             var revenueData = new List<RevenueReportDTO>();
 
@@ -380,6 +386,19 @@ namespace SportShop.Areas.Admin.Controllers
                 query = query.Where(x => x.p.BrandID == filter.BrandID.Value);
             }
 
+            // Apply payment method filter
+            if (!string.IsNullOrEmpty(filter.PaymentMethod))
+            {
+                if (filter.PaymentMethod == "COD")
+                {
+                    query = query.Where(x => !x.o.Payments.Any() || x.o.Payments.Any(p => p.Method == "COD"));
+                }
+                else
+                {
+                    query = query.Where(x => x.o.Payments.Any(p => p.Method == filter.PaymentMethod));
+                }
+            }
+
             var productSales = await query
                 .GroupBy(x => new { x.p.ProductID, ProductName = x.p.Name, CategoryName = x.c.Name, BrandName = x.b.Name, x.p.Price, x.p.ImageURL })
                 .Select(g => new ProductSalesReportDTO
@@ -437,6 +456,9 @@ namespace SportShop.Areas.Admin.Controllers
                     (!filter.BrandID.HasValue || oi.Product.BrandID == filter.BrandID.Value)
                 ));
             }
+
+            // Apply payment method filter
+            ordersQuery = ApplyPaymentMethodFilter(ordersQuery, filter);
 
             var filteredOrders = await ordersQuery
                 .Include(o => o.User)
@@ -519,6 +541,19 @@ namespace SportShop.Areas.Admin.Controllers
                     (!filter.CategoryID.HasValue || oi.Product.CategoryID == filter.CategoryID.Value) &&
                     (!filter.BrandID.HasValue || oi.Product.BrandID == filter.BrandID.Value)
                 ));
+            }
+
+            // Apply payment method filter if specified
+            if (!string.IsNullOrEmpty(filter.PaymentMethod))
+            {
+                if (filter.PaymentMethod == "COD")
+                {
+                    ordersQuery = ordersQuery.Where(o => !o.Payments.Any() || o.Payments.Any(p => p.Method == "COD"));
+                }
+                else
+                {
+                    ordersQuery = ordersQuery.Where(o => o.Payments.Any(p => p.Method == filter.PaymentMethod));
+                }
             }
 
             // Get filtered orders
@@ -680,6 +715,22 @@ namespace SportShop.Areas.Admin.Controllers
         private int GetQuarter(DateTime date)
         {
             return (date.Month - 1) / 3 + 1;
+        }
+
+        private IQueryable<Order> ApplyPaymentMethodFilter(IQueryable<Order> query, ReportFilterDTO filter)
+        {
+            if (!string.IsNullOrEmpty(filter.PaymentMethod))
+            {
+                if (filter.PaymentMethod == "COD")
+                {
+                    query = query.Where(o => !o.Payments.Any() || o.Payments.Any(p => p.Method == "COD"));
+                }
+                else
+                {
+                    query = query.Where(o => o.Payments.Any(p => p.Method == filter.PaymentMethod));
+                }
+            }
+            return query;
         }
         #endregion
     }

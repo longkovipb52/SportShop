@@ -14,11 +14,13 @@ namespace SportShop.Areas.Admin.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly VoucherService _voucherService;
+        private readonly EmailService _emailService;
 
-        public OrdersController(ApplicationDbContext context, VoucherService voucherService)
+        public OrdersController(ApplicationDbContext context, VoucherService voucherService, EmailService emailService)
         {
             _context = context;
             _voucherService = voucherService;
+            _emailService = emailService;
         }
 
         // GET: Admin/Orders
@@ -251,6 +253,37 @@ namespace SportShop.Areas.Admin.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+                
+                // Gửi email thông báo cập nhật trạng thái đơn hàng
+                try
+                {
+                    var orderWithUser = await _context.Orders
+                        .Include(o => o.User)
+                        .Include(o => o.OrderItems)
+                            .ThenInclude(oi => oi.Product)
+                        .FirstOrDefaultAsync(o => o.OrderID == orderId);
+
+                    if (orderWithUser?.User?.Email != null)
+                    {
+                        var shippingAddress = orderWithUser.ShippingAddress;
+                        
+                        await _emailService.SendOrderStatusUpdateEmailAsync(
+                            orderWithUser.User.Email,
+                            orderWithUser.ShippingName,
+                            orderId,
+                            status,
+                            shippingAddress,
+                            orderWithUser.TotalAmount,
+                            orderWithUser.OrderDate,
+                            orderWithUser.OrderItems.ToList()
+                        );
+                    }
+                }
+                catch (Exception emailEx)
+                {
+                    // Log lỗi email nhưng không làm gián đoạn flow cập nhật trạng thái
+                    Console.WriteLine($"Lỗi khi gửi email thông báo: {emailEx.Message}");
+                }
                 
                 if (status == "Hoàn thành" && previousStatus != "Hoàn thành" && order.UserID > 0)
                 {

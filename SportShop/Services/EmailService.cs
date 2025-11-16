@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using SportShop.Data;
+using SportShop.Models;
 
 namespace SportShop.Services
 {
@@ -111,6 +112,25 @@ namespace SportShop.Services
             var body = GenerateReviewVoucherNotificationEmailBody(customerName, voucherCode, voucherDescription, voucherValue, voucherType, rating);
             
             await SendEmailAsync(toEmail, subject, body);
+        }
+
+        /// <summary>
+        /// Gửi email thông báo cập nhật trạng thái đơn hàng
+        /// </summary>
+        public async Task<bool> SendOrderStatusUpdateEmailAsync(string toEmail, string customerName, int orderId, string newStatus, string shippingAddress, decimal orderTotal, DateTime orderDate, List<OrderItem> orderItems)
+        {
+            try
+            {
+                var subject = $"📦 Cập nhật trạng thái đơn hàng #{orderId} - SportShop";
+                var body = GenerateOrderStatusUpdateEmailBody(customerName, orderId, newStatus, shippingAddress, orderTotal, orderDate, orderItems);
+
+                return await SendEmailAsync(toEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending order status update email: {ex.Message}");
+                return false;
+            }
         }
 
         /// <summary>
@@ -648,6 +668,237 @@ namespace SportShop.Services
         {
             var random = new Random();
             return random.Next(100000, 999999).ToString();
+        }
+
+        /// <summary>
+        /// Tạo nội dung email thông báo cập nhật trạng thái đơn hàng
+        /// </summary>
+        private string GenerateOrderStatusUpdateEmailBody(string customerName, int orderId, string newStatus, string shippingAddress, decimal orderTotal, DateTime orderDate, List<OrderItem> orderItems)
+        {
+            var statusColor = GetStatusColor(newStatus);
+            var statusIcon = GetStatusIcon(newStatus);
+            var statusMessage = GetStatusMessage(newStatus);
+
+            var orderItemsHtml = "";
+            foreach (var item in orderItems)
+            {
+                var totalPrice = item.UnitPrice * item.Quantity;
+                orderItemsHtml += $@"
+                <tr>
+                    <td style='padding: 10px; border-bottom: 1px solid #eee;'>{item.Product?.Name ?? "Sản phẩm"}</td>
+                    <td style='padding: 10px; border-bottom: 1px solid #eee; text-align: center;'>{item.Quantity}</td>
+                    <td style='padding: 10px; border-bottom: 1px solid #eee; text-align: right;'>{item.UnitPrice:N0}đ</td>
+                    <td style='padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;'>{totalPrice:N0}đ</td>
+                </tr>";
+            }
+
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }}
+        .container {{
+            max-width: 700px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: linear-gradient(135deg, {statusColor} 0%, #667eea 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }}
+        .header h1 {{
+            margin: 0;
+            font-size: 28px;
+        }}
+        .status-badge {{
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }}
+        .content {{
+            padding: 40px 30px;
+        }}
+        .order-info {{
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid {statusColor};
+        }}
+        .order-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .order-table th {{
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }}
+        .order-table td {{
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }}
+        .total-row {{
+            background: #f8f9fa;
+            font-weight: bold;
+        }}
+        .total-row td {{
+            padding: 15px 10px;
+        }}
+        .btn {{
+            display: inline-block;
+            background: linear-gradient(135deg, {statusColor} 0%, #667eea 100%);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }}
+        .footer {{
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }}
+        .status-icon {{
+            font-size: 48px;
+            margin-bottom: 10px;
+        }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <div class='status-icon'>{statusIcon}</div>
+            <h1>Cập nhật trạng thái đơn hàng</h1>
+            <div class='status-badge'>{newStatus}</div>
+        </div>
+        
+        <div class='content'>
+            <h2>Xin chào {customerName}!</h2>
+            <p><strong>Đơn hàng #{orderId}</strong> của bạn đã được cập nhật trạng thái.</p>
+            
+            <div class='order-info'>
+                <h3>📋 Thông tin đơn hàng</h3>
+                <p><strong>Ngày đặt:</strong> {orderDate:dd/MM/yyyy HH:mm}</p>
+                <p><strong>Trạng thái mới:</strong> <span style='color: {statusColor}; font-weight: bold;'>{newStatus}</span></p>
+                <p><strong>Địa chỉ giao hàng:</strong> {shippingAddress}</p>
+                <p><strong>Tổng tiền:</strong> <span style='font-size: 18px; font-weight: bold; color: #e74c3c;'>{orderTotal:N0}đ</span></p>
+            </div>
+            
+            <h3>🛒 Chi tiết sản phẩm</h3>
+            <table class='order-table'>
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th style='text-align: center;'>Số lượng</th>
+                        <th style='text-align: right;'>Đơn giá</th>
+                        <th style='text-align: right;'>Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {orderItemsHtml}
+                    <tr class='total-row'>
+                        <td colspan='3' style='text-align: right; font-weight: bold;'>Tổng cộng:</td>
+                        <td style='text-align: right; font-size: 18px; color: #e74c3c;'>{orderTotal:N0}đ</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div style='background: #e8f5e8; border: 1px solid #c3e6c3; border-radius: 8px; padding: 15px; margin: 20px 0;'>
+                <p style='margin: 0; color: #2e7d32;'><strong>✅ {statusMessage}</strong></p>
+            </div>
+            
+            <p>Nếu bạn có bất kỳ câu hỏi nào về đơn hàng, vui lòng liên hệ với chúng tôi qua email hoặc hotline.</p>
+            
+            <div style='text-align: center;'>
+                <a href='http://localhost:5084/OrderHistory' class='btn'>Xem đơn hàng của tôi</a>
+            </div>
+        </div>
+        
+        <div class='footer'>
+            <p>Cảm ơn bạn đã tin tưởng và mua sắm tại SportShop!</p>
+            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+            <p>&copy; 2025 SportShop. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>";
+        }
+
+        /// <summary>
+        /// Lấy màu sắc cho trạng thái
+        /// </summary>
+        private string GetStatusColor(string status)
+        {
+            return status switch
+            {
+                "Đang xử lý" => "#f39c12",
+                "Đã xác nhận" => "#3498db", 
+                "Đang giao" => "#9b59b6",
+                "Hoàn thành" => "#27ae60",
+                "Đã hủy" => "#e74c3c",
+                _ => "#95a5a6"
+            };
+        }
+
+        /// <summary>
+        /// Lấy icon cho trạng thái
+        /// </summary>
+        private string GetStatusIcon(string status)
+        {
+            return status switch
+            {
+                "Đang xử lý" => "⏳",
+                "Đã xác nhận" => "✅",
+                "Đang giao" => "🚚",
+                "Hoàn thành" => "🎉",
+                "Đã hủy" => "❌",
+                _ => "📦"
+            };
+        }
+
+        /// <summary>
+        /// Lấy thông điệp cho trạng thái
+        /// </summary>
+        private string GetStatusMessage(string status)
+        {
+            return status switch
+            {
+                "Đang xử lý" => "Đơn hàng của bạn đang được xử lý. Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.",
+                "Đã xác nhận" => "Đơn hàng của bạn đã được xác nhận và đang chuẩn bị hàng.",
+                "Đang giao" => "Đơn hàng của bạn đang được giao đến địa chỉ đã cung cấp.",
+                "Hoàn thành" => "Đơn hàng của bạn đã được giao thành công. Cảm ơn bạn đã mua sắm!",
+                "Đã hủy" => "Đơn hàng của bạn đã được hủy. Nếu có thắc mắc, vui lòng liên hệ với chúng tôi.",
+                _ => "Trạng thái đơn hàng đã được cập nhật."
+            };
         }
 
         private string GenerateReviewVoucherNotificationEmailBody(string customerName, string voucherCode, string voucherDescription, decimal voucherValue, string voucherType, int rating)
